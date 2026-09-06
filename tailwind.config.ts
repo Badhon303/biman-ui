@@ -1,0 +1,2 @@
+import type { Config } from 'tailwindcss'
+export default { darkMode: ['class'], content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}', './lib/**/*.{ts,tsx}'], theme: { extend: { colors: { navy: '#102a43', ink: '#102a43', mist: '#f5f7fa', accent: '#2667ff' }, boxShadow: { soft: '0 8px 30px rgba(15, 23, 42, 0.06)' }, borderRadius: { '2xl': '1.25rem' } } }, plugins: [require('tailwindcss-animate')] } satisfies Config

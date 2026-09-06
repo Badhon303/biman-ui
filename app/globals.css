@@ -1,0 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+:root { --background: 220 20% 98%; --foreground: 222 47% 11%; --muted: 215 16% 47%; --line: 214 32% 91%; --primary: 216 80% 52%; }
+.dark { --background: 222 47% 8%; --foreground: 210 40% 98%; --muted: 215 20% 65%; --line: 217 33% 18%; --primary: 216 92% 65%; }
+@layer base { * { @apply border-slate-200 dark:border-slate-800; } body { @apply bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-slate-50; font-feature-settings: "rlig" 1, "calt" 1; } }
+@layer utilities { .text-balance { text-wrap: balance; } }
