@@ -28,6 +28,7 @@ import {
   users,
 } from "@/lib/mock-data";
 import { toast } from "sonner";
+import { useRole } from "@/components/role-context";
 export function PageHeader({
   eyebrow,
   title,
@@ -260,9 +261,99 @@ function TicketModal({ onClose }: { onClose: () => void }) {
 function getName(id: string) {
   return equipment.find((e) => e.id === id)?.name ?? id;
 }
+function EquipmentModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900">
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Add equipment</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Enter the basic details for a new fleet asset.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-2xl leading-none text-slate-400 hover:text-slate-700"
+            aria-label="Close modal"
+          >
+            ×
+          </button>
+        </div>
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            onClose();
+            toast.success("Equipment added (mock)");
+          }}
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="text-xs font-semibold">
+              Asset number
+              <Input className="mt-2" placeholder="BGSE-001" />
+            </label>
+            <label className="text-xs font-semibold">
+              Equipment name
+              <Input className="mt-2" placeholder="Ground Power Unit" />
+            </label>
+            <label className="text-xs font-semibold">
+              Equipment type
+              <Input className="mt-2" placeholder="Ground Support Equipment" />
+            </label>
+            <label className="text-xs font-semibold">
+              Manufacturer
+              <Input className="mt-2" placeholder="Manufacturer name" />
+            </label>
+            <label className="text-xs font-semibold">
+              Model
+              <Input className="mt-2" placeholder="Model number" />
+            </label>
+            <label className="text-xs font-semibold">
+              Serial number
+              <Input className="mt-2" placeholder="Serial number" />
+            </label>
+            <label className="text-xs font-semibold">
+              Registration number
+              <Input className="mt-2" placeholder="Registration number" />
+            </label>
+            <label className="text-xs font-semibold">
+              Location
+              <Input className="mt-2" placeholder="Dhaka apron" />
+            </label>
+            <label className="text-xs font-semibold">
+              Status
+              <Select className="mt-2 w-full" defaultValue="Available">
+                <option>Available</option>
+                <option>Under Maintenance</option>
+                <option>Out of Service</option>
+                <option>Inactive</option>
+              </Select>
+            </label>
+            <label className="text-xs font-semibold">
+              Commissioning date
+              <Input className="mt-2" type="date" />
+            </label>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit">
+              <Plus className="h-4 w-4" />
+              Add equipment
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 export function EquipmentPage() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("All");
+  const [addOpen, setAddOpen] = useState(false);
   const rows = equipment.filter(
     (e) =>
       (status === "All" || e.status === status) &&
@@ -277,7 +368,7 @@ export function EquipmentPage() {
         title="Equipment master"
         subtitle="Your operational fleet, with a digital logbook attached to every asset."
         action={
-          <Button onClick={() => toast.success("Add equipment form opened")}>
+          <Button onClick={() => setAddOpen(true)}>
             <Plus className="h-4 w-4" />
             Add equipment
           </Button>
@@ -347,11 +438,133 @@ export function EquipmentPage() {
           </TBody>
         </Table>
       </Card>
+      {addOpen && <EquipmentModal onClose={() => setAddOpen(false)} />}
     </ShellPage>
   );
 }
+function RequestModal({
+  onClose,
+  onCreate,
+}: {
+  onClose: () => void;
+  onCreate: (data: {
+    item: string;
+    quantity: number;
+    reason: string;
+    ticketId: string;
+    equipmentId: string;
+  }) => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900">
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Create equipment request</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Submit a parts or equipment request for approval.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-2xl leading-none text-slate-400 hover:text-slate-700"
+            aria-label="Close modal"
+          >
+            ×
+          </button>
+        </div>
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const data = new FormData(e.currentTarget);
+            onCreate({
+              item: String(data.get("item")),
+              quantity: Number(data.get("quantity")),
+              reason: String(data.get("reason")),
+              ticketId: String(data.get("ticketId")),
+              equipmentId: String(data.get("equipmentId")),
+            });
+          }}
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="text-xs font-semibold">
+              Item or part
+              <Input className="mt-2" name="item" placeholder="Hydraulic hose" required />
+            </label>
+            <label className="text-xs font-semibold">
+              Quantity
+              <Input
+                className="mt-2"
+                name="quantity"
+                type="number"
+                min="1"
+                defaultValue="1"
+                required
+              />
+            </label>
+            <label className="text-xs font-semibold">
+              Linked ticket
+              <Select
+                className="mt-2 w-full"
+                name="ticketId"
+                defaultValue={tickets[0]?.id}
+                required
+              >
+                {tickets.map((ticket) => (
+                  <option key={ticket.id} value={ticket.id}>
+                    {ticket.ticketNo} ·{" "}
+                    {ticket.faultDescription ?? ticket.maintenanceRecord.problemDescription}
+                  </option>
+                ))}
+              </Select>
+            </label>
+            <label className="text-xs font-semibold">
+              Equipment
+              <Select
+                className="mt-2 w-full"
+                name="equipmentId"
+                defaultValue={equipment[0]?.id}
+                required
+              >
+                {equipment.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.assetNo} · {item.name}
+                  </option>
+                ))}
+              </Select>
+            </label>
+          </div>
+          <label className="block text-xs font-semibold">
+            Reason
+            <textarea
+              className="mt-2 min-h-28 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 dark:bg-slate-950"
+              name="reason"
+              placeholder="Explain why this item is needed"
+              required
+            />
+          </label>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit">
+              <Plus className="h-4 w-4" />
+              Submit request
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 export function RequestsPage() {
+  const { role, user } = useRole();
   const [rows, setRows] = useState(initialRequests);
+  const [createOpen, setCreateOpen] = useState(false);
+  const canCreate = role === "Engineer";
+  const canApprove = role === "Biman Admin" || role === "Super Admin";
   const update = (id: string, status: "Approved" | "Rejected") => {
     setRows((rs) =>
       rs.map((r) =>
@@ -360,12 +573,41 @@ export function RequestsPage() {
     );
     toast.success(`Request ${status.toLowerCase()}`);
   };
+  const createRequest = (data: {
+    item: string;
+    quantity: number;
+    reason: string;
+    ticketId: string;
+    equipmentId: string;
+  }) => {
+    setRows((rs) => [
+      ...rs,
+      {
+        id: `REQ-${String(rs.length + 1).padStart(3, "0")}`,
+        requestNo: `REQ-${String(rs.length + 1).padStart(3, "0")}`,
+        ...data,
+        requestedBy: user.name,
+        requestedDate: "2026-09-07",
+        status: "Pending",
+      },
+    ]);
+    setCreateOpen(false);
+    toast.success("Request submitted for approval");
+  };
   return (
     <ShellPage>
       <PageHeader
         eyebrow="Maintenance / Requests"
         title="Equipment & parts requests"
         subtitle="A request-and-approval record linked to maintenance work — not an inventory system."
+        action={
+          canCreate ? (
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Create request
+            </Button>
+          ) : undefined
+        }
       />
       <Card>
         <div className="flex items-center justify-between border-b p-5">
@@ -425,7 +667,7 @@ export function RequestsPage() {
                   )}
                 </TD>
                 <TD>
-                  {r.status === "Pending" && (
+                  {canApprove && r.status === "Pending" && (
                     <div className="flex gap-1">
                       <Button className="h-8 px-2 text-xs" onClick={() => update(r.id, "Approved")}>
                         <Check className="h-3 w-3" />
@@ -447,6 +689,7 @@ export function RequestsPage() {
           </TBody>
         </Table>
       </Card>
+      {createOpen && <RequestModal onClose={() => setCreateOpen(false)} onCreate={createRequest} />}
     </ShellPage>
   );
 }
