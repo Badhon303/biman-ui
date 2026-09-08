@@ -8,7 +8,6 @@ import {
   ClipboardList,
   FileText,
   Gauge,
-  History,
   LayoutDashboard,
   LogOut,
   Moon,
@@ -34,7 +33,6 @@ const nav = [
       ["Tickets", "/tickets", ClipboardList],
       ["Schedule", "/schedule", CalendarClock],
       ["Requests", "/requests", Wrench],
-      ["Maintenance history", "/history", History],
     ],
   },
   {

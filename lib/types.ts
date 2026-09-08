@@ -73,7 +73,6 @@ export interface MaintenanceSchedule {
   activity: string
   frequency: string
   lastDate: string
-  nextDate: string
   dueDate: string
   scheduleDuration: string
   status: ScheduleStatus

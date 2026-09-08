@@ -8,8 +8,10 @@ import {
   FileText,
   Filter,
   Plus,
+  Pencil,
   Search,
   SlidersHorizontal,
+  Trash2,
   X,
 } from "lucide-react";
 import { ShellPage } from "@/components/app-shell";
@@ -57,6 +59,7 @@ export function TicketsPage() {
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
+  const [ticketRows, setTicketRows] = useState(tickets);
   const types = [
     "All",
     "Preventive Maintenance",
@@ -64,7 +67,7 @@ export function TicketsPage() {
     "General Maintenance",
     "Washing Schedule",
   ];
-  const rows = tickets.filter(
+  const rows = ticketRows.filter(
     (t) =>
       (filter === "All" || t.type === filter) &&
       `${t.ticketNo} ${t.equipmentId} ${getName(t.equipmentId)} ${t.assignedEngineer}`
@@ -161,9 +164,28 @@ export function TicketsPage() {
                   <StatusBadge status={t.status} />
                 </TD>
                 <TD>
-                  <Link href={`/tickets/${t.id}`} className="text-xs font-semibold text-blue-600">
-                    Open
-                  </Link>
+                  <div className="flex items-center gap-1">
+                    <Link
+                      href={`/tickets/${t.id}`}
+                      className="rounded-md p-2 text-slate-500 transition hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/40"
+                      aria-label={`Edit ${t.ticketNo}`}
+                      title="Edit ticket"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Link>
+                    <button
+                      type="button"
+                      className="rounded-md p-2 text-slate-500 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40"
+                      aria-label={`Delete ${t.ticketNo}`}
+                      title="Delete ticket"
+                      onClick={() => {
+                        setTicketRows((current) => current.filter((ticket) => ticket.id !== t.id));
+                        toast.success("Ticket deleted (mock)");
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </TD>
               </TR>
             ))}
