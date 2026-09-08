@@ -3,6 +3,8 @@ export type EquipmentStatus = 'Available' | 'Under Maintenance' | 'Out of Servic
 export type TicketType = 'Preventive Maintenance' | 'Breakdown Maintenance' | 'General Maintenance' | 'Washing Schedule'
 export type TicketStatus = 'Open' | 'Assigned' | 'In Progress' | 'Awaiting Parts' | 'Awaiting Verification' | 'Completed' | 'Closed'
 export type RequestStatus = 'Pending' | 'Approved' | 'Rejected' | 'Received'
+export type ScheduleType = 'Preventive Maintenance' | 'Washing'
+export type ScheduleStatus = 'Scheduled' | 'Due soon' | 'Overdue' | 'In progress' | 'Completed'
 
 export interface Specification { label: string; value: string }
 export interface EquipmentDocument { id: string; name: string; type: string; expiryDate?: string; uploadedDate: string }
@@ -61,6 +63,22 @@ export interface Ticket {
   downtimeHours?: number
   maintenanceRecord: MaintenanceRecord
   history: TicketHistory[]
+}
+
+export interface MaintenanceSchedule {
+  id: string
+  scheduleNo: string
+  type: ScheduleType
+  equipmentId: string
+  activity: string
+  frequency: string
+  lastDate: string
+  nextDate: string
+  dueDate: string
+  scheduleDuration: string
+  status: ScheduleStatus
+  ticketId?: string
+  assignedEngineer?: string
 }
 
 export interface EquipmentRequest {

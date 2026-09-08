@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Bell,
   Box,
+  CalendarClock,
   ClipboardList,
   FileText,
   Gauge,
@@ -31,6 +32,7 @@ const nav = [
     group: "Maintenance",
     items: [
       ["Tickets", "/tickets", ClipboardList],
+      ["Schedule", "/schedule", CalendarClock],
       ["Requests", "/requests", Wrench],
       ["Maintenance history", "/history", History],
     ],
