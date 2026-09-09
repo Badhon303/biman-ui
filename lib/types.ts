@@ -11,18 +11,23 @@ export interface EquipmentDocument { id: string; name: string; type: string; exp
 export interface Equipment {
   id: string
   assetNo: string
-  name: string
   type: string
   manufacturer: string
   model: string
-  serialNo: string
-  registrationNo: string
+  bimanSerialNo: string
+  name?: string
+  registrationNo?: string
   location: string
   status: EquipmentStatus
-  commissioningDate: string
+  hourMeter?: number
+  actualGTDate?: string
+  shipDate?: string
+  shippingStatus?: string
+  emissionRatting?: string
   equipmentPhotos: string[]
   specifications: Specification[]
   documents: EquipmentDocument[]
+  // Operational records used by maintenance and washing screens.
   lastPmDate: string
   lastWashDate: string
   nextWashDate: string

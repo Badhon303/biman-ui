@@ -28,6 +28,7 @@ import {
   notifications as initialNotifications,
   documents,
   users,
+  engineers,
 } from "@/lib/mock-data";
 import { toast } from "sonner";
 import { useRole } from "@/components/role-context";
@@ -202,7 +203,7 @@ function TicketModal({ onClose }: { onClose: () => void }) {
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900">
         <div className="mb-5 flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold">Create maintenance ticket</h2>
+            <h2 className="text-lg font-semibold">Create ticket</h2>
             <p className="mt-1 text-sm text-slate-500">Enter the basic details for a new ticket.</p>
           </div>
           <button
@@ -258,6 +259,19 @@ function TicketModal({ onClose }: { onClose: () => void }) {
               Due date
               <Input className="mt-2" type="date" defaultValue="2026-09-10" />
             </label>
+            <label className="text-xs font-semibold">
+              Assigned engineer
+              <Select className="mt-2 w-full" defaultValue="">
+                <option value="" disabled>
+                  Select engineer
+                </option>
+                {engineers.map((engineer) => (
+                  <option key={engineer.id} value={engineer.id}>
+                    {engineer.name}
+                  </option>
+                ))}
+              </Select>
+            </label>
           </div>
           <label className="block text-xs font-semibold">
             Problem description
@@ -281,9 +295,11 @@ function TicketModal({ onClose }: { onClose: () => void }) {
   );
 }
 function getName(id: string) {
-  return equipment.find((e) => e.id === id)?.name ?? id;
+  return equipment.find((e) => e.id === id)?.type ?? id;
 }
 function EquipmentModal({ onClose }: { onClose: () => void }) {
+  const equipmentTypes = Array.from(new Set(equipment.map((item) => item.type)))
+
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm">
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900">
@@ -322,7 +338,16 @@ function EquipmentModal({ onClose }: { onClose: () => void }) {
             </label>
             <label className="text-xs font-semibold">
               Equipment type
-              <Input className="mt-2" placeholder="Ground Support Equipment" />
+              <Select className="mt-2 w-full" defaultValue="" required>
+                <option value="" disabled>
+                  Select equipment type
+                </option>
+                {equipmentTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </Select>
             </label>
             <label className="text-xs font-semibold">
               Manufacturer
@@ -354,7 +379,7 @@ function EquipmentModal({ onClose }: { onClose: () => void }) {
               </Select>
             </label>
             <label className="text-xs font-semibold">
-              Commissioning date
+              Actual GT date
               <Input className="mt-2" type="date" />
             </label>
           </div>
@@ -379,7 +404,7 @@ export function EquipmentPage() {
   const rows = equipment.filter(
     (e) =>
       (status === "All" || e.status === status) &&
-      `${e.assetNo} ${e.name} ${e.manufacturer} ${e.location}`
+      `${e.assetNo} ${e.type} ${e.manufacturer} ${e.location}`
         .toLowerCase()
         .includes(q.toLowerCase()),
   );
@@ -387,7 +412,7 @@ export function EquipmentPage() {
     <ShellPage>
       <PageHeader
         eyebrow="Assets / Fleet registry"
-        title="Equipment master"
+        title="Equipment List"
         subtitle="Your operational fleet, with a digital logbook attached to every asset."
         action={
           <Button onClick={() => setAddOpen(true)}>
@@ -419,9 +444,9 @@ export function EquipmentPage() {
           <THead>
             <TR>
               <TH>Asset no.</TH>
-              <TH>Equipment</TH>
+              <TH>Type</TH>
               <TH>Manufacturer / model</TH>
-              <TH>Serial no.</TH>
+              <TH>Biman serial no.</TH>
               <TH>Location</TH>
               <TH>Status</TH>
               <TH>Actions</TH>
@@ -437,7 +462,7 @@ export function EquipmentPage() {
                 </TD>
                 <TD>
                   <Link href={`/equipment/${e.id}`} className="font-medium hover:text-blue-600">
-                    {e.name}
+                    {e.type}
                   </Link>
                   <div className="text-xs text-slate-400">{e.type}</div>
                 </TD>
@@ -445,7 +470,7 @@ export function EquipmentPage() {
                   {e.manufacturer}
                   <div className="text-xs text-slate-400">{e.model}</div>
                 </TD>
-                <TD className="font-mono text-xs">{e.serialNo}</TD>
+                <TD className="font-mono text-xs">{e.bimanSerialNo}</TD>
                 <TD>{e.location}</TD>
                 <TD>
                   <StatusBadge status={e.status} />

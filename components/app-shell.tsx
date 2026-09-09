@@ -38,7 +38,7 @@ const nav = [
   {
     group: "Assets",
     items: [
-      ["Equipment master", "/equipment", Box],
+      ["Equipment List", "/equipment", Box],
       ["Documents", "/documents", FileText],
     ],
   },

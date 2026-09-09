@@ -29,7 +29,7 @@ export default function Dashboard() {
   const isBiman = role === "Biman Admin";
   const ownTickets = isEngineer ? tickets.filter((t) => t.assignedEngineer === user.name) : tickets;
   const filtered = equipment.filter((e) =>
-    `${e.assetNo} ${e.name} ${e.location}`.toLowerCase().includes(search.toLowerCase()),
+    `${e.assetNo} ${e.type} ${e.location}`.toLowerCase().includes(search.toLowerCase()),
   );
   const availableCount = equipment.filter((e) => e.status === "Available").length;
   const maintenanceCount = equipment.filter((e) => e.status === "Under Maintenance").length;
@@ -184,7 +184,7 @@ export default function Dashboard() {
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_.6fr]">
         <Card>
           <SectionTitle
-            title="Equipment master"
+            title="Equipment List"
             subtitle="Search your fleet and open a digital logbook"
             action="View master"
             href="/equipment"
@@ -209,14 +209,14 @@ export default function Dashboard() {
               >
                 <div className="flex items-center gap-3">
                   <div className="grid h-9 w-9 place-items-center rounded-lg bg-slate-100 text-xs font-bold text-slate-500 dark:bg-slate-800">
-                    {e.name
+                    {e.type
                       .split(" ")
                       .map((x) => x[0])
                       .join("")
                       .slice(0, 2)}
                   </div>
                   <div>
-                    <div className="text-sm font-semibold">{e.name}</div>
+                    <div className="text-sm font-semibold">{e.type}</div>
                     <div className="text-xs text-slate-500">
                       {e.assetNo} · {e.location}
                     </div>
