@@ -232,7 +232,7 @@ function TicketModal({ onClose }: { onClose: () => void }) {
                 </option>
                 {equipment.map((item) => (
                   <option key={item.id} value={item.id}>
-                    {item.assetNo} · {item.name}
+                    {item.assetNo} · {item.type}
                   </option>
                 ))}
               </Select>
@@ -447,6 +447,7 @@ export function EquipmentPage() {
               <TH>Type</TH>
               <TH>Manufacturer / model</TH>
               <TH>Biman serial no.</TH>
+              <TH>TLD serial no.</TH>
               <TH>Location</TH>
               <TH>Status</TH>
               <TH>Actions</TH>
@@ -464,13 +465,13 @@ export function EquipmentPage() {
                   <Link href={`/equipment/${e.id}`} className="font-medium hover:text-blue-600">
                     {e.type}
                   </Link>
-                  <div className="text-xs text-slate-400">{e.type}</div>
                 </TD>
                 <TD>
                   {e.manufacturer}
                   <div className="text-xs text-slate-400">{e.model}</div>
                 </TD>
                 <TD className="font-mono text-xs">{e.bimanSerialNo}</TD>
+                <TD className="font-mono text-xs">{e.TLDSerialNo}</TD>
                 <TD>{e.location}</TD>
                 <TD>
                   <StatusBadge status={e.status} />
@@ -577,7 +578,7 @@ function RequestModal({
               >
                 {equipment.map((item) => (
                   <option key={item.id} value={item.id}>
-                    {item.assetNo} · {item.name}
+                    {item.assetNo} · {item.type}
                   </option>
                 ))}
               </Select>

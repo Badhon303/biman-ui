@@ -28,7 +28,7 @@ const scheduleFilters: Array<"All" | ScheduleType> = ["All", "Preventive Mainten
 
 function equipmentName(id: string) {
   const item = equipment.find((entry) => entry.id === id);
-  return item ? `${item.name} · ${item.assetNo}` : id;
+  return item ? `${item.type} · ${item.assetNo}` : id;
 }
 
 function formatDate(value: string) {
@@ -362,7 +362,7 @@ function AddScheduleModal({
               >
                 {equipment.map((item) => (
                   <option key={item.id} value={item.id}>
-                    {item.assetNo} · {item.name}
+                    {item.assetNo} · {item.type}
                   </option>
                 ))}
               </Select>

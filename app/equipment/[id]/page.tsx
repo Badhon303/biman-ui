@@ -62,7 +62,7 @@ export default function EquipmentProfile() {
             {tab === 'Overview' && (
               <div className="grid gap-6 sm:grid-cols-2">
                 <Info label="Biman serial number" value={e.bimanSerialNo} />
-                <Info label="Location" value={e.location} />
+                <Info label="TLD serial number" value={e.TLDSerialNo} />
                 <Info label="Status" value={e.status} />
                 <Info label="Hour meter" value={e.hourMeter !== undefined ? `${e.hourMeter} hours` : 'Not recorded'} />
                 <Info label="Actual GT date" value={e.actualGTDate ?? 'Not recorded'} />

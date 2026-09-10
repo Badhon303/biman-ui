@@ -15,8 +15,7 @@ export interface Equipment {
   manufacturer: string
   model: string
   bimanSerialNo: string
-  name?: string
-  registrationNo?: string
+  TLDSerialNo: string
   location: string
   status: EquipmentStatus
   hourMeter?: number
@@ -27,12 +26,6 @@ export interface Equipment {
   equipmentPhotos: string[]
   specifications: Specification[]
   documents: EquipmentDocument[]
-  // Operational records used by maintenance and washing screens.
-  lastPmDate: string
-  lastWashDate: string
-  nextWashDate: string
-  insuranceExpiry: string
-  batteryWaterTopUpDue?: string
 }
 
 export interface ChecklistItem { id: string; label: string; checked: boolean }

@@ -281,7 +281,7 @@ export default function Dashboard() {
                   key={t.id}
                 >
                   <div>
-                    <div className="text-sm font-semibold">{getEquipment(t.equipmentId)?.name}</div>
+                    <div className="text-sm font-semibold">{getEquipment(t.equipmentId)?.type}</div>
                     <div className="mt-1 text-xs text-slate-500">
                       {t.ticketNo} · {t.assignedEngineer}
                     </div>
@@ -389,7 +389,7 @@ function TicketRows({ rows }: { rows: typeof tickets }) {
             <div className="text-sm font-semibold">
               {t.ticketNo}{" "}
               <span className="ml-1 font-normal text-slate-500">
-                · {getEquipment(t.equipmentId)?.name}
+                · {getEquipment(t.equipmentId)?.type}
               </span>
             </div>
             <div className="mt-1 text-xs text-slate-500">
