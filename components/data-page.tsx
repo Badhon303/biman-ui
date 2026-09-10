@@ -29,7 +29,10 @@ import {
   documents,
   users,
   engineers,
+  hourMeterServiceOptions,
+  nextAssetNo,
 } from "@/lib/mock-data";
+import type { Equipment } from "@/lib/types";
 import { toast } from "sonner";
 import { useRole } from "@/components/role-context";
 export function PageHeader({
@@ -297,8 +300,23 @@ function TicketModal({ onClose }: { onClose: () => void }) {
 function getName(id: string) {
   return equipment.find((e) => e.id === id)?.type ?? id;
 }
-function EquipmentModal({ onClose }: { onClose: () => void }) {
-  const equipmentTypes = Array.from(new Set(equipment.map((item) => item.type)))
+function EquipmentModal({
+  onClose,
+  onAdd,
+  assetNo,
+}: {
+  onClose: () => void;
+  onAdd: (item: Equipment) => void;
+  assetNo: string;
+}) {
+  const equipmentTypes = Array.from(new Set(equipment.map((item) => item.type)));
+  const [type, setType] = useState("");
+  const [manufacturer, setManufacturer] = useState("");
+  const [model, setModel] = useState("");
+  const [bimanSerialNo, setBimanSerialNo] = useState("");
+  const [TLDSerialNo, setTLDSerialNo] = useState("");
+  const [serviceType, setServiceType] = useState("");
+  const [hourMeter, setHourMeter] = useState("");
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm">
@@ -323,6 +341,25 @@ function EquipmentModal({ onClose }: { onClose: () => void }) {
           className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
+            if (!type) {
+              toast.error("Please select an equipment type");
+              return;
+            }
+            onAdd({
+              id: `eq${Date.now()}`,
+              assetNo,
+              type,
+              manufacturer,
+              model,
+              bimanSerialNo,
+              TLDSerialNo,
+              location: "Not assigned",
+              status: "Available",
+              hourMeter: hourMeter ? Number(hourMeter) : undefined,
+              equipmentPhotos: [],
+              specifications: [],
+              documents: [],
+            });
             onClose();
             toast.success("Equipment added (mock)");
           }}
@@ -330,57 +367,92 @@ function EquipmentModal({ onClose }: { onClose: () => void }) {
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="text-xs font-semibold">
               Asset number
-              <Input className="mt-2" placeholder="BGSE-001" />
-            </label>
-            <label className="text-xs font-semibold">
-              Equipment name
-              <Input className="mt-2" placeholder="Ground Power Unit" />
+              <Input className="mt-2 bg-slate-100 dark:bg-slate-800" value={assetNo} readOnly disabled />
             </label>
             <label className="text-xs font-semibold">
               Equipment type
-              <Select className="mt-2 w-full" defaultValue="" required>
+              <Select
+                className="mt-2 w-full"
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                required
+              >
                 <option value="" disabled>
                   Select equipment type
                 </option>
-                {equipmentTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
+                {equipmentTypes.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
                   </option>
                 ))}
               </Select>
             </label>
             <label className="text-xs font-semibold">
               Manufacturer
-              <Input className="mt-2" placeholder="Manufacturer name" />
+              <Input
+                className="mt-2"
+                placeholder="Manufacturer name"
+                value={manufacturer}
+                onChange={(e) => setManufacturer(e.target.value)}
+              />
             </label>
             <label className="text-xs font-semibold">
               Model
-              <Input className="mt-2" placeholder="Model number" />
+              <Input
+                className="mt-2"
+                placeholder="Model number"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+              />
             </label>
             <label className="text-xs font-semibold">
-              Serial number
-              <Input className="mt-2" placeholder="Serial number" />
+              Biman serial no.
+              <Input
+                className="mt-2"
+                placeholder="Biman serial number"
+                value={bimanSerialNo}
+                onChange={(e) => setBimanSerialNo(e.target.value)}
+              />
             </label>
             <label className="text-xs font-semibold">
-              Registration number
-              <Input className="mt-2" placeholder="Registration number" />
+              TLD serial no.
+              <Input
+                className="mt-2"
+                placeholder="TLD serial number"
+                value={TLDSerialNo}
+                onChange={(e) => setTLDSerialNo(e.target.value)}
+              />
             </label>
             <label className="text-xs font-semibold">
-              Location
-              <Input className="mt-2" placeholder="Dhaka apron" />
-            </label>
-            <label className="text-xs font-semibold">
-              Status
-              <Select className="mt-2 w-full" defaultValue="Available">
-                <option>Available</option>
-                <option>Under Maintenance</option>
-                <option>Out of Service</option>
-                <option>Inactive</option>
+              Hour meter service
+              <Select
+                className="mt-2 w-full"
+                value={serviceType}
+                onChange={(e) => {
+                  const selected = e.target.value;
+                  setServiceType(selected);
+                  const option = hourMeterServiceOptions.find((o) => o.label === selected);
+                  if (option) setHourMeter(String(option.hours));
+                }}
+              >
+                <option value="">Select service interval</option>
+                {hourMeterServiceOptions.map((o) => (
+                  <option key={o.label} value={o.label}>
+                    {o.label}
+                  </option>
+                ))}
               </Select>
             </label>
             <label className="text-xs font-semibold">
-              Actual GT date
-              <Input className="mt-2" type="date" />
+              Hour meter (hours)
+              <Input
+                className="mt-2"
+                type="number"
+                min={0}
+                placeholder="e.g. 500"
+                value={hourMeter}
+                onChange={(e) => setHourMeter(e.target.value)}
+              />
             </label>
           </div>
           <div className="flex justify-end gap-2 pt-2">
@@ -398,16 +470,24 @@ function EquipmentModal({ onClose }: { onClose: () => void }) {
   );
 }
 export function EquipmentPage() {
+  const { role } = useRole();
+  const canManage = role === "Super Admin" || role === "Manager";
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("All");
   const [addOpen, setAddOpen] = useState(false);
-  const rows = equipment.filter(
+  const [equipmentList, setEquipmentList] = useState<Equipment[]>(equipment);
+  const rows = equipmentList.filter(
     (e) =>
       (status === "All" || e.status === status) &&
       `${e.assetNo} ${e.type} ${e.manufacturer} ${e.location}`
         .toLowerCase()
         .includes(q.toLowerCase()),
   );
+  const deleteEquipment = (item: Equipment) => {
+    if (!window.confirm(`Delete ${item.assetNo}?`)) return;
+    setEquipmentList((current) => current.filter((e) => e.id !== item.id));
+    toast.success("Equipment deleted (mock)");
+  };
   return (
     <ShellPage>
       <PageHeader
@@ -415,10 +495,12 @@ export function EquipmentPage() {
         title="Equipment List"
         subtitle="Your operational fleet, with a digital logbook attached to every asset."
         action={
-          <Button onClick={() => setAddOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Add equipment
-          </Button>
+          canManage ? (
+            <Button onClick={() => setAddOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Add equipment
+            </Button>
+          ) : undefined
         }
       />
       <Card>
@@ -477,16 +559,40 @@ export function EquipmentPage() {
                   <StatusBadge status={e.status} />
                 </TD>
                 <TD>
-                  <Link href={`/equipment/${e.id}`} className="text-xs font-semibold text-blue-600">
-                    View profile
-                  </Link>
+                  <div className="flex items-center gap-1">
+                    <Link
+                      href={`/equipment/${e.id}`}
+                      className="rounded-md p-2 text-slate-500 transition hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/40"
+                      aria-label={`Edit ${e.assetNo}`}
+                      title="Edit equipment"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Link>
+                    {canManage && (
+                      <button
+                        type="button"
+                        className="rounded-md p-2 text-slate-500 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40"
+                        aria-label={`Delete ${e.assetNo}`}
+                        title="Delete equipment"
+                        onClick={() => deleteEquipment(e)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                 </TD>
               </TR>
             ))}
           </TBody>
         </Table>
       </Card>
-      {addOpen && <EquipmentModal onClose={() => setAddOpen(false)} />}
+      {addOpen && (
+        <EquipmentModal
+          onClose={() => setAddOpen(false)}
+          assetNo={nextAssetNo(equipmentList)}
+          onAdd={(item) => setEquipmentList((current) => [...current, item])}
+        />
+      )}
     </ShellPage>
   );
 }

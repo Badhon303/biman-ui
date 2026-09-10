@@ -74,6 +74,21 @@ export const engineers = users.filter((u) => u.role === "Engineer");
 // Equipment
 // ---------------------------------------------------------------------------
 
+export const hourMeterServiceOptions: { label: string; hours: number }[] = [
+  { label: "500 HOUR-B-SVC", hours: 500 },
+  { label: "1000 HOUR-C -SVC", hours: 1000 },
+  { label: "2000 HOUR-D-SVC", hours: 2000 },
+  { label: "V-SVC - 6 MONTHS", hours: 4380 },
+];
+
+export const nextAssetNo = (list: Equipment[]) => {
+  const numbers = list
+    .map((item) => Number.parseInt(item.assetNo.replace(/\D/g, ""), 10))
+    .filter((n) => !Number.isNaN(n));
+  const next = (numbers.length ? Math.max(...numbers) : 0) + 1;
+  return `BGM-${String(next).padStart(3, "0")}`;
+};
+
 export const equipment: Equipment[] = [
   {
     id: "eq1",
