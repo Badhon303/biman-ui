@@ -30,6 +30,7 @@ import {
   users,
   engineers,
   hourMeterServiceOptions,
+  resolveHourMeter,
   nextAssetNo,
 } from "@/lib/mock-data";
 import type { Equipment } from "@/lib/types";
@@ -315,7 +316,6 @@ function EquipmentModal({
   const [model, setModel] = useState("");
   const [bimanSerialNo, setBimanSerialNo] = useState("");
   const [TLDSerialNo, setTLDSerialNo] = useState("");
-  const [serviceType, setServiceType] = useState("");
   const [hourMeter, setHourMeter] = useState("");
 
   return (
@@ -355,7 +355,7 @@ function EquipmentModal({
               TLDSerialNo,
               location: "Not assigned",
               status: "Available",
-              hourMeter: hourMeter ? Number(hourMeter) : undefined,
+              hourMeter: resolveHourMeter(hourMeter),
               equipmentPhotos: [],
               specifications: [],
               documents: [],
@@ -424,35 +424,19 @@ function EquipmentModal({
               />
             </label>
             <label className="text-xs font-semibold">
-              Hour meter service
-              <Select
-                className="mt-2 w-full"
-                value={serviceType}
-                onChange={(e) => {
-                  const selected = e.target.value;
-                  setServiceType(selected);
-                  const option = hourMeterServiceOptions.find((o) => o.label === selected);
-                  if (option) setHourMeter(String(option.hours));
-                }}
-              >
-                <option value="">Select service interval</option>
-                {hourMeterServiceOptions.map((o) => (
-                  <option key={o.label} value={o.label}>
-                    {o.label}
-                  </option>
-                ))}
-              </Select>
-            </label>
-            <label className="text-xs font-semibold">
-              Hour meter (hours)
+              Hour meter
               <Input
                 className="mt-2"
-                type="number"
-                min={0}
-                placeholder="e.g. 500"
+                list="hour-meter-options"
+                placeholder="Select a service interval or type hours"
                 value={hourMeter}
                 onChange={(e) => setHourMeter(e.target.value)}
               />
+              <datalist id="hour-meter-options">
+                {hourMeterServiceOptions.map((o) => (
+                  <option key={o.label} value={o.label} />
+                ))}
+              </datalist>
             </label>
           </div>
           <div className="flex justify-end gap-2 pt-2">

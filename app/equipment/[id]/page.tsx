@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Badge, StatusBadge } from '@/components/ui/badge'
-import { equipment, getEquipment, hourMeterServiceOptions, tickets } from '@/lib/mock-data'
+import { equipment, getEquipment, hourMeterServiceOptions, resolveHourMeter, tickets } from '@/lib/mock-data'
 import type { Equipment, EquipmentDocument, EquipmentStatus, Specification } from '@/lib/types'
 import { useRole } from '@/components/role-context'
 import { toast } from 'sonner'
@@ -27,13 +27,13 @@ export default function EquipmentProfile() {
   const [e, setE] = useState<Equipment>(() => getEquipment(id) ?? equipment[0])
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<Equipment>(e)
-  const [serviceType, setServiceType] = useState('')
+  const [hourMeterInput, setHourMeterInput] = useState('')
   const [tab, setTab] = useState<EquipmentTab>('Overview')
   const history = tickets.filter((ticket) => ticket.equipmentId === e.id)
 
   const startEditing = () => {
     setDraft(e)
-    setServiceType('')
+    setHourMeterInput(e.hourMeter !== undefined ? String(e.hourMeter) : '')
     setEditing(true)
   }
   const cancelEditing = () => {
@@ -41,7 +41,7 @@ export default function EquipmentProfile() {
     setEditing(false)
   }
   const save = () => {
-    setE(draft)
+    setE({ ...draft, hourMeter: resolveHourMeter(hourMeterInput) })
     setEditing(false)
     toast.success('Equipment updated (mock)')
   }
@@ -163,32 +163,19 @@ export default function EquipmentProfile() {
                     <Input className="mt-2" value={draft.TLDSerialNo} onChange={(ev) => updateDraft({ TLDSerialNo: ev.target.value })} />
                   </label>
                   <label className="text-xs font-semibold">
-                    Hour meter service
-                    <Select
-                      className="mt-2 w-full"
-                      value={serviceType}
-                      onChange={(ev) => {
-                        const selected = ev.target.value
-                        setServiceType(selected)
-                        const option = hourMeterServiceOptions.find((o) => o.label === selected)
-                        if (option) updateDraft({ hourMeter: option.hours })
-                      }}
-                    >
-                      <option value="">Select service interval</option>
-                      {hourMeterServiceOptions.map((o) => (
-                        <option key={o.label} value={o.label}>{o.label}</option>
-                      ))}
-                    </Select>
-                  </label>
-                  <label className="text-xs font-semibold">
-                    Hour meter (hours)
+                    Hour meter
                     <Input
                       className="mt-2"
-                      type="number"
-                      min={0}
-                      value={draft.hourMeter ?? ''}
-                      onChange={(ev) => updateDraft({ hourMeter: ev.target.value ? Number(ev.target.value) : undefined })}
+                      list="hour-meter-options"
+                      placeholder="Select a service interval or type hours"
+                      value={hourMeterInput}
+                      onChange={(ev) => setHourMeterInput(ev.target.value)}
                     />
+                    <datalist id="hour-meter-options">
+                      {hourMeterServiceOptions.map((o) => (
+                        <option key={o.label} value={o.label} />
+                      ))}
+                    </datalist>
                   </label>
                   <label className="text-xs font-semibold">
                     Actual GT date

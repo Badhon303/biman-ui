@@ -81,6 +81,19 @@ export const hourMeterServiceOptions: { label: string; hours: number }[] = [
   { label: "V-SVC - 6 MONTHS", hours: 4380 },
 ];
 
+// Accepts either one of the hourMeterServiceOptions labels or a plain number
+// typed directly into the same field, and resolves it down to an hour count.
+export const resolveHourMeter = (raw: string): number | undefined => {
+  const trimmed = raw.trim();
+  if (!trimmed) return undefined;
+  const match = hourMeterServiceOptions.find(
+    (option) => option.label.toLowerCase() === trimmed.toLowerCase(),
+  );
+  if (match) return match.hours;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
 export const nextAssetNo = (list: Equipment[]) => {
   const numbers = list
     .map((item) => Number.parseInt(item.assetNo.replace(/\D/g, ""), 10))
