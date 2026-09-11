@@ -26,6 +26,7 @@ import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { StatusBadge } from '@/components/ui/badge'
 import { engineers, getEquipment, getTicket, requests } from '@/lib/mock-data'
+import type { EquipmentRequest } from '@/lib/types'
 import { useRole } from '@/components/role-context'
 import { toast } from 'sonner'
 
@@ -64,6 +65,8 @@ export default function TicketDetail() {
       ? [{ id: 'f0', author: t.assignedEngineer ?? 'Engineer', timestamp: t.createdDate, html: t.maintenanceRecord.engineerNotes, images: [] }]
       : [],
   )
+  const [ticketRequests, setTicketRequests] = useState<EquipmentRequest[]>(requests)
+  const [requestModalOpen, setRequestModalOpen] = useState(false)
 
   const current = Math.max(
     0,
@@ -103,6 +106,23 @@ export default function TicketDetail() {
     } else {
       toast.success('Feedback submitted')
     }
+  }
+  const addRequest = (data: { item: string; quantity: number; reason: string }) => {
+    setTicketRequests((current) => [
+      ...current,
+      {
+        id: `r${current.length + 1}`,
+        requestNo: `REQ-${String(current.length + 1).padStart(3, '0')}`,
+        ...data,
+        ticketId: t.ticketNo,
+        equipmentId: t.equipmentId,
+        requestedBy: t.assignedEngineer ?? 'Unassigned',
+        requestedDate: new Date().toISOString().slice(0, 10),
+        status: 'Pending',
+      },
+    ])
+    setRequestModalOpen(false)
+    toast.success('Request submitted for approval')
   }
 
   return (
@@ -245,13 +265,13 @@ export default function TicketDetail() {
                 <p className="mt-1 text-xs text-slate-500">Linked requests for this ticket, if parts are needed</p>
               </div>
               {canRequestParts && (
-                <Button variant="outline" className="h-8 px-2 text-xs" onClick={() => toast.success('Request form opened')}>
+                <Button variant="outline" className="h-8 px-2 text-xs" onClick={() => setRequestModalOpen(true)}>
                   <Plus className="h-3.5 w-3.5" />Request
                 </Button>
               )}
             </div>
             <div className="divide-y">
-              {requests.filter((r) => r.ticketId === t.ticketNo).map((r) => (
+              {ticketRequests.filter((r) => r.ticketId === t.ticketNo).map((r) => (
                 <div key={r.id} className="flex items-center justify-between p-4">
                   <div>
                     <div className="text-sm font-medium">{r.item} ×{r.quantity}</div>
@@ -260,14 +280,76 @@ export default function TicketDetail() {
                   <StatusBadge status={r.status} />
                 </div>
               ))}
-              {requests.filter((r) => r.ticketId === t.ticketNo).length === 0 && (
+              {ticketRequests.filter((r) => r.ticketId === t.ticketNo).length === 0 && (
                 <div className="p-5 text-sm text-slate-500">No requests linked yet.</div>
               )}
             </div>
           </Card>
         </div>
       </div>
+
+      {requestModalOpen && (
+        <AddRequestModal onClose={() => setRequestModalOpen(false)} onCreate={addRequest} />
+      )}
     </ShellPage>
+  )
+}
+
+function AddRequestModal({
+  onClose,
+  onCreate,
+}: Readonly<{
+  onClose: () => void
+  onCreate: (data: { item: string; quantity: number; reason: string }) => void
+}>) {
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900">
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Add request</h2>
+            <p className="mt-1 text-sm text-slate-500">Request equipment or parts needed for this ticket.</p>
+          </div>
+          <button type="button" onClick={onClose} className="text-2xl leading-none text-slate-400 hover:text-slate-700" aria-label="Close modal">×</button>
+        </div>
+        <form
+          className="space-y-4"
+          onSubmit={(ev) => {
+            ev.preventDefault()
+            const data = new FormData(ev.currentTarget)
+            const item = String(data.get('item')).trim()
+            const reason = String(data.get('reason')).trim()
+            if (!item || !reason) {
+              toast.error('Fill in the item and reason before submitting')
+              return
+            }
+            onCreate({ item, quantity: Number(data.get('quantity')), reason })
+          }}
+        >
+          <label className="block text-xs font-semibold">
+            Item or part
+            <Input className="mt-2" name="item" placeholder="Hydraulic hose" required />
+          </label>
+          <label className="block text-xs font-semibold">
+            Quantity
+            <Input className="mt-2" name="quantity" type="number" min="1" defaultValue="1" required />
+          </label>
+          <label className="block text-xs font-semibold">
+            Reason
+            <textarea
+              className="mt-2 min-h-24 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 dark:bg-slate-950"
+              name="reason"
+              placeholder="Explain why this item is needed"
+              required
+            />
+          </label>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button type="submit"><Plus className="h-4 w-4" />Submit request</Button>
+          </div>
+        </form>
+      </div>
+    </div>
   )
 }
 
