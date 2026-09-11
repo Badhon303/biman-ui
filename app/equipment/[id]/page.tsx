@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, Calendar, FileText, Pencil, Plus, Printer, QrCode, Save, ShieldCheck, Trash2, Upload, X } from 'lucide-react'
+import { ArrowLeft, Calendar, FileText, Pencil, Plus, Printer, Save, ShieldCheck, Trash2, Upload, X } from 'lucide-react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { ShellPage } from '@/components/app-shell'
@@ -93,7 +93,6 @@ export default function EquipmentProfile() {
             </>
           )}
           <Button variant="outline" onClick={() => toast.success('Print dialog opened (mock)')}><Printer className="h-4 w-4" />Print</Button>
-          <Button onClick={() => toast.success('QR code generated (mock)')}><QrCode className="h-4 w-4" />Generate QR</Button>
         </div>
       </div>
 
@@ -211,6 +210,7 @@ export default function EquipmentProfile() {
               <Specifications
                 specifications={e.specifications}
                 canManage={canManage}
+                editing={editing}
                 onAdd={addSpecification}
                 onUpdate={updateSpecification}
                 onRemove={removeSpecification}
@@ -251,17 +251,19 @@ function UploadPhoto({ label, className = 'h-24 rounded-xl' }: Readonly<{ label:
 function Specifications({
   specifications,
   canManage,
+  editing,
   onAdd,
   onUpdate,
   onRemove,
 }: Readonly<{
   specifications: Specification[]
   canManage: boolean
+  editing: boolean
   onAdd: () => void
   onUpdate: (index: number, patch: Partial<Specification>) => void
   onRemove: (index: number) => void
 }>) {
-  if (!canManage) {
+  if (!canManage || !editing) {
     return specifications.length ? (
       <div className="grid gap-3 sm:grid-cols-2">
         {specifications.map((specification) => (

@@ -27,9 +27,7 @@ import {
   requests as initialRequests,
   notifications as initialNotifications,
   documents,
-  users,
   engineers,
-  hourMeterServiceOptions,
   resolveHourMeter,
   nextAssetNo,
 } from "@/lib/mock-data";
@@ -427,16 +425,14 @@ function EquipmentModal({
               Hour meter
               <Input
                 className="mt-2"
-                list="hour-meter-options"
-                placeholder="Select a service interval or type hours"
+                type="number"
+                placeholder="Enter hours"
                 value={hourMeter}
                 onChange={(e) => setHourMeter(e.target.value)}
               />
-              <datalist id="hour-meter-options">
-                {hourMeterServiceOptions.map((o) => (
-                  <option key={o.label} value={o.label} />
-                ))}
-              </datalist>
+              <span className="mt-1 block text-xs font-normal text-slate-500">
+                500 hours-B-SVC, 1000 hours C-SVC, 2000 hours D-SVC, 4380 hours (6 months) V-SCV
+              </span>
             </label>
           </div>
           <div className="flex justify-end gap-2 pt-2">
