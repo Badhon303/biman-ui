@@ -66,16 +66,15 @@ export interface Ticket {
 export interface MaintenanceSchedule {
   id: string
   scheduleNo: string
-  type: ScheduleType
+  scheduleType: ScheduleType
+  serviceType: string
   equipmentId: string
-  activity: string
   frequency: string
   lastDate: string
   dueDate: string
-  scheduleDuration: string
+  overdueBy: string
   status: ScheduleStatus
   ticketId?: string
-  assignedEngineer?: string
 }
 
 export interface EquipmentRequest {

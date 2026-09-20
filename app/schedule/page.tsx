@@ -21,10 +21,19 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/badge";
 import { TD, TH, TBody, THead, TR, Table } from "@/components/ui/table";
-import { engineers, equipment, maintenanceSchedules } from "@/lib/mock-data";
+import { equipment, maintenanceSchedules } from "@/lib/mock-data";
 import type { MaintenanceSchedule, ScheduleType } from "@/lib/types";
 
 const scheduleFilters: Array<"All" | ScheduleType> = ["All", "Preventive Maintenance", "Washing"];
+const serviceOptions = [
+  "Service F 500 Hour",
+  "Service B 500 Hour",
+  "Service C 1000 Hour",
+  "Service D 2000 Hour",
+  "Service E 2500 Hour",
+  "Service V 625 Hour",
+  "Custom",
+] as const;
 
 function equipmentName(id: string) {
   const item = equipment.find((entry) => entry.id === id);
@@ -32,6 +41,8 @@ function equipmentName(id: string) {
 }
 
 function formatDate(value: string) {
+  if (!value) return "—";
+
   return new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
     month: "short",
@@ -54,13 +65,13 @@ export default function SchedulePage() {
   const rows = useMemo(
     () =>
       scheduleRows.filter((schedule) => {
-        const matchesType = filter === "All" || schedule.type === filter;
+        const matchesType = filter === "All" || schedule.scheduleType === filter;
         const effectiveStatus = generatedTickets[schedule.id]
           ? "Ticket generated"
           : schedule.status;
         const matchesStatus = status === "All" || effectiveStatus === status;
         const matchesSearch =
-          `${schedule.scheduleNo} ${schedule.activity} ${equipmentName(schedule.equipmentId)} ${schedule.assignedEngineer ?? ""}`
+          `${schedule.scheduleNo} ${schedule.serviceType} ${equipmentName(schedule.equipmentId)}`
             .toLowerCase()
             .includes(search.toLowerCase());
         return matchesType && matchesStatus && matchesSearch;
@@ -69,10 +80,10 @@ export default function SchedulePage() {
   );
 
   const generateTicket = (schedule: MaintenanceSchedule) => {
-    const ticketNo = `${scheduleTypeLabel(schedule.type) === "PM" ? "PM" : "WS"}-2026-${String(schedule.id.replace("sch", "")).padStart(3, "0")}`;
+    const ticketNo = `${scheduleTypeLabel(schedule.scheduleType) === "PM" ? "PM" : "WS"}-2026-${String(schedule.id.replace("sch", "")).padStart(3, "0")}`;
     setGeneratedTickets((current) => ({ ...current, [schedule.id]: ticketNo }));
     toast.success(`${ticketNo} generated`, {
-      description: `${schedule.activity} for ${equipmentName(schedule.equipmentId)} is now in the ticket queue.`,
+      description: `${schedule.serviceType} for ${equipmentName(schedule.equipmentId)} is now in the ticket queue.`,
     });
   };
 
@@ -168,8 +179,8 @@ export default function SchedulePage() {
             <TR>
               <TH>Schedule</TH>
               <TH>Equipment</TH>
-              <TH>Type / frequency</TH>
-              <TH>Last date</TH>
+              <TH>Service type</TH>
+              <TH>Start/last date</TH>
               <TH>Due date</TH>
               <TH>Overdue By</TH>
               <TH>Status</TH>
@@ -192,7 +203,6 @@ export default function SchedulePage() {
                     <div className="font-semibold text-slate-900 dark:text-white">
                       {schedule.scheduleNo}
                     </div>
-                    <div className="mt-1 text-xs text-slate-400">{schedule.activity}</div>
                   </TD>
                   <TD>
                     <div className="font-medium text-slate-800 dark:text-slate-100">
@@ -203,7 +213,7 @@ export default function SchedulePage() {
                     </div>
                   </TD>
                   <TD>
-                    <div className="font-medium">{scheduleTypeLabel(schedule.type)}</div>
+                    <div className="font-medium">{schedule.serviceType}</div>
                     <div className="text-xs text-slate-400">{schedule.frequency}</div>
                   </TD>
                   <TD>{formatDate(schedule.lastDate)}</TD>
@@ -212,7 +222,7 @@ export default function SchedulePage() {
                   >
                     {formatDate(schedule.dueDate)}
                   </TD>
-                  <TD>{schedule.scheduleDuration}</TD>
+                  <TD>{schedule.overdueBy}</TD>
                   <TD>
                     <StatusBadge status={displayStatus} />
                   </TD>
@@ -255,7 +265,7 @@ export default function SchedulePage() {
             setScheduleRows((current) => [...current, schedule]);
             setAddOpen(false);
             toast.success(`${schedule.scheduleNo} added`, {
-              description: `${schedule.activity} has been added to the maintenance schedule.`,
+              description: `${schedule.serviceType} has been added to the maintenance schedule.`,
             });
           }}
         />
@@ -267,12 +277,10 @@ export default function SchedulePage() {
 type ScheduleForm = {
   type: ScheduleType;
   equipmentId: string;
-  activity: string;
-  frequency: string;
   lastDate: string;
-  dueDate: string;
-  scheduleDuration: string;
-  assignedEngineer: string;
+  serviceType: (typeof serviceOptions)[number];
+  name: string;
+  frequency: string;
 };
 
 function AddScheduleModal({
@@ -287,12 +295,10 @@ function AddScheduleModal({
   const [form, setForm] = useState<ScheduleForm>({
     type: "Preventive Maintenance",
     equipmentId: equipment[0]?.id ?? "",
-    activity: "",
-    frequency: "",
     lastDate: "",
-    dueDate: "",
-    scheduleDuration: "",
-    assignedEngineer: engineers[0]?.name ?? "",
+    serviceType: serviceOptions[0],
+    name: "",
+    frequency: "",
   });
 
   const update = (field: keyof ScheduleForm, value: string) => {
@@ -302,7 +308,13 @@ function AddScheduleModal({
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     onCreate({
-      ...form,
+      scheduleType: form.type,
+      serviceType: form.type === "Washing" ? "Washing" : form.serviceType,
+      equipmentId: form.equipmentId,
+      lastDate: form.lastDate,
+      frequency: form.type === "Washing" || form.serviceType === "Custom" ? form.frequency : "",
+      dueDate: "",
+      overdueBy: "",
       id: `sch${Date.now()}`,
       scheduleNo: `SCH-${new Date().getFullYear()}-${String(sequence).padStart(3, "0")}`,
       status: "Scheduled",
@@ -352,6 +364,58 @@ function AddScheduleModal({
                 <option value="Washing">Washing</option>
               </Select>
             </label>
+            {form.type === "Preventive Maintenance" ? (
+              <label className="text-xs font-semibold">
+                Service type
+                <Select
+                  className="mt-2 w-full"
+                  required
+                  value={form.serviceType}
+                  onChange={(event) => update("serviceType", event.target.value)}
+                >
+                  {serviceOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </Select>
+              </label>
+            ) : (
+              <label className="text-xs font-semibold">
+                Frequency
+                <Input
+                  className="mt-2"
+                  required
+                  placeholder="e.g. Every 500 hour"
+                  value={form.frequency}
+                  onChange={(event) => update("frequency", event.target.value)}
+                />
+              </label>
+            )}
+            {form.type === "Preventive Maintenance" && form.serviceType === "Custom" && (
+              <>
+                <label className="text-xs font-semibold">
+                  Name
+                  <Input
+                    className="mt-2"
+                    required
+                    placeholder="Enter service name"
+                    value={form.name}
+                    onChange={(event) => update("name", event.target.value)}
+                  />
+                </label>
+                <label className="text-xs font-semibold">
+                  Frequency
+                  <Input
+                    className="mt-2"
+                    required
+                    placeholder="e.g. Every 500 hour"
+                    value={form.frequency}
+                    onChange={(event) => update("frequency", event.target.value)}
+                  />
+                </label>
+              </>
+            )}
             <label className="text-xs font-semibold">
               Equipment
               <Select
@@ -367,38 +431,8 @@ function AddScheduleModal({
                 ))}
               </Select>
             </label>
-            <label className="text-xs font-semibold sm:col-span-2">
-              Activity
-              <Input
-                className="mt-2"
-                required
-                placeholder="e.g. Monthly service"
-                value={form.activity}
-                onChange={(event) => update("activity", event.target.value)}
-              />
-            </label>
             <label className="text-xs font-semibold">
-              Frequency
-              <Input
-                className="mt-2"
-                required
-                placeholder="e.g. Every 1 month"
-                value={form.frequency}
-                onChange={(event) => update("frequency", event.target.value)}
-              />
-            </label>
-            <label className="text-xs font-semibold">
-              Overdue By
-              <Input
-                className="mt-2"
-                required
-                placeholder="e.g. 2 days"
-                value={form.scheduleDuration}
-                onChange={(event) => update("scheduleDuration", event.target.value)}
-              />
-            </label>
-            <label className="text-xs font-semibold">
-              Last completed date
+              Start date
               <Input
                 className="mt-2"
                 required
@@ -406,31 +440,6 @@ function AddScheduleModal({
                 value={form.lastDate}
                 onChange={(event) => update("lastDate", event.target.value)}
               />
-            </label>
-            <label className="text-xs font-semibold">
-              Due date
-              <Input
-                className="mt-2"
-                required
-                type="date"
-                value={form.dueDate}
-                onChange={(event) => update("dueDate", event.target.value)}
-              />
-            </label>
-            <label className="text-xs font-semibold">
-              Assigned engineer
-              <Select
-                className="mt-2 w-full"
-                value={form.assignedEngineer}
-                onChange={(event) => update("assignedEngineer", event.target.value)}
-              >
-                <option value="">Unassigned</option>
-                {engineers.map((engineer) => (
-                  <option key={engineer.id} value={engineer.name}>
-                    {engineer.name}
-                  </option>
-                ))}
-              </Select>
             </label>
           </div>
           <div className="flex justify-end gap-3 border-t pt-5">

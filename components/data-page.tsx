@@ -430,9 +430,9 @@ function EquipmentModal({
                 value={hourMeter}
                 onChange={(e) => setHourMeter(e.target.value)}
               />
-              <span className="mt-1 block text-xs font-normal text-slate-500">
+              {/* <span className="mt-1 block text-xs font-normal text-slate-500">
                 500 hours-B-SVC, 1000 hours C-SVC, 2000 hours D-SVC, 4380 hours (6 months) V-SCV
-              </span>
+              </span> */}
             </label>
           </div>
           <div className="flex justify-end gap-2 pt-2">
