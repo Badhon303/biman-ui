@@ -23,6 +23,7 @@ import { StatusBadge } from "@/components/ui/badge";
 import { TD, TH, TBody, THead, TR, Table } from "@/components/ui/table";
 import { equipment, maintenanceSchedules } from "@/lib/mock-data";
 import type { MaintenanceSchedule, ScheduleType } from "@/lib/types";
+import { overdueBy } from "@/lib/utils";
 
 const scheduleFilters: Array<"All" | ScheduleType> = ["All", "Preventive Maintenance", "Washing"];
 const serviceOptions = [
@@ -222,7 +223,7 @@ export default function SchedulePage() {
                   >
                     {formatDate(schedule.dueDate)}
                   </TD>
-                  <TD>{schedule.overdueBy}</TD>
+                  <TD>{overdueBy(schedule.dueDate)}</TD>
                   <TD>
                     <StatusBadge status={displayStatus} />
                   </TD>
@@ -314,7 +315,6 @@ function AddScheduleModal({
       lastDate: form.lastDate,
       frequency: form.type === "Washing" || form.serviceType === "Custom" ? form.frequency : "",
       dueDate: "",
-      overdueBy: "",
       id: `sch${Date.now()}`,
       scheduleNo: `SCH-${new Date().getFullYear()}-${String(sequence).padStart(3, "0")}`,
       status: "Scheduled",

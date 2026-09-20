@@ -72,7 +72,6 @@ export interface MaintenanceSchedule {
   frequency: string
   lastDate: string
   dueDate: string
-  overdueBy: string
   status: ScheduleStatus
   ticketId?: string
 }
