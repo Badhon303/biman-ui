@@ -1,12 +1,15 @@
 "use client";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Archive,
+  Bold,
   Check,
   Download,
   FileText,
   Filter,
+  Italic,
+  List,
   Plus,
   Pencil,
   Search,
@@ -242,10 +245,8 @@ function TicketModal({ onClose }: { onClose: () => void }) {
             <label className="text-xs font-semibold">
               Ticket type
               <Select className="mt-2 w-full" defaultValue="Breakdown Maintenance">
-                <option>Preventive Maintenance</option>
                 <option>Breakdown Maintenance</option>
                 <option>General Maintenance</option>
-                <option>Washing Schedule</option>
               </Select>
             </label>
             <label className="text-xs font-semibold">
@@ -275,13 +276,10 @@ function TicketModal({ onClose }: { onClose: () => void }) {
               </Select>
             </label>
           </div>
-          <label className="block text-xs font-semibold">
-            Problem description
-            <textarea
-              className="mt-2 min-h-28 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 dark:bg-slate-950"
-              placeholder="Describe the issue or planned maintenance"
-            />
-          </label>
+          <div className="text-xs font-semibold">
+            <div>Problem description</div>
+            <RichTextEditor placeholder="Describe the issue or planned maintenance" />
+          </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
@@ -293,6 +291,54 @@ function TicketModal({ onClose }: { onClose: () => void }) {
           </div>
         </form>
       </div>
+    </div>
+  );
+}
+function RichTextEditor({ placeholder }: { placeholder: string }) {
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  const format = (command: string) => {
+    editorRef.current?.focus();
+    document.execCommand(command);
+  };
+
+  return (
+    <div className="mt-2 overflow-hidden rounded-lg border bg-white dark:bg-slate-950">
+      <div className="flex items-center gap-1 border-b bg-slate-50 p-1.5 dark:bg-slate-900/60">
+        <button
+          type="button"
+          className="rounded-md p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800"
+          aria-label="Bold"
+          onClick={() => format("bold")}
+        >
+          <Bold className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          className="rounded-md p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800"
+          aria-label="Italic"
+          onClick={() => format("italic")}
+        >
+          <Italic className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          className="rounded-md p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800"
+          aria-label="Bullet list"
+          onClick={() => format("insertUnorderedList")}
+        >
+          <List className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <div
+        ref={editorRef}
+        contentEditable
+        suppressContentEditableWarning
+        role="textbox"
+        aria-label="Problem description"
+        data-placeholder={placeholder}
+        className="min-h-28 w-full p-3 text-sm outline-none empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)] focus:border-blue-500"
+      />
     </div>
   );
 }
