@@ -11,8 +11,7 @@ export type TicketStatus =
   | "Completed"
   | "Closed";
 export type RequestStatus = "Pending" | "Approved" | "Rejected" | "Received";
-export type ScheduleType = "Preventive Maintenance" | "Washing";
-export type ScheduleStatus = "Scheduled" | "Due soon" | "Overdue" | "In progress" | "Completed";
+export type ScheduleStatus = "Scheduled" | "Due soon" | "Overdue";
 
 export interface Specification {
   label: string;
@@ -107,10 +106,7 @@ export interface Ticket {
 export interface MaintenanceSchedule {
   id: string;
   scheduleNo: string;
-  scheduleType: ScheduleType;
-  serviceType: string;
   equipmentId: string;
-  frequency: string;
   lastDate: string;
   dueDate: string;
   status: ScheduleStatus;
