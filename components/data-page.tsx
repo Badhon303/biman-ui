@@ -13,7 +13,6 @@ import {
   Plus,
   Pencil,
   Search,
-  SlidersHorizontal,
   Trash2,
   X,
 } from "lucide-react";
@@ -31,8 +30,8 @@ import {
   notifications as initialNotifications,
   documents,
   engineers,
-  resolveHourMeter,
   nextAssetNo,
+  equipmentTypes,
 } from "@/lib/mock-data";
 import type { Equipment } from "@/lib/types";
 import { isOverdue, overdueBy } from "@/lib/utils";
@@ -168,9 +167,7 @@ export function TicketsPage() {
                   <div className="text-xs text-slate-400">{t.priority} priority</div>
                 </TD>
                 <TD
-                  className={
-                    isOverdue(t.dueDate, t.closedDate) ? "font-medium text-rose-600" : ""
-                  }
+                  className={isOverdue(t.dueDate, t.closedDate) ? "font-medium text-rose-600" : ""}
                 >
                   {overdueBy(t.dueDate, t.closedDate)}
                 </TD>
@@ -363,10 +360,11 @@ function EquipmentModal({
   onAdd: (item: Equipment) => void;
   assetNo: string;
 }) {
-  const equipmentTypes = Array.from(new Set(equipment.map((item) => item.type)));
   const [type, setType] = useState("");
   const [manufacturer, setManufacturer] = useState("");
   const [model, setModel] = useState("");
+  const [engineModel, setEngineModel] = useState("");
+  const [engineSerialNo, setEngineSerialNo] = useState("");
   const [bimanSerialNo, setBimanSerialNo] = useState("");
   const [TLDSerialNo, setTLDSerialNo] = useState("");
   const [hourMeter, setHourMeter] = useState("");
@@ -404,11 +402,13 @@ function EquipmentModal({
               type,
               manufacturer,
               model,
+              engineModel,
+              engineSerialNo,
               bimanSerialNo,
               TLDSerialNo,
               location: "Not assigned",
               status: "Available",
-              hourMeter: resolveHourMeter(hourMeter),
+              hourMeter: hourMeter.trim() ? Number(hourMeter) : undefined,
               equipmentPhotos: [],
               specifications: [],
               documents: [],
@@ -420,7 +420,12 @@ function EquipmentModal({
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="text-xs font-semibold">
               Asset number
-              <Input className="mt-2 bg-slate-100 dark:bg-slate-800" value={assetNo} readOnly disabled />
+              <Input
+                className="mt-2 bg-slate-100 dark:bg-slate-800"
+                value={assetNo}
+                readOnly
+                disabled
+              />
             </label>
             <label className="text-xs font-semibold">
               Equipment type
@@ -434,8 +439,8 @@ function EquipmentModal({
                   Select equipment type
                 </option>
                 {equipmentTypes.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
+                  <option key={t.id} value={t.name}>
+                    {t.name}
                   </option>
                 ))}
               </Select>
@@ -456,6 +461,24 @@ function EquipmentModal({
                 placeholder="Model number"
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
+              />
+            </label>
+            <label className="text-xs font-semibold">
+              Engine model
+              <Input
+                className="mt-2"
+                placeholder="Engine model"
+                value={engineModel}
+                onChange={(e) => setEngineModel(e.target.value)}
+              />
+            </label>
+            <label className="text-xs font-semibold">
+              Engine S/L
+              <Input
+                className="mt-2"
+                placeholder="Engine serial number"
+                value={engineSerialNo}
+                onChange={(e) => setEngineSerialNo(e.target.value)}
               />
             </label>
             <label className="text-xs font-semibold">
@@ -504,12 +527,77 @@ function EquipmentModal({
     </div>
   );
 }
+function HourMeterModal({
+  equipment,
+  onClose,
+  onUpdate,
+}: Readonly<{
+  equipment: Equipment;
+  onClose: () => void;
+  onUpdate: (value: string) => void;
+}>) {
+  const [value, setValue] = useState(
+    equipment.hourMeter !== undefined ? String(equipment.hourMeter) : "",
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900">
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Add current hour meter</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Update the current reading for {equipment.assetNo}.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-2xl leading-none text-slate-400 hover:text-slate-700"
+            aria-label="Close modal"
+          >
+            ×
+          </button>
+        </div>
+        <form
+          className="space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onUpdate(value);
+          }}
+        >
+          <label className="text-xs font-semibold">
+            Current hour meter
+            <Input
+              className="mt-2"
+              type="number"
+              min="0"
+              step="any"
+              placeholder="Enter current hours"
+              value={value}
+              onChange={(event) => setValue(event.target.value)}
+              autoFocus
+            />
+          </label>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit">Update</Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export function EquipmentPage() {
   const { role } = useRole();
   const canManage = role === "Super Admin" || role === "Manager";
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("All");
   const [addOpen, setAddOpen] = useState(false);
+  const [hourMeterEquipment, setHourMeterEquipment] = useState<Equipment | null>(null);
   const [equipmentList, setEquipmentList] = useState<Equipment[]>(equipment);
   const rows = equipmentList.filter(
     (e) =>
@@ -522,6 +610,20 @@ export function EquipmentPage() {
     if (!window.confirm(`Delete ${item.assetNo}?`)) return;
     setEquipmentList((current) => current.filter((e) => e.id !== item.id));
     toast.success("Equipment deleted (mock)");
+  };
+  const updateHourMeter = (item: Equipment, value: string) => {
+    const parsed = Number(value.trim());
+    if (!value.trim() || !Number.isFinite(parsed) || parsed < 0) {
+      toast.error("Enter a valid hour meter value");
+      return;
+    }
+    setEquipmentList((current) =>
+      current.map((equipment) =>
+        equipment.id === item.id ? { ...equipment, hourMeter: parsed } : equipment,
+      ),
+    );
+    setHourMeterEquipment(null);
+    toast.success(`Hour meter updated for ${item.assetNo}`);
   };
   return (
     <ShellPage>
@@ -563,6 +665,7 @@ export function EquipmentPage() {
               <TH>Asset no.</TH>
               <TH>Type</TH>
               <TH>Manufacturer / model</TH>
+              <TH>Hour meter</TH>
               <TH>Biman serial no.</TH>
               <TH>TLD serial no.</TH>
               <TH>Location</TH>
@@ -586,6 +689,22 @@ export function EquipmentPage() {
                 <TD>
                   {e.manufacturer}
                   <div className="text-xs text-slate-400">{e.model}</div>
+                </TD>
+                <TD>
+                  <div className="flex items-center gap-2 whitespace-nowrap">
+                    <span>{e.hourMeter !== undefined ? `${e.hourMeter} hours` : "Not recorded"}</span>
+                    {canManage && (
+                      <button
+                        type="button"
+                        className="rounded-md p-1 text-slate-500 transition hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/40"
+                        aria-label={`Update hour meter for ${e.assetNo}`}
+                        title="Update hour meter"
+                        onClick={() => setHourMeterEquipment(e)}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                 </TD>
                 <TD className="font-mono text-xs">{e.bimanSerialNo}</TD>
                 <TD className="font-mono text-xs">{e.TLDSerialNo}</TD>
@@ -626,6 +745,13 @@ export function EquipmentPage() {
           onClose={() => setAddOpen(false)}
           assetNo={nextAssetNo(equipmentList)}
           onAdd={(item) => setEquipmentList((current) => [...current, item])}
+        />
+      )}
+      {hourMeterEquipment && (
+        <HourMeterModal
+          equipment={hourMeterEquipment}
+          onClose={() => setHourMeterEquipment(null)}
+          onUpdate={(value) => updateHourMeter(hourMeterEquipment, value)}
         />
       )}
     </ShellPage>

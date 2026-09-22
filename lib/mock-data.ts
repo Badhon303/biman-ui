@@ -2,6 +2,8 @@ import type {
   AppNotification,
   Equipment,
   EquipmentRequest,
+  EquipmentType,
+  EquipmentTypeService,
   MaintenanceSchedule,
   Ticket,
   User,
@@ -74,25 +76,8 @@ export const engineers = users.filter((u) => u.role === "Engineer");
 // Equipment
 // ---------------------------------------------------------------------------
 
-export const hourMeterServiceOptions: { label: string; hours: number }[] = [
-  { label: "500 HOUR-B-SVC", hours: 500 },
-  { label: "1000 HOUR-C -SVC", hours: 1000 },
-  { label: "2000 HOUR-D-SVC", hours: 2000 },
-  { label: "V-SVC - 6 MONTHS", hours: 4380 },
-];
-
 // Accepts either one of the hourMeterServiceOptions labels or a plain number
 // typed directly into the same field, and resolves it down to an hour count.
-export const resolveHourMeter = (raw: string): number | undefined => {
-  const trimmed = raw.trim();
-  if (!trimmed) return undefined;
-  const match = hourMeterServiceOptions.find(
-    (option) => option.label.toLowerCase() === trimmed.toLowerCase(),
-  );
-  if (match) return match.hours;
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : undefined;
-};
 
 export const nextAssetNo = (list: Equipment[]) => {
   const numbers = list
@@ -109,6 +94,8 @@ export const equipment: Equipment[] = [
     type: "Belt Loader",
     manufacturer: "TLD",
     model: "NBL-800",
+    engineModel: "Kubota V2403",
+    engineSerialNo: "KBT-2403-001",
     bimanSerialNo: "12345",
     TLDSerialNo: "T103433",
     location: "HSIA - Apron Bay 4",
@@ -127,15 +114,23 @@ export const equipment: Equipment[] = [
     ],
     documents: [
       { id: "d1", name: "NBL-800 Operator Manual.pdf", type: "Manual", uploadedDate: "2020-01-20" },
-      { id: "d2", name: "Insurance Certificate 2026.pdf", type: "Insurance", expiryDate: "2026-11-30", uploadedDate: "2025-12-01" },
+      {
+        id: "d2",
+        name: "Insurance Certificate 2026.pdf",
+        type: "Insurance",
+        expiryDate: "2026-11-30",
+        uploadedDate: "2025-12-01",
+      },
     ],
   },
   {
     id: "eq2",
     assetNo: "BGM-002",
-    type: "Tug Tractor",
+    type: "Push-Back",
     manufacturer: "TLD",
     model: "TMX-150",
+    engineModel: "Cummins QSB 4.5",
+    engineSerialNo: "CMB-QSB45-002",
     bimanSerialNo: "54321",
     TLDSerialNo: "T44084",
     location: "HSIA - Apron Bay 2",
@@ -154,9 +149,11 @@ export const equipment: Equipment[] = [
   {
     id: "eq3",
     assetNo: "BGM-003",
-    type: "Ground Power Unit (GPU)",
+    type: "Ground Power Unit",
     manufacturer: "TLD",
     model: "GPU-90",
+    engineModel: "John Deere 4045",
+    engineSerialNo: "JDR-4045-003",
     bimanSerialNo: "67890",
     TLDSerialNo: "T21515",
     location: "HSIA - Apron Bay 6",
@@ -169,7 +166,13 @@ export const equipment: Equipment[] = [
     ],
     documents: [
       { id: "d4", name: "GPU-90 Wiring Diagram.pdf", type: "Manual", uploadedDate: "2021-03-25" },
-      { id: "d5", name: "Insurance Certificate 2026.pdf", type: "Insurance", expiryDate: "2026-07-10", uploadedDate: "2025-07-15" },
+      {
+        id: "d5",
+        name: "Insurance Certificate 2026.pdf",
+        type: "Insurance",
+        expiryDate: "2026-07-10",
+        uploadedDate: "2025-07-15",
+      },
     ],
   },
   {
@@ -178,6 +181,8 @@ export const equipment: Equipment[] = [
     type: "Passenger Steps",
     manufacturer: "EINSA",
     model: "PS-4500",
+    engineModel: "N/A",
+    engineSerialNo: "N/A",
     bimanSerialNo: "11111",
     TLDSerialNo: "T-PS-4500",
     location: "HSIA - Apron Bay 1",
@@ -195,9 +200,11 @@ export const equipment: Equipment[] = [
   {
     id: "eq5",
     assetNo: "BGM-005",
-    type: "Air Conditioning Unit (ACU)",
+    type: "AC Units",
     manufacturer: "TLD",
     model: "ACU-60",
+    engineModel: "Kubota V3800",
+    engineSerialNo: "KBT-V3800-005",
     bimanSerialNo: "22222",
     TLDSerialNo: "T103433",
     location: "HSIA - Apron Bay 3",
@@ -209,15 +216,22 @@ export const equipment: Equipment[] = [
       { label: "Engine", value: "Kubota V3800" },
     ],
     documents: [
-      { id: "d7", name: "ACU-60 Maintenance Guide.pdf", type: "Manual", uploadedDate: "2017-12-05" },
+      {
+        id: "d7",
+        name: "ACU-60 Maintenance Guide.pdf",
+        type: "Manual",
+        uploadedDate: "2017-12-05",
+      },
     ],
   },
   {
     id: "eq6",
     assetNo: "BGM-006",
-    type: "Tug Tractor",
+    type: "Push-Back",
     manufacturer: "TLD",
     model: "TMX-150",
+    engineModel: "Cummins QSB 4.5",
+    engineSerialNo: "CMB-QSB45-006",
     bimanSerialNo: "54322",
     TLDSerialNo: "T44664",
     location: "HSIA - Apron Bay 2",
@@ -233,9 +247,11 @@ export const equipment: Equipment[] = [
   {
     id: "eq7",
     assetNo: "BGM-007",
-    type: "Pushback Tractor",
+    type: "Push-Back",
     manufacturer: "TLD",
     model: "TPX-400",
+    engineModel: "Cummins QSL9",
+    engineSerialNo: "CMB-QSL9-007",
     bimanSerialNo: "33344",
     TLDSerialNo: "T82687",
     location: "HSIA - Apron Bay 5",
@@ -253,9 +269,11 @@ export const equipment: Equipment[] = [
   {
     id: "eq8",
     assetNo: "BGM-008",
-    type: "Air Start Unit (ASU)",
+    type: "Air Start Unit",
     manufacturer: "TLD",
     model: "ASU-50",
+    engineModel: "N/A",
+    engineSerialNo: "N/A",
     bimanSerialNo: "44455",
     TLDSerialNo: "T21976",
     location: "HSIA - Apron Bay 6",
@@ -268,9 +286,11 @@ export const equipment: Equipment[] = [
   {
     id: "eq9",
     assetNo: "BGM-009",
-    type: "Cargo Loader",
+    type: "Pallet Transporter",
     manufacturer: "TLD",
     model: "CL-7000",
+    engineModel: "N/A",
+    engineSerialNo: "N/A",
     bimanSerialNo: "55566",
     TLDSerialNo: "T23918",
     location: "HSIA - Cargo Apron",
@@ -283,9 +303,11 @@ export const equipment: Equipment[] = [
   {
     id: "eq10",
     assetNo: "BGM-010",
-    type: "Baggage Tractor",
+    type: "Push-Back",
     manufacturer: "TLD",
     model: "TB-100",
+    engineModel: "N/A",
+    engineSerialNo: "N/A",
     bimanSerialNo: "66677",
     TLDSerialNo: "CH197",
     location: "HSIA - Apron Bay 4",
@@ -298,9 +320,11 @@ export const equipment: Equipment[] = [
   {
     id: "eq11",
     assetNo: "BGM-011",
-    type: "Baggage Cart",
+    type: "Pallet Transporter",
     manufacturer: "TLD",
     model: "BC-25",
+    engineModel: "N/A",
+    engineSerialNo: "N/A",
     bimanSerialNo: "77788",
     TLDSerialNo: "310173",
     location: "HSIA - Apron Bay 4",
@@ -313,9 +337,11 @@ export const equipment: Equipment[] = [
   {
     id: "eq12",
     assetNo: "BGM-012",
-    type: "Lavatory Service Vehicle",
+    type: "Water/Flush Cart",
     manufacturer: "TLD",
     model: "LSV-300",
+    engineModel: "N/A",
+    engineSerialNo: "N/A",
     bimanSerialNo: "88899",
     TLDSerialNo: "T23724",
     location: "HSIA - Apron Bay 3",
@@ -328,9 +354,11 @@ export const equipment: Equipment[] = [
   {
     id: "eq13",
     assetNo: "BGM-013",
-    type: "Potable Water Service Vehicle",
+    type: "Water/Flush Cart",
     manufacturer: "TLD",
     model: "PWV-200",
+    engineModel: "N/A",
+    engineSerialNo: "N/A",
     bimanSerialNo: "99900",
     TLDSerialNo: "T23728",
     location: "HSIA - Apron Bay 3",
@@ -343,9 +371,11 @@ export const equipment: Equipment[] = [
   {
     id: "eq14",
     assetNo: "BGM-014",
-    type: "Ground Power Unit (GPU)",
+    type: "Ground Power Unit",
     manufacturer: "TLD",
     model: "GPU-90",
+    engineModel: "John Deere 4045",
+    engineSerialNo: "JDR-4045-014",
     bimanSerialNo: "10101",
     TLDSerialNo: "T21516",
     location: "HSIA - Apron Bay 6",
@@ -355,6 +385,38 @@ export const equipment: Equipment[] = [
     specifications: [{ label: "Output", value: "90 kVA, 115/200V, 400Hz" }],
     documents: [],
   },
+];
+
+// ---------------------------------------------------------------------------
+// Equipment types
+// ---------------------------------------------------------------------------
+
+export const standardEquipmentServices: EquipmentTypeService[] = [
+  { id: "svc-f", name: "Service F", minHours: 0, maxHours: 500 },
+  { id: "svc-b", name: "Service B", minHours: 500, maxHours: 1000 },
+  { id: "svc-c", name: "Service C", minHours: 1000, maxHours: 2000 },
+  { id: "svc-d", name: "Service D", minHours: 2000, maxHours: 2500 },
+  { id: "svc-e", name: "Service E", minHours: 2500, maxHours: 3000 },
+  { id: "svc-v", name: "Service V", months: 6 },
+];
+
+export const equipmentServiceLabel = (service: EquipmentTypeService) =>
+  service.months
+    ? `${service.name} ${service.months} months`
+    : `${service.name} ${service.minHours ?? 0} to ${service.maxHours ?? 0} hours`;
+
+const standardServices = () => standardEquipmentServices.map((service) => ({ ...service }));
+
+export const equipmentTypes: EquipmentType[] = [
+  { id: "et1", name: "AC Units", services: standardServices() },
+  { id: "et2", name: "Push-Back", services: standardServices() },
+  { id: "et3", name: "High-Lift Catering Van", services: standardServices() },
+  { id: "et4", name: "Water/Flush Cart", services: standardServices() },
+  { id: "et5", name: "Air Start Unit", services: standardServices() },
+  { id: "et6", name: "Ground Power Unit", services: standardServices() },
+  { id: "et7", name: "Pallet Transporter", services: standardServices() },
+  { id: "et8", name: "Belt Loader", services: standardServices() },
+  { id: "et9", name: "Passenger Steps", services: standardServices() },
 ];
 
 // ---------------------------------------------------------------------------
@@ -397,7 +459,12 @@ export const tickets: Ticket[] = [
       finalApproval: false,
     },
     history: [
-      { id: "h1", label: "Ticket created", timestamp: "2026-06-20T09:00:00", actor: "Kamal Hossain" },
+      {
+        id: "h1",
+        label: "Ticket created",
+        timestamp: "2026-06-20T09:00:00",
+        actor: "Kamal Hossain",
+      },
     ],
   },
   {
@@ -414,7 +481,8 @@ export const tickets: Ticket[] = [
     createdBy: "Kamal Hossain",
     requestingParty: "Biman Admin",
     maintenanceRecord: {
-      problemDescription: "Operator reported hydraulic fluid pooling under tow bar during towing operations.",
+      problemDescription:
+        "Operator reported hydraulic fluid pooling under tow bar during towing operations.",
       inspectionChecklist: baseChecklist().map((c) => ({ ...c, checked: true })),
       rootCause: "Worn seal on main lift cylinder.",
       repairActivity: "Cylinder removed for seal replacement.",
@@ -427,9 +495,24 @@ export const tickets: Ticket[] = [
       finalApproval: false,
     },
     history: [
-      { id: "h1", label: "Ticket created", timestamp: "2026-06-25T08:10:00", actor: "Kamal Hossain" },
-      { id: "h2", label: "Assigned to Engr. Rakib Hasan", timestamp: "2026-06-25T09:00:00", actor: "Nusrat Jahan" },
-      { id: "h3", label: "Work started", timestamp: "2026-06-25T10:30:00", actor: "Engr. Rakib Hasan" },
+      {
+        id: "h1",
+        label: "Ticket created",
+        timestamp: "2026-06-25T08:10:00",
+        actor: "Kamal Hossain",
+      },
+      {
+        id: "h2",
+        label: "Assigned to Engr. Rakib Hasan",
+        timestamp: "2026-06-25T09:00:00",
+        actor: "Nusrat Jahan",
+      },
+      {
+        id: "h3",
+        label: "Work started",
+        timestamp: "2026-06-25T10:30:00",
+        actor: "Engr. Rakib Hasan",
+      },
     ],
   },
   {
@@ -458,7 +541,12 @@ export const tickets: Ticket[] = [
       finalApproval: false,
     },
     history: [
-      { id: "h1", label: "Ticket created", timestamp: "2026-06-24T13:00:00", actor: "Kamal Hossain" },
+      {
+        id: "h1",
+        label: "Ticket created",
+        timestamp: "2026-06-24T13:00:00",
+        actor: "Kamal Hossain",
+      },
     ],
   },
   {
@@ -488,10 +576,30 @@ export const tickets: Ticket[] = [
       finalApproval: false,
     },
     history: [
-      { id: "h1", label: "Ticket created", timestamp: "2026-06-15T09:00:00", actor: "Farhan Ahmed" },
-      { id: "h2", label: "Assigned to Engr. Abdul Karim", timestamp: "2026-06-15T09:30:00", actor: "Nusrat Jahan" },
-      { id: "h3", label: "Work completed", timestamp: "2026-06-21T15:00:00", actor: "Engr. Abdul Karim" },
-      { id: "h4", label: "Submitted for verification", timestamp: "2026-06-21T15:05:00", actor: "Engr. Abdul Karim" },
+      {
+        id: "h1",
+        label: "Ticket created",
+        timestamp: "2026-06-15T09:00:00",
+        actor: "Farhan Ahmed",
+      },
+      {
+        id: "h2",
+        label: "Assigned to Engr. Abdul Karim",
+        timestamp: "2026-06-15T09:30:00",
+        actor: "Nusrat Jahan",
+      },
+      {
+        id: "h3",
+        label: "Work completed",
+        timestamp: "2026-06-21T15:00:00",
+        actor: "Engr. Abdul Karim",
+      },
+      {
+        id: "h4",
+        label: "Submitted for verification",
+        timestamp: "2026-06-21T15:05:00",
+        actor: "Engr. Abdul Karim",
+      },
     ],
   },
   {
@@ -521,9 +629,24 @@ export const tickets: Ticket[] = [
       finalApproval: false,
     },
     history: [
-      { id: "h1", label: "Ticket created", timestamp: "2026-06-22T08:00:00", actor: "Kamal Hossain" },
-      { id: "h2", label: "Assigned to Engr. Rakib Hasan", timestamp: "2026-06-22T08:40:00", actor: "Nusrat Jahan" },
-      { id: "h3", label: "Equipment/parts requested", timestamp: "2026-06-22T14:00:00", actor: "Engr. Rakib Hasan" },
+      {
+        id: "h1",
+        label: "Ticket created",
+        timestamp: "2026-06-22T08:00:00",
+        actor: "Kamal Hossain",
+      },
+      {
+        id: "h2",
+        label: "Assigned to Engr. Rakib Hasan",
+        timestamp: "2026-06-22T08:40:00",
+        actor: "Nusrat Jahan",
+      },
+      {
+        id: "h3",
+        label: "Equipment/parts requested",
+        timestamp: "2026-06-22T14:00:00",
+        actor: "Engr. Rakib Hasan",
+      },
     ],
   },
   {
@@ -555,9 +678,24 @@ export const tickets: Ticket[] = [
       finalApproval: true,
     },
     history: [
-      { id: "h1", label: "Ticket created", timestamp: "2026-06-19T08:00:00", actor: "Kamal Hossain" },
-      { id: "h2", label: "Work completed", timestamp: "2026-06-20T09:00:00", actor: "Engr. Shirin Sultana" },
-      { id: "h3", label: "Verified & closed", timestamp: "2026-06-20T09:30:00", actor: "Engr. Shirin Sultana" },
+      {
+        id: "h1",
+        label: "Ticket created",
+        timestamp: "2026-06-19T08:00:00",
+        actor: "Kamal Hossain",
+      },
+      {
+        id: "h2",
+        label: "Work completed",
+        timestamp: "2026-06-20T09:00:00",
+        actor: "Engr. Shirin Sultana",
+      },
+      {
+        id: "h3",
+        label: "Verified & closed",
+        timestamp: "2026-06-20T09:30:00",
+        actor: "Engr. Shirin Sultana",
+      },
     ],
   },
   {
@@ -589,9 +727,24 @@ export const tickets: Ticket[] = [
       finalApproval: true,
     },
     history: [
-      { id: "h1", label: "Ticket created", timestamp: "2026-05-28T09:00:00", actor: "Farhan Ahmed" },
-      { id: "h2", label: "Work completed", timestamp: "2026-06-02T11:00:00", actor: "Engr. Abdul Karim" },
-      { id: "h3", label: "Verified & closed", timestamp: "2026-06-02T11:30:00", actor: "Engr. Abdul Karim" },
+      {
+        id: "h1",
+        label: "Ticket created",
+        timestamp: "2026-05-28T09:00:00",
+        actor: "Farhan Ahmed",
+      },
+      {
+        id: "h2",
+        label: "Work completed",
+        timestamp: "2026-06-02T11:00:00",
+        actor: "Engr. Abdul Karim",
+      },
+      {
+        id: "h3",
+        label: "Verified & closed",
+        timestamp: "2026-06-02T11:30:00",
+        actor: "Engr. Abdul Karim",
+      },
     ],
   },
   {
@@ -623,9 +776,24 @@ export const tickets: Ticket[] = [
       finalApproval: true,
     },
     history: [
-      { id: "h1", label: "Ticket created", timestamp: "2026-06-05T08:00:00", actor: "Kamal Hossain" },
-      { id: "h2", label: "Work completed", timestamp: "2026-06-10T16:00:00", actor: "Engr. Rakib Hasan" },
-      { id: "h3", label: "Verified & closed", timestamp: "2026-06-11T09:00:00", actor: "Engr. Rakib Hasan" },
+      {
+        id: "h1",
+        label: "Ticket created",
+        timestamp: "2026-06-05T08:00:00",
+        actor: "Kamal Hossain",
+      },
+      {
+        id: "h2",
+        label: "Work completed",
+        timestamp: "2026-06-10T16:00:00",
+        actor: "Engr. Rakib Hasan",
+      },
+      {
+        id: "h3",
+        label: "Verified & closed",
+        timestamp: "2026-06-11T09:00:00",
+        actor: "Engr. Rakib Hasan",
+      },
     ],
   },
   {
@@ -654,7 +822,12 @@ export const tickets: Ticket[] = [
       finalApproval: false,
     },
     history: [
-      { id: "h1", label: "Ticket created", timestamp: "2026-06-24T08:00:00", actor: "Kamal Hossain" },
+      {
+        id: "h1",
+        label: "Ticket created",
+        timestamp: "2026-06-24T08:00:00",
+        actor: "Kamal Hossain",
+      },
     ],
   },
   {
@@ -684,8 +857,18 @@ export const tickets: Ticket[] = [
       finalApproval: false,
     },
     history: [
-      { id: "h1", label: "Ticket created", timestamp: "2026-06-23T09:00:00", actor: "Kamal Hossain" },
-      { id: "h2", label: "Assigned to Engr. Abdul Karim", timestamp: "2026-06-23T09:30:00", actor: "Nusrat Jahan" },
+      {
+        id: "h1",
+        label: "Ticket created",
+        timestamp: "2026-06-23T09:00:00",
+        actor: "Kamal Hossain",
+      },
+      {
+        id: "h2",
+        label: "Assigned to Engr. Abdul Karim",
+        timestamp: "2026-06-23T09:30:00",
+        actor: "Nusrat Jahan",
+      },
     ],
   },
   {
@@ -715,9 +898,24 @@ export const tickets: Ticket[] = [
       finalApproval: false,
     },
     history: [
-      { id: "h1", label: "Ticket created", timestamp: "2026-06-25T10:00:00", actor: "Kamal Hossain" },
-      { id: "h2", label: "Assigned to Engr. Rakib Hasan", timestamp: "2026-06-25T10:30:00", actor: "Nusrat Jahan" },
-      { id: "h3", label: "Work started", timestamp: "2026-06-25T11:00:00", actor: "Engr. Rakib Hasan" },
+      {
+        id: "h1",
+        label: "Ticket created",
+        timestamp: "2026-06-25T10:00:00",
+        actor: "Kamal Hossain",
+      },
+      {
+        id: "h2",
+        label: "Assigned to Engr. Rakib Hasan",
+        timestamp: "2026-06-25T10:30:00",
+        actor: "Nusrat Jahan",
+      },
+      {
+        id: "h3",
+        label: "Work started",
+        timestamp: "2026-06-25T11:00:00",
+        actor: "Engr. Rakib Hasan",
+      },
     ],
   },
   {
@@ -746,7 +944,12 @@ export const tickets: Ticket[] = [
       finalApproval: false,
     },
     history: [
-      { id: "h1", label: "Ticket created", timestamp: "2026-06-10T09:00:00", actor: "Kamal Hossain" },
+      {
+        id: "h1",
+        label: "Ticket created",
+        timestamp: "2026-06-10T09:00:00",
+        actor: "Kamal Hossain",
+      },
     ],
   },
   {
@@ -775,7 +978,12 @@ export const tickets: Ticket[] = [
       finalApproval: false,
     },
     history: [
-      { id: "h1", label: "Ticket created", timestamp: "2026-06-15T08:00:00", actor: "Kamal Hossain" },
+      {
+        id: "h1",
+        label: "Ticket created",
+        timestamp: "2026-06-15T08:00:00",
+        actor: "Kamal Hossain",
+      },
     ],
   },
   {
@@ -807,9 +1015,24 @@ export const tickets: Ticket[] = [
       finalApproval: true,
     },
     history: [
-      { id: "h1", label: "Ticket created", timestamp: "2026-05-15T09:00:00", actor: "Kamal Hossain" },
-      { id: "h2", label: "Work completed", timestamp: "2026-05-18T14:00:00", actor: "Engr. Shirin Sultana" },
-      { id: "h3", label: "Verified & closed", timestamp: "2026-05-19T09:00:00", actor: "Engr. Shirin Sultana" },
+      {
+        id: "h1",
+        label: "Ticket created",
+        timestamp: "2026-05-15T09:00:00",
+        actor: "Kamal Hossain",
+      },
+      {
+        id: "h2",
+        label: "Work completed",
+        timestamp: "2026-05-18T14:00:00",
+        actor: "Engr. Shirin Sultana",
+      },
+      {
+        id: "h3",
+        label: "Verified & closed",
+        timestamp: "2026-05-19T09:00:00",
+        actor: "Engr. Shirin Sultana",
+      },
     ],
   },
   {
@@ -841,9 +1064,24 @@ export const tickets: Ticket[] = [
       finalApproval: true,
     },
     history: [
-      { id: "h1", label: "Ticket created", timestamp: "2026-05-25T09:00:00", actor: "Farhan Ahmed" },
-      { id: "h2", label: "Work completed", timestamp: "2026-05-29T14:00:00", actor: "Engr. Abdul Karim" },
-      { id: "h3", label: "Verified & closed", timestamp: "2026-05-30T10:00:00", actor: "Engr. Abdul Karim" },
+      {
+        id: "h1",
+        label: "Ticket created",
+        timestamp: "2026-05-25T09:00:00",
+        actor: "Farhan Ahmed",
+      },
+      {
+        id: "h2",
+        label: "Work completed",
+        timestamp: "2026-05-29T14:00:00",
+        actor: "Engr. Abdul Karim",
+      },
+      {
+        id: "h3",
+        label: "Verified & closed",
+        timestamp: "2026-05-30T10:00:00",
+        actor: "Engr. Abdul Karim",
+      },
     ],
   },
   {
@@ -873,9 +1111,24 @@ export const tickets: Ticket[] = [
       finalApproval: false,
     },
     history: [
-      { id: "h1", label: "Ticket created", timestamp: "2026-06-20T09:00:00", actor: "Kamal Hossain" },
-      { id: "h2", label: "Work completed", timestamp: "2026-06-24T15:00:00", actor: "Engr. Rakib Hasan" },
-      { id: "h3", label: "Submitted for verification", timestamp: "2026-06-24T15:05:00", actor: "Engr. Rakib Hasan" },
+      {
+        id: "h1",
+        label: "Ticket created",
+        timestamp: "2026-06-20T09:00:00",
+        actor: "Kamal Hossain",
+      },
+      {
+        id: "h2",
+        label: "Work completed",
+        timestamp: "2026-06-24T15:00:00",
+        actor: "Engr. Rakib Hasan",
+      },
+      {
+        id: "h3",
+        label: "Submitted for verification",
+        timestamp: "2026-06-24T15:05:00",
+        actor: "Engr. Rakib Hasan",
+      },
     ],
   },
   {
@@ -905,8 +1158,18 @@ export const tickets: Ticket[] = [
       finalApproval: false,
     },
     history: [
-      { id: "h1", label: "Ticket created", timestamp: "2026-06-21T08:00:00", actor: "Kamal Hossain" },
-      { id: "h2", label: "Assigned to Engr. Shirin Sultana", timestamp: "2026-06-21T08:30:00", actor: "Nusrat Jahan" },
+      {
+        id: "h1",
+        label: "Ticket created",
+        timestamp: "2026-06-21T08:00:00",
+        actor: "Kamal Hossain",
+      },
+      {
+        id: "h2",
+        label: "Assigned to Engr. Shirin Sultana",
+        timestamp: "2026-06-21T08:30:00",
+        actor: "Nusrat Jahan",
+      },
     ],
   },
 ];
