@@ -67,8 +67,11 @@ export default function TicketDetail() {
   )
   const [ticketRequests, setTicketRequests] = useState<EquipmentRequest[]>(requests)
   const [requestModalOpen, setRequestModalOpen] = useState(false)
-  const checklist = t.maintenanceRecord.inspectionChecklist
+  const [checklist, setChecklist] = useState(() => t.maintenanceRecord.inspectionChecklist.map((item) => ({ ...item })))
   const completedChecklist = checklist.filter((item) => item.checked).length
+  const toggleChecklistItem = (id: string) => {
+    setChecklist((current) => current.map((item) => (item.id === id ? { ...item, checked: !item.checked } : item)))
+  }
   const checklistByCategory = checklist.reduce<Record<string, typeof checklist>>((groups, item) => {
     const categoryItems = groups[item.category] ?? []
     categoryItems.push(item)
@@ -228,12 +231,20 @@ export default function TicketDetail() {
                       </div>
                       <div className="grid gap-3 p-3 sm:grid-cols-2">
                         {items.map((item) => (
-                          <div key={item.id} className="flex items-start gap-3 rounded-lg border p-3">
-                            <div className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded border ${item.checked ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 text-transparent dark:border-slate-600'}`}>
+                          <button
+                            key={item.id}
+                            type="button"
+                            role="checkbox"
+                            aria-checked={item.checked}
+                            aria-label={`${item.label} (${item.checked ? 'checked' : 'unchecked'})`}
+                            onClick={() => toggleChecklistItem(item.id)}
+                            className="flex w-full items-start gap-3 rounded-lg border p-3 text-left transition hover:border-blue-400 hover:bg-blue-50/50 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:hover:bg-blue-950/20"
+                          >
+                            <span className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded border ${item.checked ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 text-transparent dark:border-slate-600'}`}>
                               <Check className="h-3.5 w-3.5" />
-                            </div>
-                            <div className={`text-xs ${item.checked ? 'text-slate-700 dark:text-slate-200' : 'text-slate-500'}`}>{item.label}</div>
-                          </div>
+                            </span>
+                            <span className={`text-xs ${item.checked ? 'text-slate-700 dark:text-slate-200' : 'text-slate-500'}`}>{item.label}</span>
+                          </button>
                         ))}
                       </div>
                     </section>
