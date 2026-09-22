@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   Archive,
   Bold,
@@ -71,11 +71,12 @@ export function TicketsPage() {
     "Preventive Maintenance",
     "Breakdown Maintenance",
     "General Maintenance",
-    "Washing Schedule",
+    "washing",
+    "scheduled",
   ];
   const rows = ticketRows.filter(
     (t) =>
-      (filter === "All" || t.type === filter) &&
+      (filter === "All" || t.serviceType === filter) &&
       `${t.ticketNo} ${t.equipmentId} ${getName(t.equipmentId)} ${t.assignedEngineer}`
         .toLowerCase()
         .includes(search.toLowerCase()),
@@ -117,7 +118,11 @@ export function TicketsPage() {
                     ? "Breakdown"
                     : t === "General Maintenance"
                       ? "General"
-                      : t}
+                      : t === "washing"
+                        ? "Washing"
+                        : t === "scheduled"
+                          ? "Scheduled"
+                          : t}
               </button>
             ))}
           </div>
@@ -127,7 +132,7 @@ export function TicketsPage() {
             <TR>
               <TH>Ticket</TH>
               <TH>Equipment</TH>
-              <TH>Type</TH>
+              <TH>Service type</TH>
               <TH>Due date</TH>
               <TH>Overdue by</TH>
               <TH>Assigned engineer</TH>
@@ -160,7 +165,7 @@ export function TicketsPage() {
                   </div>
                 </TD>
                 <TD>
-                  <span className="text-xs">{t.type.replace(" Maintenance", "")}</span>
+                  <span className="text-xs">{t.serviceType.replace(" Maintenance", "")}</span>
                 </TD>
                 <TD>
                   <div className="font-medium">{t.dueDate}</div>
@@ -253,6 +258,7 @@ function TicketModal({ onClose }: { onClose: () => void }) {
               <Select className="mt-2 w-full" defaultValue="Breakdown Maintenance">
                 <option>Breakdown Maintenance</option>
                 <option>General Maintenance</option>
+                <option>Washing</option>
               </Select>
             </label>
             <label className="text-xs font-semibold">

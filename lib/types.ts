@@ -1,7 +1,7 @@
 export type Role = "Super Admin" | "Manager" | "Engineer" | "Biman Admin";
 export type EquipmentStatus = "Available" | "Under Maintenance" | "Out of Service" | "Inactive";
 export type TicketType =
-  "Preventive Maintenance" | "Breakdown Maintenance" | "General Maintenance" | "Washing Schedule";
+  "Preventive Maintenance" | "Breakdown Maintenance" | "General Maintenance" | "washing" | "scheduled";
 export type TicketStatus =
   | "Open"
   | "Assigned"
@@ -86,7 +86,7 @@ export interface TicketHistory {
 export interface Ticket {
   id: string;
   ticketNo: string;
-  type: TicketType;
+  serviceType: TicketType;
   equipmentId: string;
   pmType?: string;
   faultDescription?: string;

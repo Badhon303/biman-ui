@@ -272,7 +272,7 @@ export default function Dashboard() {
           />
           <div className="divide-y">
             {tickets
-              .filter((t) => t.type === "Preventive Maintenance")
+              .filter((t) => t.serviceType === "Preventive Maintenance")
               .slice(0, 4)
               .map((t) => (
                 <Link
@@ -393,7 +393,7 @@ function TicketRows({ rows }: { rows: typeof tickets }) {
               </span>
             </div>
             <div className="mt-1 text-xs text-slate-500">
-              {t.type} · {t.assignedEngineer}
+              {t.serviceType} · {t.assignedEngineer}
             </div>
           </div>
           <div className="flex items-center gap-3">

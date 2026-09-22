@@ -226,7 +226,7 @@ export default function TicketDetail() {
           <Card className="p-6">
             <h2 className="text-base font-semibold">Ticket information</h2>
             <div className="mt-5 grid gap-4">
-              <Info label="Type" value={t.type} />
+              <Info label="Type" value={t.serviceType} />
               {editing ? (
                 <label className="flex items-center justify-between gap-4 border-b pb-3 text-xs">
                   <span className="text-slate-500">Priority</span>

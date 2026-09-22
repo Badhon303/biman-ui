@@ -603,7 +603,7 @@ function Logbook({ history }: Readonly<{ history: typeof tickets }>) {
           </div>
           <div>
             <div className="text-sm font-semibold">
-              {ticket.ticketNo} · {ticket.type}
+              {ticket.ticketNo} · {ticket.serviceType}
             </div>
             <div className="mt-1 text-xs text-slate-500">
               Due {ticket.dueDate} · <StatusBadge status={ticket.status} />

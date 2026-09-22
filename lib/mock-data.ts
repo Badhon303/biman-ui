@@ -435,9 +435,8 @@ export const tickets: Ticket[] = [
   {
     id: "t1",
     ticketNo: "PM-2026-001",
-    type: "Preventive Maintenance",
+    serviceType: "Preventive Maintenance",
     equipmentId: "eq1",
-    pmType: "250 Hr Service",
     priority: "Medium",
     status: "Open",
     dueDate: "2026-09-18",
@@ -470,7 +469,7 @@ export const tickets: Ticket[] = [
   {
     id: "t2",
     ticketNo: "BM-2026-018",
-    type: "Breakdown Maintenance",
+    serviceType: "Breakdown Maintenance",
     equipmentId: "eq2",
     faultDescription: "Hydraulic leak from main lift cylinder",
     priority: "High",
@@ -518,7 +517,7 @@ export const tickets: Ticket[] = [
   {
     id: "t3",
     ticketNo: "GM-2026-005",
-    type: "General Maintenance",
+    serviceType: "General Maintenance",
     equipmentId: "eq5",
     faultDescription: "Cabin light not working",
     priority: "Low",
@@ -552,9 +551,8 @@ export const tickets: Ticket[] = [
   {
     id: "t4",
     ticketNo: "PM-2026-021",
-    type: "Preventive Maintenance",
+    serviceType: "Preventive Maintenance",
     equipmentId: "eq4",
-    pmType: "250 Hr Service",
     priority: "Medium",
     status: "Awaiting Verification",
     dueDate: "2026-09-14",
@@ -605,7 +603,7 @@ export const tickets: Ticket[] = [
   {
     id: "t5",
     ticketNo: "BM-2026-019",
-    type: "Breakdown Maintenance",
+    serviceType: "Breakdown Maintenance",
     equipmentId: "eq9",
     faultDescription: "Main lift motor overheating",
     priority: "High",
@@ -652,9 +650,8 @@ export const tickets: Ticket[] = [
   {
     id: "t6",
     ticketNo: "WS-2026-011",
-    type: "Washing Schedule",
+    serviceType: "washing",
     equipmentId: "eq1",
-    pmType: "Weekly Wash",
     priority: "Low",
     status: "Completed",
     dueDate: "2026-06-20",
@@ -701,9 +698,8 @@ export const tickets: Ticket[] = [
   {
     id: "t7",
     ticketNo: "PM-2026-014",
-    type: "Preventive Maintenance",
+    serviceType: "Preventive Maintenance",
     equipmentId: "eq3",
-    pmType: "Monthly Service",
     priority: "Medium",
     status: "Closed",
     dueDate: "2026-06-02",
@@ -750,7 +746,7 @@ export const tickets: Ticket[] = [
   {
     id: "t8",
     ticketNo: "BM-2026-020",
-    type: "Breakdown Maintenance",
+    serviceType: "Breakdown Maintenance",
     equipmentId: "eq5",
     faultDescription: "Compressor not engaging",
     priority: "High",
@@ -799,9 +795,8 @@ export const tickets: Ticket[] = [
   {
     id: "t9",
     ticketNo: "WS-2026-012",
-    type: "Washing Schedule",
+    serviceType: "scheduled",
     equipmentId: "eq7",
-    pmType: "Weekly Wash",
     priority: "Low",
     status: "Open",
     dueDate: "2026-09-23",
@@ -833,9 +828,8 @@ export const tickets: Ticket[] = [
   {
     id: "t10",
     ticketNo: "PM-2026-022",
-    type: "Preventive Maintenance",
+    serviceType: "Preventive Maintenance",
     equipmentId: "eq6",
-    pmType: "500 Hr Service",
     priority: "Medium",
     status: "Assigned",
     dueDate: "2026-10-04",
@@ -874,7 +868,7 @@ export const tickets: Ticket[] = [
   {
     id: "t11",
     ticketNo: "GM-2026-006",
-    type: "General Maintenance",
+    serviceType: "General Maintenance",
     equipmentId: "eq8",
     faultDescription: "Loose panel cover",
     priority: "Low",
@@ -921,9 +915,8 @@ export const tickets: Ticket[] = [
   {
     id: "t12",
     ticketNo: "PM-2026-023",
-    type: "Preventive Maintenance",
+    serviceType: "Preventive Maintenance",
     equipmentId: "eq10",
-    pmType: "250 Hr Service",
     priority: "Medium",
     status: "Open",
     dueDate: "2026-09-15",
@@ -955,9 +948,8 @@ export const tickets: Ticket[] = [
   {
     id: "t13",
     ticketNo: "WS-2026-013",
-    type: "Washing Schedule",
+    serviceType: "scheduled",
     equipmentId: "eq9",
-    pmType: "Weekly Wash",
     priority: "Low",
     status: "Open",
     dueDate: "2026-09-18",
@@ -989,7 +981,7 @@ export const tickets: Ticket[] = [
   {
     id: "t14",
     ticketNo: "BM-2026-021",
-    type: "Breakdown Maintenance",
+    serviceType: "Breakdown Maintenance",
     equipmentId: "eq11",
     faultDescription: "Wheel bearing seized",
     priority: "Medium",
@@ -1038,9 +1030,8 @@ export const tickets: Ticket[] = [
   {
     id: "t15",
     ticketNo: "PM-2026-024",
-    type: "Preventive Maintenance",
+    serviceType: "Preventive Maintenance",
     equipmentId: "eq12",
-    pmType: "Monthly Service",
     priority: "Medium",
     status: "Closed",
     dueDate: "2026-06-01",
@@ -1087,7 +1078,7 @@ export const tickets: Ticket[] = [
   {
     id: "t16",
     ticketNo: "GM-2026-007",
-    type: "General Maintenance",
+    serviceType: "General Maintenance",
     equipmentId: "eq14",
     faultDescription: "Control panel display flickering",
     priority: "Medium",
@@ -1134,9 +1125,8 @@ export const tickets: Ticket[] = [
   {
     id: "t17",
     ticketNo: "WS-2026-014",
-    type: "Washing Schedule",
+    serviceType: "scheduled",
     equipmentId: "eq13",
-    pmType: "Weekly Wash",
     priority: "Low",
     status: "Assigned",
     dueDate: "2026-09-27",
