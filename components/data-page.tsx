@@ -137,7 +137,7 @@ export function TicketsPage() {
               <TH>Overdue by</TH>
               <TH>Assigned engineer</TH>
               <TH>Status</TH>
-              <TH></TH>
+              <TH>Action</TH>
             </TR>
           </THead>
           <TBody>

@@ -67,6 +67,14 @@ export default function TicketDetail() {
   )
   const [ticketRequests, setTicketRequests] = useState<EquipmentRequest[]>(requests)
   const [requestModalOpen, setRequestModalOpen] = useState(false)
+  const checklist = t.maintenanceRecord.inspectionChecklist
+  const completedChecklist = checklist.filter((item) => item.checked).length
+  const checklistByCategory = checklist.reduce<Record<string, typeof checklist>>((groups, item) => {
+    const categoryItems = groups[item.category] ?? []
+    categoryItems.push(item)
+    groups[item.category] = categoryItems
+    return groups
+  }, {})
 
   const current = Math.max(
     0,
@@ -195,6 +203,54 @@ export default function TicketDetail() {
             <div className="rounded-xl border bg-slate-50 p-4 dark:bg-slate-900/60">
               <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">Problem statement</div>
               <p className="mt-2 text-sm">{t.faultDescription ?? t.maintenanceRecord.problemDescription}</p>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-sm font-semibold">Inspection checklist</h3>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {completedChecklist} of {checklist.length} inspection items completed
+                  </p>
+                </div>
+                <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+                  {checklist.length ? Math.round((completedChecklist / checklist.length) * 100) : 0}%
+                </span>
+              </div>
+              <div className="space-y-4">
+                {Object.entries(checklistByCategory).map(([category, items]) => {
+                  const completedItems = items.filter((item) => item.checked).length
+                  return (
+                    <section key={category} className="overflow-hidden rounded-xl border">
+                      <div className="flex items-center justify-between border-b bg-slate-50 px-4 py-3 dark:bg-slate-900/60">
+                        <h4 className="text-xs font-semibold uppercase tracking-wider">{category}</h4>
+                        <span className="text-xs text-slate-500">{completedItems}/{items.length} complete</span>
+                      </div>
+                      <div className="grid gap-3 p-3 sm:grid-cols-2">
+                        {items.map((item) => (
+                          <div key={item.id} className="flex items-start gap-3 rounded-lg border p-3">
+                            <div className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded border ${item.checked ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 text-transparent dark:border-slate-600'}`}>
+                              <Check className="h-3.5 w-3.5" />
+                            </div>
+                            <div className={`text-xs ${item.checked ? 'text-slate-700 dark:text-slate-200' : 'text-slate-500'}`}>{item.label}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <RecordField label="Root cause" value={t.maintenanceRecord.rootCause || 'Not recorded'} />
+              <RecordField label="Repair activity" value={t.maintenanceRecord.repairActivity || 'Not recorded'} />
+              <RecordField label="Parts used" value={t.maintenanceRecord.partsUsed || 'None'} />
+              <RecordField label="Labour hours" value={`${t.maintenanceRecord.labourHours} hrs`} />
+              <RecordField label="Functional test" value={t.maintenanceRecord.functionalTestPassed ? 'Passed' : 'Pending'} />
+              <RecordField label="Safety check" value={t.maintenanceRecord.safetyCheckPassed ? 'Passed' : 'Pending'} />
+              <RecordField label="Final approval" value={t.maintenanceRecord.finalApproval ? 'Approved' : 'Pending'} />
+              <RecordField label="Engineer notes" value={t.maintenanceRecord.engineerNotes || 'No notes recorded'} />
             </div>
 
             <div className="mt-6 space-y-4">
@@ -416,6 +472,15 @@ function FeedbackComposer({ onSubmit }: Readonly<{ onSubmit: (entry: { html: str
         </label>
         <Button onClick={submit}><Send className="h-4 w-4" />Submit feedback</Button>
       </div>
+    </div>
+  )
+}
+
+function RecordField({ label, value }: Readonly<{ label: string; value: string }>) {
+  return (
+    <div className="rounded-xl border bg-slate-50 p-3 dark:bg-slate-900/60">
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{label}</div>
+      <div className="mt-1 text-sm">{value}</div>
     </div>
   )
 }

@@ -3,16 +3,14 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { CalendarClock, CircleAlert, Search, Ticket as TicketIcon } from "lucide-react";
-import { toast } from "sonner";
 import { PageHeader } from "@/components/data-page";
 import { ShellPage } from "@/components/app-shell";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/badge";
 import { TD, TH, TBody, THead, TR, Table } from "@/components/ui/table";
 import { equipment, maintenanceSchedules, tickets } from "@/lib/mock-data";
-import type { MaintenanceSchedule, ScheduleStatus } from "@/lib/types";
+import type { ScheduleStatus } from "@/lib/types";
 import { overdueBy } from "@/lib/utils";
 
 const DUE_SOON_DAYS = 15;
@@ -74,7 +72,6 @@ export default function SchedulePage() {
   const [status, setStatus] = useState("All");
   const [search, setSearch] = useState("");
   const [scheduleRows] = useState(maintenanceSchedules);
-  const [generatedTickets, setGeneratedTickets] = useState<Record<string, string>>({});
 
   const rows = useMemo(
     () =>
@@ -88,14 +85,6 @@ export default function SchedulePage() {
     [scheduleRows, search, status],
   );
 
-  const generateTicket = (schedule: MaintenanceSchedule) => {
-    const ticketNo = `TKT-2026-${String(schedule.id.replace("sch", "")).padStart(3, "0")}`;
-    setGeneratedTickets((current) => ({ ...current, [schedule.id]: ticketNo }));
-    toast.success(`${ticketNo} generated`, {
-      description: `${equipmentName(schedule.equipmentId)} is now in the ticket queue.`,
-    });
-  };
-
   const totalDue = scheduleRows.filter(
     (schedule) => schedule.status === "Overdue" || schedule.status === "Due soon",
   ).length;
@@ -106,7 +95,7 @@ export default function SchedulePage() {
       <PageHeader
         eyebrow="Maintenance / Schedule"
         title="Maintenance schedule"
-        subtitle="Review maintenance schedules and generate a ticket when work is due."
+        subtitle="Review maintenance schedules and their linked tickets."
       />
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -166,17 +155,14 @@ export default function SchedulePage() {
               <TH>Due date</TH>
               <TH>Overdue By</TH>
               <TH>Status</TH>
-              <TH>Action</TH>
+              <TH>Ticket</TH>
             </TR>
           </THead>
           <TBody>
             {rows.map((schedule) => {
-              const generatedTicketNo = generatedTickets[schedule.id];
-              const linkedTicketNo = schedule.ticketId
+              const ticketNo = schedule.ticketId
                 ? tickets.find((ticket) => ticket.id === schedule.ticketId)?.ticketNo
                 : undefined;
-              const ticketNo = generatedTicketNo ?? linkedTicketNo;
-              const hasTicket = Boolean(ticketNo);
               const displayStatus = schedule.status;
               const { lastDate, dueDate } = scheduleDates(schedule.status, new Date());
               return (
@@ -214,23 +200,16 @@ export default function SchedulePage() {
                     <StatusBadge status={displayStatus} />
                   </TD>
                   <TD>
-                    {hasTicket ? (
+                    {ticketNo ? (
                       <Link
-                        href={schedule.ticketId ? `/tickets/${schedule.ticketId}` : "/tickets"}
+                        href={`/tickets/${schedule.ticketId}`}
                         className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600"
                       >
                         <TicketIcon className="h-3.5 w-3.5" />
                         {ticketNo}
                       </Link>
                     ) : (
-                      <Button
-                        variant="outline"
-                        className="px-2.5 py-1.5 text-xs"
-                        onClick={() => generateTicket(schedule)}
-                      >
-                        <TicketIcon className="h-3.5 w-3.5" />
-                        Generate ticket
-                      </Button>
+                      <span className="text-xs text-slate-400">No ticket</span>
                     )}
                   </TD>
                 </TR>

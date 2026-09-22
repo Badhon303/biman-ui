@@ -424,11 +424,87 @@ export const equipmentTypes: EquipmentType[] = [
 // ---------------------------------------------------------------------------
 
 const baseChecklist = (): Ticket["maintenanceRecord"]["inspectionChecklist"] => [
-  { id: "c1", label: "Visual inspection for damage/wear", checked: false },
-  { id: "c2", label: "Fluid levels checked (oil, hydraulic, coolant)", checked: false },
-  { id: "c3", label: "Tyres/wheels condition checked", checked: false },
-  { id: "c4", label: "Brakes and steering tested", checked: false },
-  { id: "c5", label: "Lights, horn & warning signals functional", checked: false },
+  // Body Work
+  { id: "c1", category: "Body Work", label: "Wiper condition checked", checked: false },
+  { id: "c2", category: "Body Work", label: "All four doors condition checked", checked: false },
+  { id: "c3", category: "Body Work", label: "Body condition checked for damage/wear", checked: false },
+  { id: "c4", category: "Body Work", label: "Front side mirrors checked", checked: false },
+  { id: "c5", category: "Body Work", label: "Windshield condition checked", checked: false },
+  { id: "c6", category: "Body Work", label: "Rear glass condition checked", checked: false },
+  { id: "c7", category: "Body Work", label: "Rear side mirrors checked", checked: false },
+
+  // Engine
+  { id: "c8", category: "Engine", label: "Lube filter checked/replaced", checked: false },
+  { id: "c9", category: "Engine", label: "Fuel filter checked/replaced", checked: false },
+  { id: "c10", category: "Engine", label: "Air filter checked/replaced", checked: false },
+  { id: "c11", category: "Engine", label: "Water separator checked", checked: false },
+  { id: "c12", category: "Engine", label: "Engine oil level/condition checked", checked: false },
+  { id: "c13", category: "Engine", label: "Engine idle/RPM checked", checked: false },
+  { id: "c14", category: "Engine", label: "Belting condition checked", checked: false },
+  { id: "c15", category: "Engine", label: "Timing belt condition checked", checked: false },
+  { id: "c16", category: "Engine", label: "Diesel tank checked", checked: false },
+  { id: "c17", category: "Engine", label: "Engine checked for oil/fluid leakage", checked: false },
+
+  // Transmission
+  { id: "c18", category: "Transmission", label: "Gear filter checked/replaced", checked: false },
+  { id: "c19", category: "Transmission", label: "Gear oil level/condition checked", checked: false },
+  { id: "c20", category: "Transmission", label: "Transmission checked for leakage", checked: false },
+
+  // Rear Axle
+  { id: "c21", category: "Rear Axle", label: "Axle oil level/condition checked", checked: false },
+  { id: "c22", category: "Rear Axle", label: "Axle oil seal checked for leakage", checked: false },
+
+  // Brake
+  { id: "c23", category: "Brake", label: "Brake oil level/condition checked", checked: false },
+  { id: "c24", category: "Brake", label: "Brake pads checked", checked: false },
+  { id: "c25", category: "Brake", label: "Brake hoses checked", checked: false },
+  { id: "c26", category: "Brake", label: "Brake calipers checked", checked: false },
+  { id: "c27", category: "Brake", label: "Brake discs checked", checked: false },
+  { id: "c28", category: "Brake", label: "Brake drums checked", checked: false },
+  { id: "c29", category: "Brake", label: "Brake lining checked", checked: false },
+  { id: "c30", category: "Brake", label: "Wheel cylinders checked", checked: false },
+  { id: "c31", category: "Brake", label: "Parking brake cable checked", checked: false },
+
+  // Hydraulic
+  { id: "c32", category: "Hydraulic", label: "Hydraulic filter checked/replaced", checked: false },
+  { id: "c33", category: "Hydraulic", label: "Hydraulic oil level/condition checked", checked: false },
+  { id: "c34", category: "Hydraulic", label: "Main hydraulic pump checked", checked: false },
+  { id: "c35", category: "Hydraulic", label: "Hydraulic hoses checked", checked: false },
+  { id: "c36", category: "Hydraulic", label: "Hydraulic cylinders checked", checked: false },
+
+  // Wheels & Suspension
+  { id: "c37", category: "Wheels & Suspension", label: "Tyres checked for condition/wear", checked: false },
+  { id: "c38", category: "Wheels & Suspension", label: "Wheel studs checked", checked: false },
+  { id: "c39", category: "Wheels & Suspension", label: "Tyre pressure checked on all four wheels", checked: false },
+  { id: "c40", category: "Wheels & Suspension", label: "Leaf springs checked", checked: false },
+  { id: "c41", category: "Wheels & Suspension", label: "Front springs checked", checked: false },
+  { id: "c42", category: "Wheels & Suspension", label: "U-clamps checked", checked: false },
+
+  // Electrical
+  { id: "c43", category: "Electrical", label: "Front lamps checked", checked: false },
+  { id: "c44", category: "Electrical", label: "Rear lamps checked", checked: false },
+  { id: "c45", category: "Electrical", label: "Front indicators/signals checked", checked: false },
+  { id: "c46", category: "Electrical", label: "Rear indicators/signals checked", checked: false },
+  { id: "c47", category: "Electrical", label: "Reverse lights checked", checked: false },
+  { id: "c48", category: "Electrical", label: "Brake lights checked", checked: false },
+  { id: "c49", category: "Electrical", label: "Battery water/condition checked", checked: false },
+  { id: "c50", category: "Electrical", label: "Beacon light checked", checked: false },
+
+  // Greasing
+  { id: "c51", category: "Greasing", label: "Propeller shaft greased/checked", checked: false },
+  { id: "c52", category: "Greasing", label: "King pin greased/checked", checked: false },
+  { id: "c53", category: "Greasing", label: "Steering joints greased/checked", checked: false },
+  { id: "c54", category: "Greasing", label: "Spring points greased/checked", checked: false },
+
+  // Safety
+  { id: "c55", category: "Safety", label: "Fire extinguisher checked and expiry date verified", checked: false },
+  { id: "c56", category: "Safety", label: "Tyre chock available and condition checked", checked: false },
+  { id: "c57", category: "Safety", label: "Chain tyre chock checked", checked: false },
+
+  // General
+  { id: "c58", category: "General", label: "Equipment washing completed", checked: false },
+  { id: "c59", category: "General", label: "Painting condition checked/touch-up completed", checked: false },
+  { id: "c60", category: "General", label: "Safety/identification stickers checked", checked: false },
 ];
 
 export const tickets: Ticket[] = [
@@ -449,7 +525,6 @@ export const tickets: Ticket[] = [
       inspectionChecklist: baseChecklist(),
       rootCause: "",
       repairActivity: "",
-      correctiveAction: "",
       partsUsed: "",
       labourHours: 0,
       engineerNotes: "",
@@ -485,7 +560,6 @@ export const tickets: Ticket[] = [
       inspectionChecklist: baseChecklist().map((c) => ({ ...c, checked: true })),
       rootCause: "Worn seal on main lift cylinder.",
       repairActivity: "Cylinder removed for seal replacement.",
-      correctiveAction: "Replace cylinder seal kit, refill hydraulic fluid, bleed system.",
       partsUsed: "Seal kit HK-2201",
       labourHours: 4,
       engineerNotes: "Awaiting seal kit delivery to complete repair.",
@@ -531,7 +605,6 @@ export const tickets: Ticket[] = [
       inspectionChecklist: baseChecklist(),
       rootCause: "",
       repairActivity: "",
-      correctiveAction: "",
       partsUsed: "",
       labourHours: 0,
       engineerNotes: "",
@@ -565,7 +638,6 @@ export const tickets: Ticket[] = [
       inspectionChecklist: baseChecklist().map((c) => ({ ...c, checked: true })),
       rootCause: "N/A",
       repairActivity: "Lubrication, filter replacement, torque check on step assembly.",
-      correctiveAction: "N/A - preventive only.",
       partsUsed: "Oil filter OF-110, Grease 2x",
       labourHours: 3,
       engineerNotes: "All checks passed, ready for verification.",
@@ -618,7 +690,6 @@ export const tickets: Ticket[] = [
       inspectionChecklist: baseChecklist().map((c) => ({ ...c, checked: true })),
       rootCause: "Motor bearing failure.",
       repairActivity: "Motor removed for bearing replacement.",
-      correctiveAction: "Replace motor bearing set, test under load.",
       partsUsed: "Bearing set BR-440",
       labourHours: 6,
       engineerNotes: "Requested replacement bearing set - awaiting approval from Biman Admin.",
@@ -666,7 +737,6 @@ export const tickets: Ticket[] = [
       inspectionChecklist: baseChecklist().map((c) => ({ ...c, checked: true })),
       rootCause: "N/A",
       repairActivity: "Full exterior wash, degrease undercarriage.",
-      correctiveAction: "N/A",
       partsUsed: "N/A",
       labourHours: 1,
       engineerNotes: "Completed without issue.",
@@ -714,7 +784,6 @@ export const tickets: Ticket[] = [
       inspectionChecklist: baseChecklist().map((c) => ({ ...c, checked: true })),
       rootCause: "N/A",
       repairActivity: "Filter change, battery water top-up, output test.",
-      correctiveAction: "N/A",
       partsUsed: "Air filter AF-90",
       labourHours: 2,
       engineerNotes: "All parameters within spec.",
@@ -763,7 +832,6 @@ export const tickets: Ticket[] = [
       inspectionChecklist: baseChecklist().map((c) => ({ ...c, checked: true })),
       rootCause: "Faulty compressor clutch relay.",
       repairActivity: "Replaced relay and tested compressor cycle.",
-      correctiveAction: "Relay replaced, system recharged.",
       partsUsed: "Relay RLY-12, Refrigerant 2kg",
       labourHours: 5,
       engineerNotes: "Unit still flagged out of service pending final electrical audit.",
@@ -808,7 +876,6 @@ export const tickets: Ticket[] = [
       inspectionChecklist: baseChecklist(),
       rootCause: "",
       repairActivity: "",
-      correctiveAction: "",
       partsUsed: "",
       labourHours: 0,
       engineerNotes: "",
@@ -842,7 +909,6 @@ export const tickets: Ticket[] = [
       inspectionChecklist: baseChecklist(),
       rootCause: "",
       repairActivity: "",
-      correctiveAction: "",
       partsUsed: "",
       labourHours: 0,
       engineerNotes: "",
@@ -883,7 +949,6 @@ export const tickets: Ticket[] = [
       inspectionChecklist: baseChecklist().map((c) => ({ ...c, checked: true })),
       rootCause: "Missing fasteners.",
       repairActivity: "Replacing fasteners and re-securing panel.",
-      correctiveAction: "Install M6 fasteners.",
       partsUsed: "Fasteners M6 x4",
       labourHours: 1,
       engineerNotes: "In progress, near completion.",
@@ -928,7 +993,6 @@ export const tickets: Ticket[] = [
       inspectionChecklist: baseChecklist(),
       rootCause: "",
       repairActivity: "",
-      correctiveAction: "",
       partsUsed: "",
       labourHours: 0,
       engineerNotes: "",
@@ -961,7 +1025,6 @@ export const tickets: Ticket[] = [
       inspectionChecklist: baseChecklist(),
       rootCause: "",
       repairActivity: "",
-      correctiveAction: "",
       partsUsed: "",
       labourHours: 0,
       engineerNotes: "",
@@ -998,7 +1061,6 @@ export const tickets: Ticket[] = [
       inspectionChecklist: baseChecklist().map((c) => ({ ...c, checked: true })),
       rootCause: "Bearing corrosion due to water ingress.",
       repairActivity: "Wheel and bearing assembly replaced.",
-      correctiveAction: "Sealed bearing housing installed.",
       partsUsed: "Wheel bearing WB-20",
       labourHours: 3,
       engineerNotes: "Cart taken out of active rotation, flagged inactive pending review.",
@@ -1046,7 +1108,6 @@ export const tickets: Ticket[] = [
       inspectionChecklist: baseChecklist().map((c) => ({ ...c, checked: true })),
       rootCause: "N/A",
       repairActivity: "Tank flush, valve inspection.",
-      correctiveAction: "N/A",
       partsUsed: "Valve seal kit",
       labourHours: 2,
       engineerNotes: "Completed without issue.",
@@ -1093,7 +1154,6 @@ export const tickets: Ticket[] = [
       inspectionChecklist: baseChecklist().map((c) => ({ ...c, checked: true })),
       rootCause: "Loose display ribbon connector.",
       repairActivity: "Reseated ribbon connector, cleaned contacts.",
-      correctiveAction: "Connector reseated and secured.",
       partsUsed: "N/A",
       labourHours: 1.5,
       engineerNotes: "Ready for verification.",
@@ -1139,7 +1199,6 @@ export const tickets: Ticket[] = [
       inspectionChecklist: baseChecklist(),
       rootCause: "",
       repairActivity: "",
-      correctiveAction: "",
       partsUsed: "",
       labourHours: 0,
       engineerNotes: "",

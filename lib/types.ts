@@ -61,6 +61,7 @@ export interface EquipmentType {
 
 export interface ChecklistItem {
   id: string;
+  category: string;
   label: string;
   checked: boolean;
 }
@@ -69,7 +70,6 @@ export interface MaintenanceRecord {
   inspectionChecklist: ChecklistItem[];
   rootCause: string;
   repairActivity: string;
-  correctiveAction: string;
   partsUsed: string;
   labourHours: number;
   engineerNotes: string;
