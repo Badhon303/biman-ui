@@ -396,6 +396,8 @@ export const equipment: Equipment[] = [
 // Equipment types
 // ---------------------------------------------------------------------------
 
+
+// standardEquipmentServices is fixed, constant
 export const standardEquipmentServices: EquipmentTypeService[] = [
   { id: "svc-f", name: "Service F", minHours: 0, maxHours: 500 },
   { id: "svc-b", name: "Service B", minHours: 500, maxHours: 1000 },
@@ -428,6 +430,7 @@ export const equipmentTypes: EquipmentType[] = [
 // Tickets
 // ---------------------------------------------------------------------------
 
+// baseChecklist is fixed, constant
 const baseChecklist = (): Ticket["maintenanceRecord"]["inspectionChecklist"] => [
   // Body Work
   { id: "c1", category: "Body Work", label: "Wiper condition checked", checked: false },
