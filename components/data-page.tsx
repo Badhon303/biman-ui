@@ -37,6 +37,7 @@ import type { Equipment } from "@/lib/types";
 import { isOverdue, overdueBy } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRole } from "@/components/role-context";
+import { HourMeterHistoryModal } from "@/components/hour-meter-history";
 export function PageHeader({
   eyebrow,
   title,
@@ -604,6 +605,7 @@ export function EquipmentPage() {
   const [status, setStatus] = useState("All");
   const [addOpen, setAddOpen] = useState(false);
   const [hourMeterEquipment, setHourMeterEquipment] = useState<Equipment | null>(null);
+  const [historyEquipment, setHistoryEquipment] = useState<Equipment | null>(null);
   const [equipmentList, setEquipmentList] = useState<Equipment[]>(equipment);
   const rows = equipmentList.filter(
     (e) =>
@@ -623,9 +625,21 @@ export function EquipmentPage() {
       toast.error("Enter a valid hour meter value");
       return;
     }
+    const reading = {
+      id: `hm-${Date.now()}`,
+      value: parsed,
+      recordedAt: new Date().toISOString().slice(0, 10),
+      recordedBy: role,
+    };
     setEquipmentList((current) =>
       current.map((equipment) =>
-        equipment.id === item.id ? { ...equipment, hourMeter: parsed } : equipment,
+        equipment.id === item.id
+          ? {
+              ...equipment,
+              hourMeter: parsed,
+              hourMeterHistory: [...(equipment.hourMeterHistory ?? []), reading],
+            }
+          : equipment,
       ),
     );
     setHourMeterEquipment(null);
@@ -698,7 +712,14 @@ export function EquipmentPage() {
                 </TD>
                 <TD>
                   <div className="flex items-center gap-2 whitespace-nowrap">
-                    <span>{e.hourMeter !== undefined ? `${e.hourMeter} hours` : "Not recorded"}</span>
+                    <button
+                      type="button"
+                      className="font-medium text-blue-600 underline-offset-4 hover:underline"
+                      onClick={() => setHistoryEquipment(e)}
+                      aria-label={`View hour meter history for ${e.assetNo}`}
+                    >
+                      {e.hourMeter !== undefined ? `${e.hourMeter} hours` : "Not recorded"}
+                    </button>
                     {canManage && (
                       <button
                         type="button"
@@ -758,6 +779,14 @@ export function EquipmentPage() {
           equipment={hourMeterEquipment}
           onClose={() => setHourMeterEquipment(null)}
           onUpdate={(value) => updateHourMeter(hourMeterEquipment, value)}
+        />
+      )}
+      {historyEquipment && (
+        <HourMeterHistoryModal
+          assetNo={historyEquipment.assetNo}
+          history={historyEquipment.hourMeterHistory}
+          currentValue={historyEquipment.hourMeter}
+          onClose={() => setHistoryEquipment(null)}
         />
       )}
     </ShellPage>

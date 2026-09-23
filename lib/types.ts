@@ -24,6 +24,12 @@ export interface EquipmentDocument {
   expiryDate?: string;
   uploadedDate: string;
 }
+export interface HourMeterReading {
+  id: string;
+  value: number;
+  recordedAt: string;
+  recordedBy: string;
+}
 export interface Equipment {
   id: string;
   assetNo: string;
@@ -37,6 +43,7 @@ export interface Equipment {
   location: string;
   status: EquipmentStatus;
   hourMeter?: number;
+  hourMeterHistory?: HourMeterReading[];
   actualGTDate?: string;
   shipDate?: string;
   shippingStatus?: string;

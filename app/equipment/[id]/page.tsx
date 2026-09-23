@@ -26,6 +26,7 @@ import { equipment, getEquipment, tickets } from "@/lib/mock-data";
 import type { Equipment, EquipmentDocument, EquipmentStatus, Specification } from "@/lib/types";
 import { useRole } from "@/components/role-context";
 import { toast } from "sonner";
+import { HourMeterHistory, HourMeterHistoryModal } from "@/components/hour-meter-history";
 
 const tabs = ["Overview", "Specifications", "Documents", "Logbook"] as const;
 type EquipmentTab = (typeof tabs)[number];
@@ -45,6 +46,7 @@ export default function EquipmentProfile() {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Equipment>(e);
   const [hourMeterInput, setHourMeterInput] = useState("");
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [tab, setTab] = useState<EquipmentTab>("Overview");
   const history = tickets.filter((ticket) => ticket.equipmentId === e.id);
 
@@ -63,7 +65,19 @@ export default function EquipmentProfile() {
       toast.error("Enter a valid hour meter value");
       return;
     }
-    setE({ ...draft, hourMeter: parsedHourMeter });
+    const nextEquipment = { ...draft, hourMeter: parsedHourMeter };
+    if (parsedHourMeter !== undefined && parsedHourMeter !== e.hourMeter) {
+      nextEquipment.hourMeterHistory = [
+        ...(e.hourMeterHistory ?? []),
+        {
+          id: `hm-${Date.now()}`,
+          value: parsedHourMeter,
+          recordedAt: new Date().toISOString().slice(0, 10),
+          recordedBy: role,
+        },
+      ];
+    }
+    setE(nextEquipment);
     setEditing(false);
     toast.success("Equipment updated (mock)");
   };
@@ -218,6 +232,13 @@ export default function EquipmentProfile() {
             <UploadPhoto label="Front view" />
             <UploadPhoto label="Side view" />
           </div>
+          <div className="mt-5">
+            <HourMeterHistory
+              history={e.hourMeterHistory}
+              currentValue={e.hourMeter}
+              onView={() => setHistoryOpen(true)}
+            />
+          </div>
         </Card>
 
         <Card>
@@ -325,10 +346,6 @@ export default function EquipmentProfile() {
                   <Info label="Engine model" value={e.engineModel} />
                   <Info label="Engine S/L" value={e.engineSerialNo} />
                   <Info label="Status" value={e.status} />
-                  <Info
-                    label="Hour meter"
-                    value={e.hourMeter !== undefined ? `${e.hourMeter} hours` : "Not recorded"}
-                  />
                   <Info label="Actual GT date" value={e.actualGTDate ?? "Not recorded"} />
                   <Info label="Ship date" value={e.shipDate ?? "Not recorded"} />
                   <Info label="Shipping status" value={e.shippingStatus ?? "Not recorded"} />
@@ -358,6 +375,14 @@ export default function EquipmentProfile() {
           </div>
         </Card>
       </div>
+      {historyOpen && (
+        <HourMeterHistoryModal
+          assetNo={e.assetNo}
+          history={e.hourMeterHistory}
+          currentValue={e.hourMeter}
+          onClose={() => setHistoryOpen(false)}
+        />
+      )}
     </ShellPage>
   );
 }

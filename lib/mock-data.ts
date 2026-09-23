@@ -102,6 +102,11 @@ export const equipment: Equipment[] = [
     status: "Available",
     actualGTDate: "2020-01-15",
     hourMeter: 250,
+    hourMeterHistory: [
+      { id: "hm1", value: 180, recordedAt: "2026-05-12", recordedBy: "Engr. Abdul Karim" },
+      { id: "hm2", value: 220, recordedAt: "2026-07-18", recordedBy: "Engr. Rakib Hasan" },
+      { id: "hm3", value: 250, recordedAt: "2026-09-10", recordedBy: "Engr. Abdul Karim" },
+    ],
     shipDate: "2020-01-15",
     shippingStatus: "COMMISSIONED",
     emissionRatting: "Tier3/Stage 3A",
