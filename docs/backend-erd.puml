@@ -1,0 +1,253 @@
+@startuml biman_gse_logbook_erd
+
+' Backend-oriented ERD derived from lib/types.ts and lib/mock-data.ts
+' Nested TypeScript objects are modeled as relational child tables.
+
+!theme plain
+hide methods
+hide stereotypes
+skinparam linetype ortho
+skinparam entity {
+  BackgroundColor #F8FAFC
+  BorderColor #2563EB
+  FontColor #0F172A
+}
+skinparam note {
+  BackgroundColor #FFF7ED
+  BorderColor #F59E0B
+}
+
+entity "USER" as user {
+  *id : varchar <<PK>>
+  --
+  name : varchar
+  initials : varchar
+  role : enum
+  organization : varchar
+  email : varchar <<UQ>>
+  status : enum
+}
+
+entity "EQUIPMENT" as equipment {
+  *id : varchar <<PK>>
+  --
+  asset_no : varchar <<UQ>>
+  type : varchar
+  manufacturer : varchar
+  model : varchar
+  engine_model : varchar
+  engine_serial_no : varchar
+  biman_serial_no : varchar
+  tld_serial_no : varchar
+  location : varchar
+  status : enum
+  hour_meter : decimal <<nullable>>
+  actual_gt_date : date <<nullable>>
+  ship_date : date <<nullable>>
+  shipping_status : varchar <<nullable>>
+  emission_rating : varchar <<nullable>>
+}
+
+entity "EQUIPMENT_PHOTO" as equipment_photo {
+  *id : bigint <<PK>>
+  --
+  equipment_id : varchar <<FK>>
+  file_url : text
+  uploaded_at : datetime
+  uploaded_by_user_id : varchar <<FK, nullable>>
+}
+
+entity "EQUIPMENT_SPECIFICATION" as specification {
+  *id : bigint <<PK>>
+  --
+  equipment_id : varchar <<FK>>
+  label : varchar
+  value : varchar
+}
+
+entity "EQUIPMENT_DOCUMENT" as equipment_document {
+  *id : varchar <<PK>>
+  --
+  equipment_id : varchar <<FK>>
+  name : varchar
+  type : varchar
+  expiry_date : date <<nullable>>
+  uploaded_date : date
+}
+
+entity "HOUR_METER_READING" as hour_meter_reading {
+  *id : varchar <<PK>>
+  --
+  equipment_id : varchar <<FK>>
+  value : decimal
+  recorded_at : date
+  recorded_by_user_id : varchar <<FK>>
+}
+
+entity "EQUIPMENT_TYPE" as equipment_type {
+  *id : varchar <<PK>>
+  --
+  name : varchar
+}
+
+entity "EQUIPMENT_TYPE_SERVICE" as equipment_type_service {
+  *id : varchar <<PK>>
+  --
+  equipment_type_id : varchar <<FK>>
+  name : varchar
+  min_hours : decimal <<nullable>>
+  max_hours : decimal <<nullable>>
+  months : int <<nullable>>
+}
+
+entity "TICKET" as ticket {
+  *id : varchar <<PK>>
+  --
+  ticket_no : varchar <<UQ>>
+  equipment_id : varchar <<FK>>
+  service_type : enum
+  pm_type : varchar <<nullable>>
+  fault_description : text <<nullable>>
+  priority : enum
+  status : enum
+  due_date : date
+  created_date : date
+  assigned_engineer_user_id : varchar <<FK, nullable>>
+  created_by_user_id : varchar <<FK>>
+  requesting_party : varchar
+  closed_date : date <<nullable>>
+  downtime_hours : decimal <<nullable>>
+}
+
+entity "MAINTENANCE_RECORD" as maintenance_record {
+  *id : bigint <<PK>>
+  --
+  ticket_id : varchar <<FK, UQ>>
+  problem_description : text
+  parts_used : text
+  labour_hours : decimal
+  engineer_feedback_html : text
+  functional_test_passed : boolean
+  safety_check_passed : boolean
+}
+
+entity "CHECKLIST_ITEM" as checklist_item {
+  *id : varchar <<PK>>
+  --
+  maintenance_record_id : bigint <<FK>>
+  category : varchar
+  label : varchar
+  checked : boolean
+}
+
+entity "WORK_IMAGE" as work_image {
+  *id : bigint <<PK>>
+  --
+  maintenance_record_id : bigint <<FK>>
+  file_url : text
+  uploaded_by_user_id : varchar <<FK, nullable>>
+  uploaded_at : datetime
+}
+
+entity "TICKET_HISTORY" as ticket_history {
+  *id : varchar <<PK>>
+  --
+  ticket_id : varchar <<FK>>
+  label : varchar
+  timestamp : datetime
+  actor_user_id : varchar <<FK, nullable>>
+}
+
+entity "MAINTENANCE_SCHEDULE" as maintenance_schedule {
+  *id : varchar <<PK>>
+  --
+  schedule_no : varchar <<UQ>>
+  equipment_id : varchar <<FK>>
+  ticket_id : varchar <<FK, nullable>>
+  last_date : date
+  due_date : date
+  status : enum
+}
+
+entity "EQUIPMENT_REQUEST" as equipment_request {
+  *id : varchar <<PK>>
+  --
+  request_no : varchar <<UQ>>
+  ticket_id : varchar <<FK>>
+  equipment_id : varchar <<FK>>
+  item : varchar
+  quantity : int
+  reason : text
+  requested_by_user_id : varchar <<FK>>
+  requested_date : date
+  status : enum
+  approved_by_user_id : varchar <<FK, nullable>>
+  approved_date : date <<nullable>>
+}
+
+entity "APP_NOTIFICATION" as notification {
+  *id : varchar <<PK>>
+  --
+  recipient_user_id : varchar <<FK, nullable>>
+  type : varchar
+  message : text
+  timestamp : datetime
+  read : boolean
+}
+
+' Core ownership and ticket relationships
+user ||--o{ ticket : creates
+user ||--o{ ticket : assigned_to
+equipment ||--o{ ticket : has
+
+ticket ||--|| maintenance_record : contains
+maintenance_record ||--o{ checklist_item : has
+maintenance_record ||--o{ work_image : includes
+ticket ||--o{ ticket_history : records
+user ||--o{ ticket_history : acts
+
+' Equipment and service catalog relationships
+equipment ||--o{ equipment_photo : has
+equipment ||--o{ specification : has
+equipment ||--o{ equipment_document : stores
+equipment ||--o{ hour_meter_reading : records
+user ||--o{ hour_meter_reading : records
+equipment_type ||--o{ equipment_type_service : defines
+
+' Scheduling and requests
+equipment ||--o{ maintenance_schedule : scheduled_for
+ticket |o--o| maintenance_schedule : optionally_generates
+ticket ||--o{ equipment_request : requires
+equipment ||--o{ equipment_request : requested_for
+user ||--o{ equipment_request : requests
+user |o--o{ equipment_request : approves
+user |o--o{ work_image : uploads
+user |o--o{ notification : receives
+
+note right of ticket
+  Current mock data stores assignedEngineer,
+  createdBy, actor, and request user values as
+  display names. Use user IDs as FKs in backend.
+end note
+
+note right of maintenance_record
+  workImages is represented as WORK_IMAGE rows
+  instead of a string array. Store rich text as
+  sanitized HTML or an editor JSON document.
+end note
+
+note bottom of equipment_type_service
+  EquipmentType.services is a nested array
+  in the frontend model.
+end note
+
+legend right
+  |= Symbol |= Meaning |
+  | PK | Primary key |
+  | FK | Foreign key |
+  | UQ | Unique constraint |
+  | nullable | Optional field |
+  | enum | Constrained status/type value |
+endlegend
+
+@enduml
