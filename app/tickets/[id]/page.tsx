@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, type DragEvent } from 'react'
 import {
   ArrowLeft,
   Bold,
@@ -61,13 +61,19 @@ export default function TicketDetail() {
     requestingParty: t.requestingParty,
   })
   const [feedback, setFeedback] = useState<FeedbackEntry[]>(
-    t.maintenanceRecord.engineerNotes
-      ? [{ id: 'f0', author: t.assignedEngineer ?? 'Engineer', timestamp: t.createdDate, html: t.maintenanceRecord.engineerNotes, images: [] }]
+    t.maintenanceRecord.engineerFeedback
+      ? [{ id: 'f0', author: t.assignedEngineer ?? 'Engineer', timestamp: t.createdDate, html: t.maintenanceRecord.engineerFeedback, images: [] }]
       : [],
   )
+  const [feedbackImages, setFeedbackImages] = useState<string[]>(t.maintenanceRecord.workImages)
+  const [feedbackDraft, setFeedbackDraft] = useState('')
   const [ticketRequests, setTicketRequests] = useState<EquipmentRequest[]>(requests)
   const [requestModalOpen, setRequestModalOpen] = useState(false)
   const [checklist, setChecklist] = useState(() => t.maintenanceRecord.inspectionChecklist.map((item) => ({ ...item })))
+  const [partsUsed, setPartsUsed] = useState(t.maintenanceRecord.partsUsed)
+  const [labourHours, setLabourHours] = useState(t.maintenanceRecord.labourHours)
+  const [functionalTestPassed, setFunctionalTestPassed] = useState(t.maintenanceRecord.functionalTestPassed)
+  const [safetyCheckPassed, setSafetyCheckPassed] = useState(t.maintenanceRecord.safetyCheckPassed)
   const completedChecklist = checklist.filter((item) => item.checked).length
   const toggleChecklistItem = (id: string) => {
     setChecklist((current) => current.map((item) => (item.id === id ? { ...item, checked: !item.checked } : item)))
@@ -106,16 +112,29 @@ export default function TicketDetail() {
     setEditing(false)
     toast.success('Ticket updated (mock)')
   }
-  const submitFeedback = (entry: { html: string; images: string[] }) => {
+  const submitMaintenanceRecord = () => {
+    const html = feedbackDraft.trim()
+    if (!html || html === '<br>') {
+      toast.error('Add engineer feedback before submitting the maintenance record')
+      return
+    }
     setFeedback((current) => [
       ...current,
-      { id: `f${current.length + 1}`, author: t.assignedEngineer ?? 'Engineer', timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '), ...entry },
+      {
+        id: `f${current.length + 1}`,
+        author: t.assignedEngineer ?? 'Engineer',
+        timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '),
+        html,
+        images: feedbackImages,
+      },
     ])
+    setFeedbackDraft('')
+    setFeedbackImages([])
     if (status === 'In Progress' || status === 'Awaiting Parts') {
       setStatus('Awaiting Verification')
-      toast.success('Feedback submitted — awaiting admin verification')
+      toast.success('Maintenance record submitted — awaiting admin verification')
     } else {
-      toast.success('Feedback submitted')
+      toast.success('Maintenance record submitted')
     }
   }
   const addRequest = (data: { item: string; quantity: number; reason: string }) => {
@@ -254,19 +273,36 @@ export default function TicketDetail() {
             </div>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <RecordField label="Root cause" value={t.maintenanceRecord.rootCause || 'Not recorded'} />
-              <RecordField label="Repair activity" value={t.maintenanceRecord.repairActivity || 'Not recorded'} />
-              <RecordField label="Parts used" value={t.maintenanceRecord.partsUsed || 'None'} />
-              <RecordField label="Labour hours" value={`${t.maintenanceRecord.labourHours} hrs`} />
-              <RecordField label="Functional test" value={t.maintenanceRecord.functionalTestPassed ? 'Passed' : 'Pending'} />
-              <RecordField label="Safety check" value={t.maintenanceRecord.safetyCheckPassed ? 'Passed' : 'Pending'} />
-              <RecordField label="Final approval" value={t.maintenanceRecord.finalApproval ? 'Approved' : 'Pending'} />
-              <RecordField label="Engineer notes" value={t.maintenanceRecord.engineerNotes || 'No notes recorded'} />
+              <RecordInput
+                label="Parts used"
+                value={partsUsed}
+                placeholder="Enter parts, materials, or N/A"
+                onChange={setPartsUsed}
+              />
+              <RecordInput
+                label="Labour hours"
+                type="number"
+                min="0"
+                step="0.5"
+                value={String(labourHours)}
+                onChange={(value) => setLabourHours(Number(value) || 0)}
+              />
+              <RecordToggle
+                label="Functional test"
+                checked={functionalTestPassed}
+                onChange={setFunctionalTestPassed}
+              />
+              <RecordToggle
+                label="Safety check"
+                checked={safetyCheckPassed}
+                onChange={setSafetyCheckPassed}
+              />
+              <ImageUploadField images={feedbackImages} onChange={setFeedbackImages} />
             </div>
 
             <div className="mt-6 space-y-4">
               <h3 className="text-sm font-semibold">Engineer feedback</h3>
-              {feedback.length === 0 && <div className="rounded-xl border border-dashed p-5 text-center text-sm text-slate-400">No feedback submitted yet.</div>}
+              {!isEngineer && feedback.length === 0 && <div className="rounded-xl border border-dashed p-5 text-center text-sm text-slate-400">No feedback submitted yet.</div>}
               {feedback.map((f) => (
                 <div key={f.id} className="rounded-xl border p-4">
                   <div className="flex items-center justify-between">
@@ -285,7 +321,14 @@ export default function TicketDetail() {
               ))}
             </div>
 
-            {isEngineer && status !== 'Closed' && <FeedbackComposer onSubmit={submitFeedback} />}
+            {isEngineer && status !== 'Closed' && (
+              <>
+                <FeedbackComposer onChange={setFeedbackDraft} />
+                <div className="mt-4 flex justify-end">
+                  <Button onClick={submitMaintenanceRecord}><Send className="h-4 w-4" />Final submit</Button>
+                </div>
+              </>
+            )}
           </Card>
         </div>
 
@@ -420,79 +463,166 @@ function AddRequestModal({
   )
 }
 
-function FeedbackComposer({ onSubmit }: Readonly<{ onSubmit: (entry: { html: string; images: string[] }) => void }>) {
-  const editorRef = useRef<HTMLDivElement>(null)
-  const [images, setImages] = useState<string[]>([])
-
-  const format = (command: string) => {
-    editorRef.current?.focus()
-    document.execCommand(command)
-  }
+function ImageUploadField({
+  images,
+  onChange,
+}: Readonly<{ images: string[]; onChange: (images: string[]) => void }>) {
+  const [isDragging, setIsDragging] = useState(false)
   const addImages = (files: FileList | null) => {
     if (!files) return
-    setImages((current) => [...current, ...Array.from(files).map((file) => URL.createObjectURL(file))])
+    const nextImages = Array.from(files)
+      .filter((file) => file.type.startsWith('image/'))
+      .map((file) => URL.createObjectURL(file))
+    onChange([...images, ...nextImages])
   }
-  const removeImage = (idx: number) => setImages((current) => current.filter((_, i) => i !== idx))
-  const submit = () => {
-    const html = editorRef.current?.innerHTML.trim() ?? ''
-    if (!html || html === '<br>') {
-      toast.error('Add some feedback before submitting')
-      return
-    }
-    onSubmit({ html, images })
-    if (editorRef.current) editorRef.current.innerHTML = ''
-    setImages([])
+  const removeImage = (idx: number) => onChange(images.filter((_, i) => i !== idx))
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setIsDragging(false)
+    addImages(event.dataTransfer.files)
   }
 
   return (
-    <div className="mt-4 rounded-xl border p-4">
-      <div className="mb-2 text-xs font-semibold">Add feedback</div>
-      <div className="flex items-center gap-1 rounded-t-lg border-b bg-slate-50 p-1.5 dark:bg-slate-900/60">
-        <button type="button" className="rounded-md p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800" aria-label="Bold" onClick={() => format('bold')}><Bold className="h-3.5 w-3.5" /></button>
-        <button type="button" className="rounded-md p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800" aria-label="Italic" onClick={() => format('italic')}><Italic className="h-3.5 w-3.5" /></button>
-        <button type="button" className="rounded-md p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800" aria-label="Bullet list" onClick={() => format('insertUnorderedList')}><List className="h-3.5 w-3.5" /></button>
+    <div className="sm:col-span-2 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-sm font-semibold">Work images</h3>
+          <p className="mt-1 text-xs text-slate-500">Upload photos showing the completed maintenance work.</p>
+        </div>
+        {images.length > 0 && <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">{images.length} image{images.length === 1 ? '' : 's'}</span>}
       </div>
       <div
-        ref={editorRef}
-        contentEditable
-        suppressContentEditableWarning
-        className="min-h-24 w-full rounded-b-lg border bg-white p-3 text-sm outline-none focus:border-blue-500 dark:bg-slate-950"
-        data-placeholder="Describe the work performed, findings, and any follow-up needed..."
-      />
+        onDragOver={(event) => { event.preventDefault(); setIsDragging(true) }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={handleDrop}
+        className={`rounded-xl border-2 border-dashed p-6 text-center transition ${isDragging ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30' : 'border-slate-200 bg-slate-50/70 hover:border-blue-300 hover:bg-blue-50/40 dark:border-slate-700 dark:bg-slate-950/40 dark:hover:border-blue-700'}`}
+      >
+        <ImageIcon className={`mx-auto h-8 w-8 ${isDragging ? 'text-blue-600' : 'text-slate-400'}`} />
+        <p className="mt-3 text-sm font-medium">{isDragging ? 'Drop images here' : 'Drag and drop images here'}</p>
+        <p className="mt-1 text-xs text-slate-500">or select image files from your device</p>
+        <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700">
+          <ImageIcon className="h-3.5 w-3.5" />Choose images
+          <input type="file" accept="image/*" multiple className="sr-only" onChange={(event) => addImages(event.target.files)} />
+        </label>
+      </div>
       {images.length > 0 && (
-        <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {images.map((src, idx) => (
-            <div key={idx} className="group relative h-20 overflow-hidden rounded-lg border">
-              <img src={src} alt="Attachment preview" className="h-full w-full object-cover" />
+            <div key={src} className="group relative aspect-video overflow-hidden rounded-xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-950">
+              <img src={src} alt="Work attachment preview" className="h-full w-full object-cover" />
               <button
                 type="button"
                 aria-label="Remove image"
                 onClick={() => removeImage(idx)}
-                className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100"
+                className="absolute right-2 top-2 rounded-full bg-slate-950/70 p-1.5 text-white opacity-0 shadow-sm transition group-hover:opacity-100 focus:opacity-100"
               >
-                <Trash2 className="h-3 w-3" />
+                <Trash2 className="h-3.5 w-3.5" />
               </button>
             </div>
           ))}
         </div>
       )}
-      <div className="mt-3 flex items-center justify-between">
-        <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-blue-600 hover:text-blue-700">
-          <ImageIcon className="h-4 w-4" />Attach images
-          <input type="file" accept="image/*" multiple className="sr-only" onChange={(ev) => addImages(ev.target.files)} />
-        </label>
-        <Button onClick={submit}><Send className="h-4 w-4" />Submit feedback</Button>
+    </div>
+  )
+}
+
+function FeedbackComposer({ onChange }: Readonly<{ onChange: (html: string) => void }>) {
+  const editorRef = useRef<HTMLDivElement>(null)
+
+  const format = (command: string) => {
+    editorRef.current?.focus()
+    document.execCommand(command)
+  }
+
+  return (
+    <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="mb-2 flex items-center justify-between">
+        <label htmlFor="engineer-feedback-editor" className="text-xs font-semibold">Engineer feedback</label>
+        <span className="text-[10px] text-slate-400">Rich text</span>
+      </div>
+      <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
+          <div className="flex items-center gap-1 border-b bg-slate-50 p-1.5 dark:bg-slate-950">
+          <button type="button" className="rounded-md p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800" aria-label="Bold" onMouseDown={(event) => event.preventDefault()} onClick={() => format('bold')}><Bold className="h-3.5 w-3.5" /></button>
+          <button type="button" className="rounded-md p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800" aria-label="Italic" onMouseDown={(event) => event.preventDefault()} onClick={() => format('italic')}><Italic className="h-3.5 w-3.5" /></button>
+          <button type="button" className="rounded-md p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800" aria-label="Bullet list" onMouseDown={(event) => event.preventDefault()} onClick={() => format('insertUnorderedList')}><List className="h-3.5 w-3.5" /></button>
+        </div>
+      <div
+        ref={editorRef}
+        id="engineer-feedback-editor"
+        role="textbox"
+        aria-multiline="true"
+        aria-label="Engineer feedback rich text"
+        contentEditable
+        suppressContentEditableWarning
+        className="min-h-28 w-full bg-white p-3 text-sm outline-none empty:before:content-[attr(data-placeholder)] empty:before:text-slate-400 focus:bg-blue-50/20 dark:bg-slate-950 dark:focus:bg-blue-950/10"
+        data-placeholder="Describe the work performed, findings, and any follow-up needed..."
+        onInput={(event) => onChange(event.currentTarget.innerHTML)}
+      />
       </div>
     </div>
   )
 }
 
-function RecordField({ label, value }: Readonly<{ label: string; value: string }>) {
+function RecordInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = 'text',
+  min,
+  step,
+}: Readonly<{
+  label: string
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+  type?: 'text' | 'number'
+  min?: string
+  step?: string
+}>) {
   return (
-    <div className="rounded-xl border bg-slate-50 p-3 dark:bg-slate-900/60">
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{label}</div>
-      <div className="mt-1 text-sm">{value}</div>
-    </div>
+    <label className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900">
+      <span className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400">{label}</span>
+      <input
+        className="mt-2 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white dark:border-slate-700 dark:bg-slate-950 dark:focus:bg-slate-900"
+        type={type}
+        value={value}
+        min={min}
+        step={step}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </label>
+  )
+}
+
+function RecordToggle({
+  label,
+  checked,
+  onChange,
+}: Readonly<{ label: string; checked: boolean; onChange: (checked: boolean) => void }>) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`flex items-center justify-between rounded-xl border p-3 text-left shadow-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${
+        checked
+          ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30'
+          : 'border-slate-200 bg-white hover:border-blue-300 dark:border-slate-700 dark:bg-slate-900'
+      }`}
+    >
+      <span>
+        <span className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400">{label}</span>
+        <span className={`mt-1 block text-sm font-semibold ${checked ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-500'}`}>
+          {checked ? 'Passed' : 'Pending'}
+        </span>
+      </span>
+      <span className={`relative h-6 w-11 rounded-full p-1 transition ${checked ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`}>
+        <span className={`block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
+      </span>
+    </button>
   )
 }
 

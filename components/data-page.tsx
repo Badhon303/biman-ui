@@ -1048,7 +1048,7 @@ export function HistoryPage() {
   const rows = tickets.filter(
     (t) =>
       t.status === "Closed" &&
-      `${t.ticketNo} ${getName(t.equipmentId)} ${t.maintenanceRecord.repairActivity}`
+      `${t.ticketNo} ${getName(t.equipmentId)} ${t.maintenanceRecord.problemDescription}`
         .toLowerCase()
         .includes(q.toLowerCase()),
   );
@@ -1089,7 +1089,7 @@ export function HistoryPage() {
                 <TD className="font-semibold text-blue-600">{t.ticketNo}</TD>
                 <TD>{getName(t.equipmentId)}</TD>
                 <TD>{t.dueDate}</TD>
-                <TD>{t.maintenanceRecord.repairActivity}</TD>
+                <TD>{t.maintenanceRecord.problemDescription}</TD>
                 <TD>{t.maintenanceRecord.partsUsed || "None"}</TD>
                 <TD>{t.downtimeHours ?? 0} hrs</TD>
                 <TD>{t.assignedEngineer}</TD>

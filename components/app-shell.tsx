@@ -31,7 +31,7 @@ const nav = [
     group: "Maintenance",
     items: [
       ["Tickets", "/tickets", ClipboardList],
-      ["Schedule", "/schedule", CalendarClock],
+      ["V Service Schedules", "/schedule", CalendarClock],
       ["Requests", "/requests", Wrench],
     ],
   },

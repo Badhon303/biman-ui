@@ -528,14 +528,12 @@ export const tickets: Ticket[] = [
     maintenanceRecord: {
       problemDescription: "Scheduled 250 hour preventive service.",
       inspectionChecklist: baseChecklist(),
-      rootCause: "",
-      repairActivity: "",
+      workImages: [],
       partsUsed: "",
       labourHours: 0,
-      engineerNotes: "",
+      engineerFeedback: "",
       functionalTestPassed: false,
       safetyCheckPassed: false,
-      finalApproval: false,
     },
     history: [
       {
@@ -563,14 +561,12 @@ export const tickets: Ticket[] = [
       problemDescription:
         "Operator reported hydraulic fluid pooling under tow bar during towing operations.",
       inspectionChecklist: baseChecklist().map((c) => ({ ...c, checked: true })),
-      rootCause: "Worn seal on main lift cylinder.",
-      repairActivity: "Cylinder removed for seal replacement.",
+      workImages: [],
       partsUsed: "Seal kit HK-2201",
       labourHours: 4,
-      engineerNotes: "Awaiting seal kit delivery to complete repair.",
+      engineerFeedback: "<p>Awaiting seal kit delivery to complete repair.</p>",
       functionalTestPassed: false,
       safetyCheckPassed: false,
-      finalApproval: false,
     },
     history: [
       {
@@ -608,14 +604,12 @@ export const tickets: Ticket[] = [
     maintenanceRecord: {
       problemDescription: "Cabin interior light not turning on.",
       inspectionChecklist: baseChecklist(),
-      rootCause: "",
-      repairActivity: "",
+      workImages: [],
       partsUsed: "",
       labourHours: 0,
-      engineerNotes: "",
+      engineerFeedback: "",
       functionalTestPassed: false,
       safetyCheckPassed: false,
-      finalApproval: false,
     },
     history: [
       {
@@ -641,14 +635,12 @@ export const tickets: Ticket[] = [
     maintenanceRecord: {
       problemDescription: "Scheduled 250 hour preventive service.",
       inspectionChecklist: baseChecklist().map((c) => ({ ...c, checked: true })),
-      rootCause: "N/A",
-      repairActivity: "Lubrication, filter replacement, torque check on step assembly.",
+      workImages: [],
       partsUsed: "Oil filter OF-110, Grease 2x",
       labourHours: 3,
-      engineerNotes: "All checks passed, ready for verification.",
+      engineerFeedback: "<p>All checks passed, ready for verification.</p>",
       functionalTestPassed: true,
       safetyCheckPassed: true,
-      finalApproval: false,
     },
     history: [
       {
@@ -693,14 +685,12 @@ export const tickets: Ticket[] = [
     maintenanceRecord: {
       problemDescription: "Lift motor cuts out and overheats under load.",
       inspectionChecklist: baseChecklist().map((c) => ({ ...c, checked: true })),
-      rootCause: "Motor bearing failure.",
-      repairActivity: "Motor removed for bearing replacement.",
+      workImages: [],
       partsUsed: "Bearing set BR-440",
       labourHours: 6,
-      engineerNotes: "Requested replacement bearing set - awaiting approval from Biman Admin.",
+      engineerFeedback: "<p>Requested replacement bearing set - awaiting approval from Biman Admin.</p>",
       functionalTestPassed: false,
       safetyCheckPassed: false,
-      finalApproval: false,
     },
     history: [
       {
@@ -740,14 +730,12 @@ export const tickets: Ticket[] = [
     maintenanceRecord: {
       problemDescription: "Routine weekly wash.",
       inspectionChecklist: baseChecklist().map((c) => ({ ...c, checked: true })),
-      rootCause: "N/A",
-      repairActivity: "Full exterior wash, degrease undercarriage.",
+      workImages: [],
       partsUsed: "N/A",
       labourHours: 1,
-      engineerNotes: "Completed without issue.",
+      engineerFeedback: "<p>Completed without issue.</p>",
       functionalTestPassed: true,
       safetyCheckPassed: true,
-      finalApproval: true,
     },
     history: [
       {
@@ -787,14 +775,12 @@ export const tickets: Ticket[] = [
     maintenanceRecord: {
       problemDescription: "Scheduled monthly service.",
       inspectionChecklist: baseChecklist().map((c) => ({ ...c, checked: true })),
-      rootCause: "N/A",
-      repairActivity: "Filter change, battery water top-up, output test.",
+      workImages: [],
       partsUsed: "Air filter AF-90",
       labourHours: 2,
-      engineerNotes: "All parameters within spec.",
+      engineerFeedback: "<p>All parameters within spec.</p>",
       functionalTestPassed: true,
       safetyCheckPassed: true,
-      finalApproval: true,
     },
     history: [
       {
@@ -835,14 +821,12 @@ export const tickets: Ticket[] = [
     maintenanceRecord: {
       problemDescription: "AC output cold air stopped, compressor clutch not engaging.",
       inspectionChecklist: baseChecklist().map((c) => ({ ...c, checked: true })),
-      rootCause: "Faulty compressor clutch relay.",
-      repairActivity: "Replaced relay and tested compressor cycle.",
+      workImages: [],
       partsUsed: "Relay RLY-12, Refrigerant 2kg",
       labourHours: 5,
-      engineerNotes: "Unit still flagged out of service pending final electrical audit.",
+      engineerFeedback: "<p>Unit still flagged out of service pending final electrical audit.</p>",
       functionalTestPassed: true,
       safetyCheckPassed: true,
-      finalApproval: true,
     },
     history: [
       {
@@ -879,14 +863,12 @@ export const tickets: Ticket[] = [
     maintenanceRecord: {
       problemDescription: "Routine weekly wash.",
       inspectionChecklist: baseChecklist(),
-      rootCause: "",
-      repairActivity: "",
+      workImages: [],
       partsUsed: "",
       labourHours: 0,
-      engineerNotes: "",
+      engineerFeedback: "",
       functionalTestPassed: false,
       safetyCheckPassed: false,
-      finalApproval: false,
     },
     history: [
       {
@@ -912,14 +894,12 @@ export const tickets: Ticket[] = [
     maintenanceRecord: {
       problemDescription: "Scheduled 500 hour preventive service.",
       inspectionChecklist: baseChecklist(),
-      rootCause: "",
-      repairActivity: "",
+      workImages: [],
       partsUsed: "",
       labourHours: 0,
-      engineerNotes: "",
+      engineerFeedback: "",
       functionalTestPassed: false,
       safetyCheckPassed: false,
-      finalApproval: false,
     },
     history: [
       {
@@ -952,14 +932,12 @@ export const tickets: Ticket[] = [
     maintenanceRecord: {
       problemDescription: "Side access panel cover is loose and rattling.",
       inspectionChecklist: baseChecklist().map((c) => ({ ...c, checked: true })),
-      rootCause: "Missing fasteners.",
-      repairActivity: "Replacing fasteners and re-securing panel.",
+      workImages: [],
       partsUsed: "Fasteners M6 x4",
       labourHours: 1,
-      engineerNotes: "In progress, near completion.",
+      engineerFeedback: "<p>In progress, near completion.</p>",
       functionalTestPassed: false,
       safetyCheckPassed: false,
-      finalApproval: false,
     },
     history: [
       {
@@ -996,14 +974,12 @@ export const tickets: Ticket[] = [
     maintenanceRecord: {
       problemDescription: "Scheduled 250 hour preventive service - overdue.",
       inspectionChecklist: baseChecklist(),
-      rootCause: "",
-      repairActivity: "",
+      workImages: [],
       partsUsed: "",
       labourHours: 0,
-      engineerNotes: "",
+      engineerFeedback: "",
       functionalTestPassed: false,
       safetyCheckPassed: false,
-      finalApproval: false,
     },
     history: [
       {
@@ -1028,14 +1004,12 @@ export const tickets: Ticket[] = [
     maintenanceRecord: {
       problemDescription: "Routine weekly wash - overdue.",
       inspectionChecklist: baseChecklist(),
-      rootCause: "",
-      repairActivity: "",
+      workImages: [],
       partsUsed: "",
       labourHours: 0,
-      engineerNotes: "",
+      engineerFeedback: "",
       functionalTestPassed: false,
       safetyCheckPassed: false,
-      finalApproval: false,
     },
     history: [
       {
@@ -1064,14 +1038,12 @@ export const tickets: Ticket[] = [
     maintenanceRecord: {
       problemDescription: "Cart will not roll, wheel bearing seized.",
       inspectionChecklist: baseChecklist().map((c) => ({ ...c, checked: true })),
-      rootCause: "Bearing corrosion due to water ingress.",
-      repairActivity: "Wheel and bearing assembly replaced.",
+      workImages: [],
       partsUsed: "Wheel bearing WB-20",
       labourHours: 3,
-      engineerNotes: "Cart taken out of active rotation, flagged inactive pending review.",
+      engineerFeedback: "<p>Cart taken out of active rotation, flagged inactive pending review.</p>",
       functionalTestPassed: true,
       safetyCheckPassed: true,
-      finalApproval: true,
     },
     history: [
       {
@@ -1111,14 +1083,12 @@ export const tickets: Ticket[] = [
     maintenanceRecord: {
       problemDescription: "Scheduled monthly service.",
       inspectionChecklist: baseChecklist().map((c) => ({ ...c, checked: true })),
-      rootCause: "N/A",
-      repairActivity: "Tank flush, valve inspection.",
+      workImages: [],
       partsUsed: "Valve seal kit",
       labourHours: 2,
-      engineerNotes: "Completed without issue.",
+      engineerFeedback: "<p>Completed without issue.</p>",
       functionalTestPassed: true,
       safetyCheckPassed: true,
-      finalApproval: true,
     },
     history: [
       {
@@ -1157,14 +1127,12 @@ export const tickets: Ticket[] = [
     maintenanceRecord: {
       problemDescription: "Digital control panel display flickers intermittently.",
       inspectionChecklist: baseChecklist().map((c) => ({ ...c, checked: true })),
-      rootCause: "Loose display ribbon connector.",
-      repairActivity: "Reseated ribbon connector, cleaned contacts.",
+      workImages: [],
       partsUsed: "N/A",
       labourHours: 1.5,
-      engineerNotes: "Ready for verification.",
+      engineerFeedback: "<p>Ready for verification.</p>",
       functionalTestPassed: true,
       safetyCheckPassed: true,
-      finalApproval: false,
     },
     history: [
       {
@@ -1202,14 +1170,12 @@ export const tickets: Ticket[] = [
     maintenanceRecord: {
       problemDescription: "Routine weekly wash.",
       inspectionChecklist: baseChecklist(),
-      rootCause: "",
-      repairActivity: "",
+      workImages: [],
       partsUsed: "",
       labourHours: 0,
-      engineerNotes: "",
+      engineerFeedback: "",
       functionalTestPassed: false,
       safetyCheckPassed: false,
-      finalApproval: false,
     },
     history: [
       {

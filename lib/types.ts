@@ -75,14 +75,12 @@ export interface ChecklistItem {
 export interface MaintenanceRecord {
   problemDescription: string;
   inspectionChecklist: ChecklistItem[];
-  rootCause: string;
-  repairActivity: string;
+  workImages: string[];
   partsUsed: string;
   labourHours: number;
-  engineerNotes: string;
+  engineerFeedback: string;
   functionalTestPassed: boolean;
   safetyCheckPassed: boolean;
-  finalApproval: boolean;
 }
 export interface TicketHistory {
   id: string;
