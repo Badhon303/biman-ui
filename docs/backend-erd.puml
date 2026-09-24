@@ -47,6 +47,7 @@ entity "EQUIPMENT_TYPE_SERVICE" as equipment_type_service {
   --
   equipment_type_id : uuid <<FK>>
   code : enum
+  is_custom : boolean
   name : varchar
   min_hours : decimal <<nullable>>
   max_hours : decimal <<nullable>>
@@ -325,15 +326,28 @@ equipment ||--o{ equipment_request : requested_for
 note right of hour_meter_service_check
   Updating the hour meter only records a reading.
   An authorized user must explicitly trigger this check.
-  F/B/C/D/E PM tickets are created when a new
-  hour band is crossed. Use idempotency_key or
-  a unique equipment/service/cycle constraint.
+  F/B/C/D/E and custom (Others) PM tickets are created
+  when a new hour band is crossed. Use idempotency_key
+  or a unique equipment/service/cycle constraint.
+end note
+
+note right of equipment_type_service
+  All hour-band services on one equipment type
+  (F, B, C, D, E, and any is_custom bands) must
+  form one contiguous, non-overlapping sequence
+  starting at 0 hours: band[i].max_hours must equal
+  band[i+1].min_hours, validated on create/update.
+  V-Service (months set) is excluded from this check.
+  is_custom = true services map to ticket
+  service_type = "Others"; pm_service_id on the
+  ticket identifies exactly which service fired.
 end note
 
 note right of maintenance_schedule
   Only V-Service is scheduled.
   V-Service repeats every 6 months.
-  F/B/C/D/E are manual hour-meter service checks.
+  F/B/C/D/E and custom (Others) services are
+  triggered only via manual hour-meter service checks.
 end note
 
 note right of file_asset
