@@ -1,7 +1,7 @@
 @startuml biman_gse_logbook_erd
 
-' Backend-oriented ERD derived from lib/types.ts and lib/mock-data.ts
-' Nested TypeScript objects are modeled as relational child tables.
+' Approximate backend domain ERD.
+' The final Prisma/TypeORM schema may normalize or split these entities as implementation requires.
 
 !theme plain
 hide methods
@@ -18,21 +18,47 @@ skinparam note {
 }
 
 entity "USER" as user {
-  *id : varchar <<PK>>
+  *id : uuid <<PK>>
   --
   name : varchar
   initials : varchar
   role : enum
-  organization : varchar
+  organization : enum
   email : varchar <<UQ>>
+  password_hash : text
+  must_change_password : boolean
   status : enum
+  created_at : datetime
+  updated_at : datetime
+  deleted_at : datetime <<nullable>>
+}
+
+entity "EQUIPMENT_TYPE" as equipment_type {
+  *id : uuid <<PK>>
+  --
+  name : varchar <<UQ>>
+  created_at : datetime
+  updated_at : datetime
+  deleted_at : datetime <<nullable>>
+}
+
+entity "EQUIPMENT_TYPE_SERVICE" as equipment_type_service {
+  *id : uuid <<PK>>
+  --
+  equipment_type_id : uuid <<FK>>
+  code : enum
+  name : varchar
+  min_hours : decimal <<nullable>>
+  max_hours : decimal <<nullable>>
+  months : int <<nullable>>
+  sort_order : int
 }
 
 entity "EQUIPMENT" as equipment {
-  *id : varchar <<PK>>
+  *id : uuid <<PK>>
   --
   asset_no : varchar <<UQ>>
-  equipment_type_id : varchar <<FK>>
+  equipment_type_id : uuid <<FK>>
   manufacturer : varchar
   model : varchar
   engine_model : varchar
@@ -42,213 +68,294 @@ entity "EQUIPMENT" as equipment {
   location : varchar
   status : enum
   hour_meter : decimal <<nullable>>
+  current_hour_service_id : uuid <<FK, nullable>>
   actual_gt_date : date <<nullable>>
   ship_date : date <<nullable>>
   shipping_status : varchar <<nullable>>
   emission_rating : varchar <<nullable>>
+  created_at : datetime
+  updated_at : datetime
+  deleted_at : datetime <<nullable>>
+}
+
+entity "FILE_ASSET" as file_asset {
+  *id : uuid <<PK>>
+  --
+  relative_path : text
+  thumbnail_relative_path : text <<nullable>>
+  purpose : enum
+  mime_type : varchar
+  size_bytes : bigint
+  thumbnail_size_bytes : bigint <<nullable>>
+  original_size_bytes : bigint <<nullable>>
+  width : int <<nullable>>
+  height : int <<nullable>>
+  sha256 : varchar <<nullable>>
+  status : enum
+  uploaded_by_user_id : uuid <<FK>>
+  created_at : datetime
+  attached_at : datetime <<nullable>>
+  deleted_at : datetime <<nullable>>
 }
 
 entity "EQUIPMENT_PHOTO" as equipment_photo {
-  *id : bigint <<PK>>
+  *id : uuid <<PK>>
   --
-  equipment_id : varchar <<FK>>
-  file_url : text
+  equipment_id : uuid <<FK>>
+  file_asset_id : uuid <<FK, UQ>>
+  slot : enum
   uploaded_at : datetime
-  uploaded_by_user_id : varchar <<FK, nullable>>
 }
 
 entity "EQUIPMENT_SPECIFICATION" as specification {
-  *id : bigint <<PK>>
+  *id : uuid <<PK>>
   --
-  equipment_id : varchar <<FK>>
+  equipment_id : uuid <<FK>>
   label : varchar
   value : varchar
 }
 
 entity "EQUIPMENT_DOCUMENT" as equipment_document {
-  *id : varchar <<PK>>
+  *id : uuid <<PK>>
   --
-  equipment_id : varchar <<FK>>
+  equipment_id : uuid <<FK>>
+  file_asset_id : uuid <<FK, UQ>>
   name : varchar
-  type : varchar
+  type : enum
   expiry_date : date <<nullable>>
-  uploaded_date : date
+  uploaded_at : datetime
 }
 
 entity "HOUR_METER_READING" as hour_meter_reading {
-  *id : varchar <<PK>>
+  *id : uuid <<PK>>
   --
-  equipment_id : varchar <<FK>>
+  equipment_id : uuid <<FK>>
   value : decimal
-  recorded_at : date
-  recorded_by_user_id : varchar <<FK>>
+  recorded_at : datetime
+  recorded_by_user_id : uuid <<FK>>
 }
 
-entity "EQUIPMENT_TYPE" as equipment_type {
-  *id : varchar <<PK>>
+entity "HOUR_METER_SERVICE_CHECK" as hour_meter_service_check {
+  *id : uuid <<PK>>
   --
-  name : varchar
-}
-
-entity "EQUIPMENT_TYPE_SERVICE" as equipment_type_service {
-  *id : varchar <<PK>>
-  --
-  equipment_type_id : varchar <<FK>>
-  name : varchar
-  min_hours : decimal <<nullable>>
-  max_hours : decimal <<nullable>>
-  months : int <<nullable>>
+  equipment_id : uuid <<FK>>
+  service_id : uuid <<FK>>
+  previous_value : decimal
+  current_value : decimal
+  triggered_by_user_id : uuid <<FK>>
+  triggered_at : datetime
+  ticket_id : uuid <<FK, nullable>>
+  idempotency_key : varchar <<UQ>>
 }
 
 entity "TICKET" as ticket {
-  *id : varchar <<PK>>
+  *id : uuid <<PK>>
   --
   ticket_no : varchar <<UQ>>
-  equipment_id : varchar <<FK>>
+  equipment_id : uuid <<FK>>
   service_type : enum
-  pm_type : varchar <<nullable>>
+  source : enum
+  pm_service_id : uuid <<FK, nullable>>
   fault_description : text <<nullable>>
   priority : enum
   status : enum
   due_date : date
-  created_date : date
-  assigned_engineer_user_id : varchar <<FK, nullable>>
-  created_by_user_id : varchar <<FK>>
+  created_at : datetime
+  assigned_engineer_user_id : uuid <<FK, nullable>>
+  created_by_user_id : uuid <<FK>>
   requesting_party : varchar
-  closed_date : date <<nullable>>
+  closed_at : datetime <<nullable>>
   downtime_hours : decimal <<nullable>>
+  service_check_id : uuid <<FK, nullable>>
 }
 
 entity "MAINTENANCE_RECORD" as maintenance_record {
-  *id : bigint <<PK>>
+  *id : uuid <<PK>>
   --
-  ticket_id : varchar <<FK, UQ>>
+  ticket_id : uuid <<FK, UQ>>
   problem_description : text
   parts_used : text
   labour_hours : decimal
-  engineer_feedback_html : text
   functional_test_passed : boolean
   safety_check_passed : boolean
 }
 
-entity "CHECKLIST_ITEM" as checklist_item {
-  *id : varchar <<PK>>
+entity "CHECKLIST_TEMPLATE_ITEM" as checklist_template_item {
+  *id : uuid <<PK>>
   --
-  maintenance_record_id : bigint <<FK>>
+  equipment_type_id : uuid <<FK, nullable>>
+  service_type : enum <<nullable>>
+  category : varchar
+  label : varchar
+  sort_order : int
+  active : boolean
+}
+
+entity "CHECKLIST_ITEM" as checklist_item {
+  *id : uuid <<PK>>
+  --
+  maintenance_record_id : uuid <<FK>>
+  template_item_id : uuid <<FK, nullable>>
   category : varchar
   label : varchar
   checked : boolean
+  sort_order : int
+}
+
+entity "TICKET_FEEDBACK" as ticket_feedback {
+  *id : uuid <<PK>>
+  --
+  ticket_id : uuid <<FK>>
+  author_user_id : uuid <<FK>>
+  body_html : text
+  created_at : datetime
+}
+
+entity "FEEDBACK_IMAGE" as feedback_image {
+  *id : uuid <<PK>>
+  --
+  feedback_id : uuid <<FK>>
+  file_asset_id : uuid <<FK, UQ>>
 }
 
 entity "WORK_IMAGE" as work_image {
-  *id : bigint <<PK>>
+  *id : uuid <<PK>>
   --
-  maintenance_record_id : bigint <<FK>>
-  file_url : text
-  uploaded_by_user_id : varchar <<FK, nullable>>
+  maintenance_record_id : uuid <<FK>>
+  file_asset_id : uuid <<FK, UQ>>
+  uploaded_by_user_id : uuid <<FK>>
   uploaded_at : datetime
 }
 
 entity "TICKET_HISTORY" as ticket_history {
-  *id : varchar <<PK>>
+  *id : uuid <<PK>>
   --
-  ticket_id : varchar <<FK>>
+  ticket_id : uuid <<FK>>
   label : varchar
   timestamp : datetime
-  actor_user_id : varchar <<FK, nullable>>
+  actor_user_id : uuid <<FK, nullable>>
 }
 
 entity "MAINTENANCE_SCHEDULE" as maintenance_schedule {
-  *id : varchar <<PK>>
+  *id : uuid <<PK>>
   --
   schedule_no : varchar <<UQ>>
-  equipment_id : varchar <<FK>>
-  ticket_id : varchar <<FK, nullable>>
+  equipment_id : uuid <<FK>>
+  service_id : uuid <<FK>>
+  ticket_id : uuid <<FK, nullable>>
   last_date : date
   due_date : date
   status : enum
 }
 
 entity "EQUIPMENT_REQUEST" as equipment_request {
-  *id : varchar <<PK>>
+  *id : uuid <<PK>>
   --
   request_no : varchar <<UQ>>
-  ticket_id : varchar <<FK>>
-  equipment_id : varchar <<FK>>
+  ticket_id : uuid <<FK>>
+  equipment_id : uuid <<FK>>
   item : varchar
   quantity : int
   reason : text
-  requested_by_user_id : varchar <<FK>>
-  requested_date : date
+  requested_by_user_id : uuid <<FK>>
+  requested_at : datetime
   status : enum
-  approved_by_user_id : varchar <<FK, nullable>>
-  approved_date : date <<nullable>>
+  approved_by_user_id : uuid <<FK, nullable>>
+  approved_at : datetime <<nullable>>
 }
 
 entity "APP_NOTIFICATION" as notification {
-  *id : varchar <<PK>>
+  *id : uuid <<PK>>
   --
-  recipient_user_id : varchar <<FK, nullable>>
+  recipient_user_id : uuid <<FK>>
   type : varchar
   message : text
-  timestamp : datetime
-  read : boolean
+  created_at : datetime
+  read_at : datetime <<nullable>>
 }
 
-' Core ownership and ticket relationships
+' User relationships
 user ||--o{ ticket : creates
 user ||--o{ ticket : assigned_to
-equipment ||--o{ ticket : has
-
-ticket ||--|| maintenance_record : contains
-maintenance_record ||--o{ checklist_item : has
-maintenance_record ||--o{ work_image : includes
-ticket ||--o{ ticket_history : records
 user ||--o{ ticket_history : acts
+user ||--o{ ticket_feedback : authors
+user ||--o{ hour_meter_reading : records
+user ||--o{ hour_meter_service_check : triggers
+user ||--o{ equipment_request : requests
+user |o--o{ equipment_request : approves
+user ||--o{ notification : receives
+user ||--o{ file_asset : uploads
 
-' Equipment and service catalog relationships
+' Equipment and file relationships
+equipment_type ||--o{ equipment : categorizes
+equipment_type ||--o{ equipment_type_service : defines
+equipment_type_service |o--o{ equipment : current_service
 equipment ||--o{ equipment_photo : has
 equipment ||--o{ specification : has
 equipment ||--o{ equipment_document : stores
-equipment_type ||--o{ equipment : categorizes
 equipment ||--o{ hour_meter_reading : records
-user ||--o{ hour_meter_reading : records
-equipment_type ||--o{ equipment_type_service : defines
+equipment ||--o{ hour_meter_service_check : checks
+equipment_type_service ||--o{ hour_meter_service_check : triggers
+equipment_photo }o--|| file_asset : uses
+equipment_document }o--|| file_asset : uses
+
+' Ticket and maintenance relationships
+equipment ||--o{ ticket : has
+equipment_type_service ||--o{ ticket : pm_service
+ticket |o--o| hour_meter_service_check : originated_from
+ticket ||--|| maintenance_record : contains
+maintenance_record ||--o{ checklist_item : has
+maintenance_record ||--o{ work_image : includes
+ticket ||--o{ ticket_feedback : has
+ticket_feedback ||--o{ feedback_image : includes
+feedback_image }o--|| file_asset : uses
+work_image }o--|| file_asset : uses
+maintenance_record ||--o{ ticket_history : records
+ticket ||--o{ ticket_history : records
+checklist_template_item }o--o| equipment_type : specializes
+checklist_template_item |o--o{ checklist_item : cloned_into
 
 ' Scheduling and requests
-equipment ||--o{ maintenance_schedule : scheduled_for
-ticket |o--o| maintenance_schedule : optionally_generates
+ equipment ||--o{ maintenance_schedule : scheduled_for
+equipment_type_service ||--o{ maintenance_schedule : schedules
+ticket |o--o| maintenance_schedule : generated_for
 ticket ||--o{ equipment_request : requires
 equipment ||--o{ equipment_request : requested_for
-user ||--o{ equipment_request : requests
-user |o--o{ equipment_request : approves
-user |o--o{ work_image : uploads
-user |o--o{ notification : receives
 
-note right of ticket
-  Current mock data stores assignedEngineer,
-  createdBy, actor, and request user values as
-  display names. Use user IDs as FKs in backend.
+note right of hour_meter_service_check
+  Updating the hour meter only records a reading.
+  An authorized user must explicitly trigger this check.
+  F/B/C/D/E PM tickets are created when a new
+  hour band is crossed. Use idempotency_key or
+  a unique equipment/service/cycle constraint.
 end note
 
-note right of maintenance_record
-  workImages is represented as WORK_IMAGE rows
-  instead of a string array. Store rich text as
-  sanitized HTML or an editor JSON document.
+note right of maintenance_schedule
+  Only V-Service is scheduled.
+  V-Service repeats every 6 months.
+  F/B/C/D/E are manual hour-meter service checks.
 end note
 
-note bottom of equipment_type_service
-  EquipmentType.services is a nested array
-  in the frontend model.
+note right of file_asset
+  Local filesystem only.
+  Store optimized WebP + thumbnail for images.
+  Keep uploads outside the public web root.
+  Serve through authenticated API endpoints.
+end note
+
+note bottom of checklist_template_item
+  Select the most specific template by
+  equipment_type + PM service, then fall back
+  to equipment type or global default.
 end note
 
 legend right
   |= Symbol |= Meaning |
-  | PK | Primary key |
-  | FK | Foreign key |
-  | UQ | Unique constraint |
-  | nullable | Optional field |
-  | enum | Constrained status/type value |
+  | PK | Primary Key |
+  | FK | Foreign Key |
+  | UQ | Unique Constraint |
+  | nullable | Optional Field |
+  | enum | Constrained Status/Type Value |
 endlegend
 
 @enduml
