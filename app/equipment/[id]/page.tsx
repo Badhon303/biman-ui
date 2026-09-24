@@ -165,8 +165,8 @@ export default function EquipmentProfile() {
               Type
               <Input
                 className="mt-2"
-                value={draft.type}
-                onChange={(ev) => updateDraft({ type: ev.target.value })}
+                value={draft.equipmentType}
+                onChange={(ev) => updateDraft({ equipmentType: ev.target.value })}
               />
             </label>
             <label className="text-xs font-semibold">
@@ -213,7 +213,7 @@ export default function EquipmentProfile() {
             <div className="mb-2 text-xs font-semibold uppercase tracking-[.18em] text-blue-600">
               Digital logbook / {e.assetNo}
             </div>
-            <h1 className="text-3xl font-semibold tracking-tight">{e.type}</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">{e.equipmentType}</h1>
             <p className="mt-2 text-sm text-slate-500">
               {e.manufacturer} {e.model} · {e.location}
             </p>
@@ -337,7 +337,7 @@ export default function EquipmentProfile() {
               ) : (
                 <div className="grid gap-6 sm:grid-cols-2">
                   <Info label="Asset no." value={e.assetNo} />
-                  <Info label="Equipment type" value={e.type} />
+                  <Info label="Equipment type" value={e.equipmentType} />
                   <Info label="Manufacturer" value={e.manufacturer} />
                   <Info label="Model" value={e.model} />
                   <Info label="Location" value={e.location} />

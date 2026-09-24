@@ -5,6 +5,7 @@ import type {
   EquipmentType,
   EquipmentTypeService,
   MaintenanceSchedule,
+  TicketType,
   Ticket,
   User,
 } from "@/lib/types";
@@ -91,7 +92,7 @@ export const equipment: Equipment[] = [
   {
     id: "eq1",
     assetNo: "BGM-001",
-    type: "Belt Loader",
+    equipmentType: "Belt Loader",
     manufacturer: "TLD",
     model: "NBL-800",
     engineModel: "Kubota V2403",
@@ -131,7 +132,7 @@ export const equipment: Equipment[] = [
   {
     id: "eq2",
     assetNo: "BGM-002",
-    type: "Push-Back",
+    equipmentType: "Push-Back",
     manufacturer: "TLD",
     model: "TMX-150",
     engineModel: "Cummins QSB 4.5",
@@ -154,7 +155,7 @@ export const equipment: Equipment[] = [
   {
     id: "eq3",
     assetNo: "BGM-003",
-    type: "Ground Power Unit",
+    equipmentType: "Ground Power Unit",
     manufacturer: "TLD",
     model: "GPU-90",
     engineModel: "John Deere 4045",
@@ -183,7 +184,7 @@ export const equipment: Equipment[] = [
   {
     id: "eq4",
     assetNo: "BGM-004",
-    type: "Passenger Steps",
+    equipmentType: "Passenger Steps",
     manufacturer: "EINSA",
     model: "PS-4500",
     engineModel: "N/A",
@@ -205,7 +206,7 @@ export const equipment: Equipment[] = [
   {
     id: "eq5",
     assetNo: "BGM-005",
-    type: "AC Units",
+    equipmentType: "AC Units",
     manufacturer: "TLD",
     model: "ACU-60",
     engineModel: "Kubota V3800",
@@ -232,7 +233,7 @@ export const equipment: Equipment[] = [
   {
     id: "eq6",
     assetNo: "BGM-006",
-    type: "Push-Back",
+    equipmentType: "Push-Back",
     manufacturer: "TLD",
     model: "TMX-150",
     engineModel: "Cummins QSB 4.5",
@@ -252,7 +253,7 @@ export const equipment: Equipment[] = [
   {
     id: "eq7",
     assetNo: "BGM-007",
-    type: "Push-Back",
+    equipmentType: "Push-Back",
     manufacturer: "TLD",
     model: "TPX-400",
     engineModel: "Cummins QSL9",
@@ -274,7 +275,7 @@ export const equipment: Equipment[] = [
   {
     id: "eq8",
     assetNo: "BGM-008",
-    type: "Air Start Unit",
+    equipmentType: "Air Start Unit",
     manufacturer: "TLD",
     model: "ASU-50",
     engineModel: "N/A",
@@ -291,7 +292,7 @@ export const equipment: Equipment[] = [
   {
     id: "eq9",
     assetNo: "BGM-009",
-    type: "Pallet Transporter",
+    equipmentType: "Pallet Transporter",
     manufacturer: "TLD",
     model: "CL-7000",
     engineModel: "N/A",
@@ -308,7 +309,7 @@ export const equipment: Equipment[] = [
   {
     id: "eq10",
     assetNo: "BGM-010",
-    type: "Push-Back",
+    equipmentType: "Push-Back",
     manufacturer: "TLD",
     model: "TB-100",
     engineModel: "N/A",
@@ -325,7 +326,7 @@ export const equipment: Equipment[] = [
   {
     id: "eq11",
     assetNo: "BGM-011",
-    type: "Pallet Transporter",
+    equipmentType: "Pallet Transporter",
     manufacturer: "TLD",
     model: "BC-25",
     engineModel: "N/A",
@@ -342,7 +343,7 @@ export const equipment: Equipment[] = [
   {
     id: "eq12",
     assetNo: "BGM-012",
-    type: "Water/Flush Cart",
+    equipmentType: "Water/Flush Cart",
     manufacturer: "TLD",
     model: "LSV-300",
     engineModel: "N/A",
@@ -359,7 +360,7 @@ export const equipment: Equipment[] = [
   {
     id: "eq13",
     assetNo: "BGM-013",
-    type: "Water/Flush Cart",
+    equipmentType: "Water/Flush Cart",
     manufacturer: "TLD",
     model: "PWV-200",
     engineModel: "N/A",
@@ -376,7 +377,7 @@ export const equipment: Equipment[] = [
   {
     id: "eq14",
     assetNo: "BGM-014",
-    type: "Ground Power Unit",
+    equipmentType: "Ground Power Unit",
     manufacturer: "TLD",
     model: "GPU-90",
     engineModel: "John Deere 4045",
@@ -515,11 +516,24 @@ const baseChecklist = (): Ticket["maintenanceRecord"]["inspectionChecklist"] => 
   { id: "c60", category: "General", label: "Safety/identification stickers checked", checked: false },
 ];
 
+export const ticketServiceTypes: TicketType[] = [
+  "F-Service",
+  "B-Service",
+  "C-Service",
+  "D-Service",
+  "E-Service",
+  "V-Service",
+  "Breakdown",
+  "General",
+  "Washing",
+  "Others",
+];
+
 export const tickets: Ticket[] = [
   {
     id: "t1",
     ticketNo: "PM-2026-001",
-    serviceType: "Preventive Maintenance",
+    serviceType: "F-Service",
     equipmentId: "eq1",
     priority: "Medium",
     status: "Open",
@@ -550,7 +564,7 @@ export const tickets: Ticket[] = [
   {
     id: "t2",
     ticketNo: "BM-2026-018",
-    serviceType: "Breakdown Maintenance",
+    serviceType: "Breakdown",
     equipmentId: "eq2",
     faultDescription: "Hydraulic leak from main lift cylinder",
     priority: "High",
@@ -595,7 +609,7 @@ export const tickets: Ticket[] = [
   {
     id: "t3",
     ticketNo: "GM-2026-005",
-    serviceType: "General Maintenance",
+    serviceType: "General",
     equipmentId: "eq5",
     faultDescription: "Cabin light not working",
     priority: "Low",
@@ -626,7 +640,7 @@ export const tickets: Ticket[] = [
   {
     id: "t4",
     ticketNo: "PM-2026-021",
-    serviceType: "Preventive Maintenance",
+    serviceType: "F-Service",
     equipmentId: "eq4",
     priority: "Medium",
     status: "Awaiting Verification",
@@ -675,7 +689,7 @@ export const tickets: Ticket[] = [
   {
     id: "t5",
     ticketNo: "BM-2026-019",
-    serviceType: "Breakdown Maintenance",
+    serviceType: "Breakdown",
     equipmentId: "eq9",
     faultDescription: "Main lift motor overheating",
     priority: "High",
@@ -719,7 +733,7 @@ export const tickets: Ticket[] = [
   {
     id: "t6",
     ticketNo: "WS-2026-011",
-    serviceType: "washing",
+    serviceType: "Washing",
     equipmentId: "eq1",
     priority: "Low",
     status: "Completed",
@@ -764,7 +778,7 @@ export const tickets: Ticket[] = [
   {
     id: "t7",
     ticketNo: "PM-2026-014",
-    serviceType: "Preventive Maintenance",
+    serviceType: "F-Service",
     equipmentId: "eq3",
     priority: "Medium",
     status: "Closed",
@@ -809,7 +823,7 @@ export const tickets: Ticket[] = [
   {
     id: "t8",
     ticketNo: "BM-2026-020",
-    serviceType: "Breakdown Maintenance",
+    serviceType: "Breakdown",
     equipmentId: "eq5",
     faultDescription: "Compressor not engaging",
     priority: "High",
@@ -855,7 +869,7 @@ export const tickets: Ticket[] = [
   {
     id: "t9",
     ticketNo: "WS-2026-012",
-    serviceType: "scheduled",
+    serviceType: "Washing",
     equipmentId: "eq7",
     priority: "Low",
     status: "Open",
@@ -885,7 +899,7 @@ export const tickets: Ticket[] = [
   {
     id: "t10",
     ticketNo: "PM-2026-022",
-    serviceType: "Preventive Maintenance",
+    serviceType: "F-Service",
     equipmentId: "eq6",
     priority: "Medium",
     status: "Assigned",
@@ -922,7 +936,7 @@ export const tickets: Ticket[] = [
   {
     id: "t11",
     ticketNo: "GM-2026-006",
-    serviceType: "General Maintenance",
+    serviceType: "General",
     equipmentId: "eq8",
     faultDescription: "Loose panel cover",
     priority: "Low",
@@ -966,7 +980,7 @@ export const tickets: Ticket[] = [
   {
     id: "t12",
     ticketNo: "PM-2026-023",
-    serviceType: "Preventive Maintenance",
+    serviceType: "F-Service",
     equipmentId: "eq10",
     priority: "Medium",
     status: "Open",
@@ -996,7 +1010,7 @@ export const tickets: Ticket[] = [
   {
     id: "t13",
     ticketNo: "WS-2026-013",
-    serviceType: "scheduled",
+    serviceType: "Washing",
     equipmentId: "eq9",
     priority: "Low",
     status: "Open",
@@ -1026,7 +1040,7 @@ export const tickets: Ticket[] = [
   {
     id: "t14",
     ticketNo: "BM-2026-021",
-    serviceType: "Breakdown Maintenance",
+    serviceType: "Breakdown",
     equipmentId: "eq11",
     faultDescription: "Wheel bearing seized",
     priority: "Medium",
@@ -1072,7 +1086,7 @@ export const tickets: Ticket[] = [
   {
     id: "t15",
     ticketNo: "PM-2026-024",
-    serviceType: "Preventive Maintenance",
+    serviceType: "F-Service",
     equipmentId: "eq12",
     priority: "Medium",
     status: "Closed",
@@ -1117,7 +1131,7 @@ export const tickets: Ticket[] = [
   {
     id: "t16",
     ticketNo: "GM-2026-007",
-    serviceType: "General Maintenance",
+    serviceType: "General",
     equipmentId: "eq14",
     faultDescription: "Control panel display flickering",
     priority: "Medium",
@@ -1161,7 +1175,7 @@ export const tickets: Ticket[] = [
   {
     id: "t17",
     ticketNo: "WS-2026-014",
-    serviceType: "scheduled",
+    serviceType: "Washing",
     equipmentId: "eq13",
     priority: "Low",
     status: "Assigned",

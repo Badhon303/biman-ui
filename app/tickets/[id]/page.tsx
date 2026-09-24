@@ -184,7 +184,7 @@ export default function TicketDetail() {
         <div>
           <div className="mb-2 text-xs font-semibold uppercase tracking-[.18em] text-blue-600">Maintenance ticket / {t.ticketNo}</div>
           <h1 className="text-3xl font-semibold tracking-tight">{t.faultDescription ?? t.maintenanceRecord.problemDescription}</h1>
-          <p className="mt-2 text-sm text-slate-500">{e?.assetNo} · {e?.type} · raised {t.createdDate}</p>
+          <p className="mt-2 text-sm text-slate-500">{e?.assetNo} · {e?.equipmentType} · raised {t.createdDate}</p>
         </div>
         <StatusBadge status={status} />
       </div>
@@ -347,7 +347,7 @@ export default function TicketDetail() {
               ) : (
                 <Info label="Priority" value={t.priority} />
               )}
-              <Info label="Asset" value={`${e?.assetNo} · ${e?.type}`} />
+              <Info label="Asset" value={`${e?.assetNo} · ${e?.equipmentType}`} />
               {editing ? (
                 <label className="flex items-center justify-between gap-4 border-b pb-3 text-xs">
                   <span className="text-slate-500">Assigned engineer</span>

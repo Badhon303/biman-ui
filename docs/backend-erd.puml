@@ -32,7 +32,7 @@ entity "EQUIPMENT" as equipment {
   *id : varchar <<PK>>
   --
   asset_no : varchar <<UQ>>
-  type : varchar
+  equipment_type_id : varchar <<FK>>
   manufacturer : varchar
   model : varchar
   engine_model : varchar
@@ -210,6 +210,7 @@ user ||--o{ ticket_history : acts
 equipment ||--o{ equipment_photo : has
 equipment ||--o{ specification : has
 equipment ||--o{ equipment_document : stores
+equipment_type ||--o{ equipment : categorizes
 equipment ||--o{ hour_meter_reading : records
 user ||--o{ hour_meter_reading : records
 equipment_type ||--o{ equipment_type_service : defines

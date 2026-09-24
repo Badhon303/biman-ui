@@ -29,7 +29,7 @@ export default function Dashboard() {
   const isBiman = role === "Biman Admin";
   const ownTickets = isEngineer ? tickets.filter((t) => t.assignedEngineer === user.name) : tickets;
   const filtered = equipment.filter((e) =>
-    `${e.assetNo} ${e.type} ${e.location}`.toLowerCase().includes(search.toLowerCase()),
+    `${e.assetNo} ${e.equipmentType} ${e.location}`.toLowerCase().includes(search.toLowerCase()),
   );
   const availableCount = equipment.filter((e) => e.status === "Available").length;
   const maintenanceCount = equipment.filter((e) => e.status === "Under Maintenance").length;
@@ -209,14 +209,14 @@ export default function Dashboard() {
               >
                 <div className="flex items-center gap-3">
                   <div className="grid h-9 w-9 place-items-center rounded-lg bg-slate-100 text-xs font-bold text-slate-500 dark:bg-slate-800">
-                    {e.type
+                    {e.equipmentType
                       .split(" ")
                       .map((x) => x[0])
                       .join("")
                       .slice(0, 2)}
                   </div>
                   <div>
-                    <div className="text-sm font-semibold">{e.type}</div>
+                    <div className="text-sm font-semibold">{e.equipmentType}</div>
                     <div className="text-xs text-slate-500">
                       {e.assetNo} · {e.location}
                     </div>
@@ -272,7 +272,7 @@ export default function Dashboard() {
           />
           <div className="divide-y">
             {tickets
-              .filter((t) => t.serviceType === "Preventive Maintenance")
+              .filter((t) => t.serviceType === "F-Service")
               .slice(0, 4)
               .map((t) => (
                 <Link
@@ -281,7 +281,7 @@ export default function Dashboard() {
                   key={t.id}
                 >
                   <div>
-                    <div className="text-sm font-semibold">{getEquipment(t.equipmentId)?.type}</div>
+                    <div className="text-sm font-semibold">{getEquipment(t.equipmentId)?.equipmentType}</div>
                     <div className="mt-1 text-xs text-slate-500">
                       {t.ticketNo} · {t.assignedEngineer}
                     </div>
@@ -389,7 +389,7 @@ function TicketRows({ rows }: { rows: typeof tickets }) {
             <div className="text-sm font-semibold">
               {t.ticketNo}{" "}
               <span className="ml-1 font-normal text-slate-500">
-                · {getEquipment(t.equipmentId)?.type}
+                · {getEquipment(t.equipmentId)?.equipmentType}
               </span>
             </div>
             <div className="mt-1 text-xs text-slate-500">

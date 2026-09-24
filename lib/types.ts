@@ -1,7 +1,16 @@
 export type Role = "Super Admin" | "Manager" | "Engineer" | "Biman Admin";
 export type EquipmentStatus = "Available" | "Under Maintenance" | "Out of Service" | "Inactive";
 export type TicketType =
-  "Preventive Maintenance" | "Breakdown Maintenance" | "General Maintenance" | "washing" | "scheduled";
+  | "F-Service"
+  | "B-Service"
+  | "C-Service"
+  | "D-Service"
+  | "E-Service"
+  | "V-Service"
+  | "Breakdown"
+  | "General"
+  | "Washing"
+  | "Others";
 export type TicketStatus =
   | "Open"
   | "Assigned"
@@ -33,7 +42,7 @@ export interface HourMeterReading {
 export interface Equipment {
   id: string;
   assetNo: string;
-  type: string;
+  equipmentType: string;
   manufacturer: string;
   model: string;
   engineModel: string;

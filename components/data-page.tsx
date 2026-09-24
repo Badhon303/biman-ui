@@ -32,6 +32,7 @@ import {
   engineers,
   nextAssetNo,
   equipmentTypes,
+  ticketServiceTypes,
 } from "@/lib/mock-data";
 import type { Equipment } from "@/lib/types";
 import { isOverdue, overdueBy } from "@/lib/utils";
@@ -67,14 +68,7 @@ export function TicketsPage() {
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [ticketRows, setTicketRows] = useState(tickets);
-  const types = [
-    "All",
-    "Preventive Maintenance",
-    "Breakdown Maintenance",
-    "General Maintenance",
-    "washing",
-    "scheduled",
-  ];
+  const types = ["All", ...ticketServiceTypes];
   const rows = ticketRows.filter(
     (t) =>
       (filter === "All" || t.serviceType === filter) &&
@@ -87,7 +81,7 @@ export function TicketsPage() {
       <PageHeader
         eyebrow="Maintenance / Tickets"
         title="Tickets"
-        subtitle="One queue for preventive, breakdown, corrective and washing work."
+        subtitle="One queue for F, B, C, D, E and V services, breakdown, general, washing and custom work."
         action={
           <Button onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4" />
@@ -113,17 +107,7 @@ export function TicketsPage() {
                 onClick={() => setFilter(t)}
                 className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${filter === t ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"}`}
               >
-                {t === "Preventive Maintenance"
-                  ? "PM"
-                  : t === "Breakdown Maintenance"
-                    ? "Breakdown"
-                    : t === "General Maintenance"
-                      ? "General"
-                      : t === "washing"
-                        ? "Washing"
-                        : t === "scheduled"
-                          ? "Scheduled"
-                          : t}
+                {t}
               </button>
             ))}
           </div>
@@ -215,6 +199,9 @@ export function TicketsPage() {
   );
 }
 function TicketModal({ onClose }: { onClose: () => void }) {
+  const [serviceType, setServiceType] = useState(ticketServiceTypes[0]);
+  const [customService, setCustomService] = useState("");
+
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm">
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900">
@@ -249,19 +236,37 @@ function TicketModal({ onClose }: { onClose: () => void }) {
                 </option>
                 {equipment.map((item) => (
                   <option key={item.id} value={item.id}>
-                    {item.assetNo} · {item.type}
+                    {item.assetNo} · {item.equipmentType}
                   </option>
                 ))}
               </Select>
             </label>
             <label className="text-xs font-semibold">
-              Ticket type
-              <Select className="mt-2 w-full" defaultValue="Breakdown Maintenance">
-                <option>Breakdown Maintenance</option>
-                <option>General Maintenance</option>
-                <option>Washing</option>
+              Service type
+              <Select
+                className="mt-2 w-full"
+                value={serviceType}
+                onChange={(event) => setServiceType(event.target.value as (typeof ticketServiceTypes)[number])}
+              >
+                {ticketServiceTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
               </Select>
             </label>
+            {serviceType === "Others" && (
+              <label className="text-xs font-semibold">
+                Custom service
+                <Input
+                  className="mt-2"
+                  value={customService}
+                  onChange={(event) => setCustomService(event.target.value)}
+                  placeholder="Enter custom service type"
+                  required
+                />
+              </label>
+            )}
             <label className="text-xs font-semibold">
               Priority
               <Select className="mt-2 w-full" defaultValue="Medium">
@@ -356,7 +361,7 @@ function RichTextEditor({ placeholder }: { placeholder: string }) {
   );
 }
 function getName(id: string) {
-  return equipment.find((e) => e.id === id)?.type ?? id;
+  return equipment.find((e) => e.id === id)?.equipmentType ?? id;
 }
 function EquipmentModal({
   onClose,
@@ -406,7 +411,7 @@ function EquipmentModal({
             onAdd({
               id: `eq${Date.now()}`,
               assetNo,
-              type,
+              equipmentType: type,
               manufacturer,
               model,
               engineModel,
@@ -610,7 +615,7 @@ export function EquipmentPage() {
   const rows = equipmentList.filter(
     (e) =>
       (status === "All" || e.status === status) &&
-      `${e.assetNo} ${e.type} ${e.manufacturer} ${e.location}`
+      `${e.assetNo} ${e.equipmentType} ${e.manufacturer} ${e.location}`
         .toLowerCase()
         .includes(q.toLowerCase()),
   );
@@ -683,7 +688,7 @@ export function EquipmentPage() {
           <THead>
             <TR>
               <TH>Asset no.</TH>
-              <TH>Type</TH>
+              <TH>Equipment Type</TH>
               <TH>Manufacturer / model</TH>
               <TH>Hour meter</TH>
               <TH>Biman serial no.</TH>
@@ -703,7 +708,7 @@ export function EquipmentPage() {
                 </TD>
                 <TD>
                   <Link href={`/equipment/${e.id}`} className="font-medium hover:text-blue-600">
-                    {e.type}
+                    {e.equipmentType}
                   </Link>
                 </TD>
                 <TD>
@@ -880,7 +885,7 @@ function RequestModal({
               >
                 {equipment.map((item) => (
                   <option key={item.id} value={item.id}>
-                    {item.assetNo} · {item.type}
+                    {item.assetNo} · {item.equipmentType}
                   </option>
                 ))}
               </Select>

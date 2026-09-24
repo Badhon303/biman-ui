@@ -17,7 +17,7 @@ const DUE_SOON_DAYS = 15;
 
 function equipmentName(id: string) {
   const item = equipment.find((entry) => entry.id === id);
-  return item ? `${item.type} · ${item.assetNo}` : id;
+  return item ? `${item.equipmentType} · ${item.assetNo}` : id;
 }
 
 function formatDate(value: string) {
