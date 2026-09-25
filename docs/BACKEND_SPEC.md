@@ -49,9 +49,12 @@ logbook + CMMS (Computerized Maintenance Management System)**:
 Notes for backend:
 - Users belong to an `organization` (`NGGL` or `Biman`/`Biman Bangladesh`) which is independent of
   `role` but role implies a default org (Biman Admin ⇒ Biman org; other three roles ⇒ NGGL).
+  Super Admin manages accounts for both organizations within this app (decided — see §9).
 - `status`: `Active | Inactive`. Inactive users cannot authenticate.
-- Only **Super Admin** creates user accounts, with a **default/temporary password** the new user
-  must change on first login (force `must_change_password` flag).
+- Only **Super Admin** creates and manages user accounts for both NGGL and Biman organizations
+  within this app, with a **default/temporary password** the new user must change on first login
+  (force `must_change_password` flag). Biman users have no separate external provisioning process
+  (decided — see §9).
 - Any authenticated user can change their own password (old password required).
 
 ## 3. Core Modules (NestJS)
@@ -61,8 +64,8 @@ controller/service/repository, DTOs, and Swagger annotations):
 
 1. **AuthModule** — login (JWT access + refresh token), password change, forced password reset,
    guards (`JwtAuthGuard`, `RolesGuard`), `@Roles()` decorator.
-2. **UsersModule** — CRUD for NGGL users (Super Admin only), list Biman users (read-only for
-   others), profile/self endpoints.
+2. **UsersModule** — CRUD for NGGL and Biman users (Super Admin only), profile/self endpoints
+   (Biman Admin accounts are managed in this app; see §5.1 and §9).
 3. **EquipmentTypesModule** — CRUD for equipment types and their nested `services` (Super
    Admin/Manager), including the contiguous-hour-band validation for F/B/C/D/E and custom
    (`Others`) services described in §5.2.
@@ -172,9 +175,9 @@ schema:
   8. Re-run this same validation whenever services are added, edited, reordered, or removed, and
      on equipment-type creation.
 - A custom hour-band service's ticket type is always `Others`; it does not get its own
-  `TicketType` enum value. If an equipment type ever needs more than one custom band, all of them
-  share the `Others` ticket type — the specific service is identified via
-  `Ticket.pmServiceId` (FK to `EquipmentTypeService`), not by ticket type alone.
+  `TicketType` enum value. An equipment type may define multiple custom bands, which all share the
+  `Others` ticket type — the specific service is identified via `Ticket.pmServiceId` (FK to
+  `EquipmentTypeService`), not by ticket type alone (decided — see §9).
 - Deleting an equipment type in use by equipment should be blocked or require reassignment
   (default: **block delete if referenced by any equipment**).
 - Editing service bands on an equipment type that already has equipment assigned must re-run the
@@ -188,8 +191,8 @@ schema:
   specifications, documents, and photos.
 - **Hour meter updates**: Engineer, Manager, or Super Admin can update an equipment's hour meter
   (`POST /equipment/:id/hour-meter`). Rules:
-  1. New value must be `>= current hourMeter` (monotonic; reject decreases unless a separate,
-     explicitly audited correction workflow is implemented).
+  1. New value must be `>= current hourMeter`. Hour meters are strictly monotonic; reject any
+     decrease. No correction workflow is supported in this version (decided — see §9).
   2. Persist a new `HOUR_METER_READING` row (value, recordedAt, recordedByUserId); never mutate
      history, only append.
   3. Update `Equipment.hourMeter` to the new value in the same transaction.
@@ -199,11 +202,12 @@ schema:
      type's hour-band services — F/B/C/D/E and any custom hour-band services — which are
      validated to be contiguous and gap-free per §5.2.
   5. The manual service-check compares the previous serviced threshold/cycle with the current
-     meter. If a new hour band has been crossed:
+     meter. If a new hour band has been crossed or equal:
      a. Create one PM ticket with `serviceType` equal to the applicable standard service
         (`F-Service`…`E-Service`) or `Others` if the crossed band is a custom hour-band service.
         Set `pmServiceId` to the specific `EquipmentTypeService` that was crossed, `priority =
-        Medium` by default, `status = Open`, and the authenticated user as actor.
+        Medium` by default, `status = Open`, and the authenticated user as actor. The operator must
+        manually enter a due date for the ticket; there is no default grace period (decided — see §9).
      b. Clone the checklist for that equipment and PM service into the ticket's maintenance record.
      c. Record the triggered service/threshold and update the equipment's current service state so
         repeating the action is idempotent.
@@ -212,11 +216,9 @@ schema:
   6. The service-check operation must be idempotent: repeated clicks/requests for the same
      equipment, service band, and maintenance cycle must not create duplicate tickets. Enforce
      this with a transaction plus a unique business key or an equivalent locked lookup.
-  7. Because bands are contiguous and gap-free (§5.2), a single service-check may need to walk
-     through more than one crossed band if the meter jumped by a large amount (e.g. skipped
-     straight from below D-Service to above E-Service). Create one ticket per crossed band, in
-     ascending order, unless the business decides only the highest crossed band should get a
-     ticket — confirm this with stakeholders (see §9).
+  7. Because bands are contiguous and gap-free (§5.2), a single service-check may cross more than
+     one band if the meter jumped by a large amount (e.g. skipped straight from below D-Service to
+     above E-Service). Create one ticket per crossed band, in ascending order (decided — see §9).
   8. A manual service-check may be performed immediately after recording the meter or later. It
      must use the latest persisted meter value and must be auditable (`triggeredByUserId`, time,
      previous value, current value, and selected service band).
@@ -257,6 +259,9 @@ schema:
 - User-created ticket types are **only** `Breakdown`, `General`, and `Washing`, and these can be
   created by Super Admin, Manager, and Biman Admin. `faultDescription`/problem description is
   required.
+- Every ticket requires an operator-entered due date, including PM tickets created by a manual
+  hour-meter service-check. There is no default PM grace period; if one service-check creates
+  multiple tickets, enter a due date for each resulting ticket (decided — see §9).
 - `Others` must never be exposed as a manually selectable type in the create-ticket form/DTO — it
   is exclusively an auto-generated PM ticket type, on the same footing as F/B/C/D/E, not a
   user-created category.
@@ -272,7 +277,9 @@ schema:
     (`Final submit`) — checklist, parts used, labour hours, functional/safety checks, feedback
     required (non-empty).
   - `Completed`/`Closed`: Manager/Super Admin action (`Verify & close`) — reviews the maintenance
-    record and closes the ticket, sets `closedDate`, `downtimeHours` (computed or entered).
+    record and closes the ticket, sets `closedDate`, and computes `downtimeHours` from
+    `createdDate`/`closedDate` by default. Manager/Super Admin may edit or override downtime hours
+    during verification (decided — see §9).
   - Any transition/edit appends a `TICKET_HISTORY` row (actor + label + timestamp) and emits a
     notification (per requirements: "other actions on the ticket generate notifications").
 - **Priority**: `Low | Medium | High | Critical` — settable at creation and editable by
@@ -287,16 +294,19 @@ schema:
 
 ### 5.6 Inspection Checklist
 
-- A master checklist template exists per (equipment type, or globally — current mock data uses
-  one **shared 60-item checklist** across all equipment types, grouped into categories: `Body
-  Work, Engine, Transmission, Rear Axle, Brake, Hydraulic, Wheels & Suspension, Electrical,
-  Greasing, Safety, General`).
-- Model as `CHECKLIST_TEMPLATE_ITEM(id, equipment_type_id NULLABLE, category, label, sort_order)`
-  — `equipment_type_id NULL` = applies to all types (global default), otherwise type-specific
-  overrides. This is inferred from the requirement *"Based on the service type inspection
-  checklist is different"* — the current mock only ships one template, so the schema should
-  support **per-service-type / per-equipment-type checklist templates** even though seed data may
-  only populate one.
+- Checklist templates are keyed by PM service: `F`, `B`, `C`, `D`, `E`, `V`, or `Others`
+  (decided — see §9). A standard service uses its service key; each custom `Others` hour-band
+  service is further scoped by its `EquipmentTypeService` ID, since an equipment type may define
+  multiple custom bands and each requires its own template.
+- The current mock data ships one **shared 60-item checklist** across all equipment types, grouped
+  into categories: `Body Work, Engine, Transmission, Rear Axle, Brake, Hydraulic, Wheels &
+  Suspension, Electrical, Greasing, Safety, General`. The implementation must support distinct
+  templates for each PM service and each custom `Others` service even if seed data initially
+  populates only one.
+- Model template items with the PM service key and, for custom `Others` templates, the corresponding
+  `equipment_type_service_id`; e.g. `CHECKLIST_TEMPLATE_ITEM(id, pm_service_type,
+  equipment_type_service_id NULLABLE, category, label, sort_order)`. The `Others` key must resolve
+  to its specific `EquipmentTypeService` so templates cannot collide across custom bands.
 - When a ticket is created, clone the applicable template's items into
   `CHECKLIST_ITEM(maintenance_record_id, category, label, checked=false)`.
 - Engineer toggles items via `PATCH /tickets/:id/checklist/:itemId`.
@@ -352,6 +362,8 @@ Persisted, per-user (or broadcast to a role) `AppNotification` rows. Trigger mat
   failures) from ticket `downtimeHours` + `closedDate`, PM compliance (scheduled work completed
   on/before due date vs. late). Can be computed on-demand with SQL aggregates initially; consider
   materialized views or a nightly BullMQ job if datasets grow.
+- `downtimeHours` is computed from `createdDate`/`closedDate` by default and may be edited or
+  overridden by Manager/Super Admin during `Verify & close` (decided — see §9).
 
 ### 5.11 Local File Storage & Image Optimization
 
@@ -377,7 +389,8 @@ filesystem paths.
    - `.rotate()` first (apply EXIF orientation), then strip all metadata (EXIF/GPS) — smaller
      files and no location leakage.
    - Resize to fit within **1600 × 1600 px** (`fit: 'inside'`, `withoutEnlargement: true`).
-   - Encode as **WebP, quality ~75–80** (`effort: 4`). WebP is chosen over AVIF for faster
+   - Encode as **WebP, quality 78** (`effort: 4`); 1600 px / WebP q78 is confirmed sufficient for
+     inspection evidence (decided — see §9). WebP is chosen over AVIF for faster
      encoding and universal browser support; AVIF may be evaluated later.
    - Generate a **thumbnail variant**: 320 px, WebP quality ~70, used for lists, grids, and
      ticket/feedback previews.
@@ -454,8 +467,9 @@ photo slot) is saved. `PENDING` assets older than 24 h are deleted by the
 - Set `Content-Type`, `Content-Length`, `ETag`, and a restrictive `Cache-Control` header. Use
   `Content-Disposition: inline` for images and `attachment` for documents where appropriate.
 - Frontends should render thumbnails by default and load the full image only on click/zoom.
-- If the app later runs behind a reverse proxy/CDN, configure private caching carefully; do not
-  make the upload directory or raw filesystem paths publicly accessible.
+- Authenticated API routes are sufficient for image delivery in this version. A reverse proxy/CDN
+  may be layered on later without a data-model change; configure private caching carefully and do
+  not make the upload directory or raw filesystem paths publicly accessible (decided — see §9).
 
 #### Deletion & retention
 
@@ -548,32 +562,29 @@ transaction with a unique business key or an equivalent locked lookup.
   with a test Postgres/Redis via Docker Compose.
 - **Environment**: Docker Compose for local Postgres + Redis; `.env` for secrets (never commit).
 
-## 9. Open Questions / Assumptions (flag to stakeholders before finalizing schema)
+## 9. Resolved Decisions
 
-1. **Checklist templates**: mock data has one shared 60-item checklist, but the requirement states
-   that the checklist differs by service type. Confirm whether templates should be authored per
-   `EquipmentType`, per PM service (`F/B/C/D/E/V/Others`), or both. Recommendation: key templates
-   by `(equipment_type_id, pm_service_id)` with fallback to a global default, since `Others` can
-   represent a different custom service per equipment type.
-2. **Hour-meter decrease handling**: assume hour meters are monotonic; decide whether corrections
-   need a separate audited correction workflow.
-3. **PM ticket due date**: the mock does not define a grace period after a manual hour-meter
-   service-check. Choose a configurable default or require the operator to enter a due date.
-4. **Downtime hours**: currently manually entered per ticket in the mock. Decide if this should be
-   auto-computed from `createdDate`/`closedDate` timestamps instead/also.
-5. **Biman Admin's own users**: currently view-only "Biman users" list is seeded, not managed via
-   the app — confirm whether Biman-side user provisioning happens elsewhere or should also be
-   Super-Admin-managed.
-6. **Image delivery**: confirm that authenticated API routes are sufficient, or decide whether a
-   reverse proxy/CDN should be added later for private caching. Do not expose the upload directory
-   directly.
-7. **Image quality**: confirm 1600 px / WebP q78 is sufficient for inspection evidence (e.g.
-   reading serial plates or damage close-ups). Raise to 2048 px if engineers need more detail;
-   storage per image grows roughly with pixel count.
-8. **Multiple bands crossed at once**: if the hour meter jumps far enough to cross more than one
-   band since the last service-check (e.g. skipping straight past D-Service into E-Service),
-   confirm whether the backend should create a ticket for every crossed band or only the highest
-   one. §5.3 defaults to "one ticket per crossed band" pending confirmation.
-9. **Multiple custom (`Others`) bands per equipment type**: confirm whether an equipment type may
-   define more than one custom hour-band service (all sharing ticket type `Others`, disambiguated
-   by `pmServiceId`), or whether the business only ever needs at most one custom band per type.
+All previously open questions have been resolved with the stakeholder, and the sections above have
+been updated accordingly. Each decision below is cross-referenced from its related requirements.
+
+1. **Checklist templates**: keyed per PM service (`F/B/C/D/E/V/Others`), with `Others` further
+   scoped per `EquipmentTypeService` since an equipment type may have multiple custom bands. See
+   §5.6.
+2. **Hour-meter decrease handling**: strictly rejected — hour meters are monotonic, with no
+   supported correction workflow in this version. See §5.3.
+3. **PM ticket due date**: no default grace period — the operator must manually enter a due date for
+   every ticket, including PM tickets from a manual hour-meter service-check (one due date per
+   resulting ticket if multiple bands are crossed). See §5.3, §5.5.
+4. **Downtime hours**: auto-computed by default from `createdDate`/`closedDate`, but remains
+   editable/overridable by Manager/Super Admin at `Verify & close`. See §5.5, §5.10.
+5. **Biman Admin's own users**: Super-Admin-managed within this app, same as NGGL users — no
+   separate external provisioning process. See §2, §3, §5.1.
+6. **Image delivery**: authenticated API routes are sufficient for this version; a reverse
+   proxy/CDN can be layered on later without a data-model change. See §5.11.
+7. **Image quality**: 1600 px / WebP q78 confirmed sufficient for inspection evidence; no change to
+   the pipeline. See §5.11.
+8. **Multiple bands crossed at once**: one ticket is created per crossed band, in ascending order —
+   confirmed as final behavior. See §5.3.
+9. **Multiple custom (`Others`) bands per equipment type**: supported — an equipment type may define
+   more than one custom hour-band service, each disambiguated by `pmServiceId` (and, for checklists,
+   by its own template). See §5.2, §5.6.
