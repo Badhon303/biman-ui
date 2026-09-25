@@ -1,2 +1,3 @@
-import { RequestsPage } from '@/components/data-page'
+import { RequestsPage } from '@/components/requests-page'
+
 export default RequestsPage

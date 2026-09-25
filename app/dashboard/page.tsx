@@ -27,7 +27,7 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const isEngineer = role === "Engineer";
   const isBiman = role === "Biman Admin";
-  const ownTickets = isEngineer ? tickets.filter((t) => t.assignedEngineer === user.name) : tickets;
+  const ownTickets = isEngineer ? tickets.filter((t) => t.assignedEngineer === user?.name) : tickets;
   const filtered = equipment.filter((e) =>
     `${e.assetNo} ${e.equipmentType} ${e.location}`.toLowerCase().includes(search.toLowerCase()),
   );
@@ -40,7 +40,7 @@ export default function Dashboard() {
       <ShellPage>
         <PageIntro
           eyebrow="Engineer workspace"
-          title={`Good morning, ${user.name.split(" ")[0]}.`}
+          title={`Good morning, ${(user?.name ?? "").split(" ")[0]}.`}
           subtitle="Your assigned work and open equipment requests, all in one place."
         />
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -72,7 +72,7 @@ export default function Dashboard() {
           </Card>
           <Card>
             <SectionTitle title="My equipment requests" action="View requests" href="/requests" />
-            <RequestRows rows={requests.filter((r) => r.requestedBy === user.name)} />
+            <RequestRows rows={requests.filter((r) => r.requestedBy === user?.name)} />
           </Card>
         </div>
       </ShellPage>

@@ -1,2 +1,3 @@
-import { SettingsPage } from '@/components/admin-pages'
+import { SettingsPage } from '@/components/admin-data-pages'
+
 export default SettingsPage

@@ -149,14 +149,28 @@ export interface AppNotification {
   read: boolean;
 }
 export type Notification = AppNotification;
-export interface User {
+export interface ApiUser {
   id: string;
   name: string;
-  role: Role;
-  organization: string;
-  status: "Active" | "Inactive";
-  initials: string;
   email: string;
+  role: Role;
+  organization: "Biman" | "NGGL";
+  status: "Active" | "Inactive";
+  mustChangePassword: boolean;
+  createdAt: string;
+}
+
+export interface User extends Omit<ApiUser, "mustChangePassword" | "createdAt"> {
+  initials?: string;
+  mustChangePassword?: boolean;
+  createdAt?: string;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  page: number;
+  limit: number;
+  total: number;
 }
 export interface DocumentItem {
   id: string;

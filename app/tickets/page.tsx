@@ -1,2 +1,3 @@
-import { TicketsPage } from '@/components/data-page'
+import { TicketsPage } from '@/components/tickets-page'
+
 export default TicketsPage

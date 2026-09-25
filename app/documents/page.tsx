@@ -1,2 +1,3 @@
-import { DocumentsPage } from '@/components/data-page'
+import { DocumentsPage } from '@/components/documents-page'
+
 export default DocumentsPage

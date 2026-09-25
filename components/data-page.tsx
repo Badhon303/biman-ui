@@ -634,7 +634,7 @@ export function EquipmentPage() {
       id: `hm-${Date.now()}`,
       value: parsed,
       recordedAt: new Date().toISOString().slice(0, 10),
-      recordedBy: role,
+      recordedBy: role ?? "Unknown",
     };
     setEquipmentList((current) =>
       current.map((equipment) =>
@@ -941,7 +941,7 @@ export function RequestsPage() {
         id: `REQ-${String(rs.length + 1).padStart(3, "0")}`,
         requestNo: `REQ-${String(rs.length + 1).padStart(3, "0")}`,
         ...data,
-        requestedBy: user.name,
+        requestedBy: user?.name ?? "Unknown",
         requestedDate: "2026-09-07",
         status: "Pending",
       },

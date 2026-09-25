@@ -22,9 +22,9 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRole } from "./role-context";
-import { Role } from "@/lib/types";
-import { notifications } from "@/lib/mock-data";
-import { useState } from "react";
+import { apiRequest } from "@/lib/api-client";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 const nav = [
   { group: "Overview", items: [["Dashboard", "/dashboard", LayoutDashboard]] },
   {
@@ -53,11 +53,42 @@ const nav = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { role, setRole, user } = useRole();
+  const { role, user, loading, mustChangePassword, clearSession } = useRole();
   const { theme, setTheme } = useTheme();
   const [mobile, setMobile] = useState(false);
-  const unread = notifications.filter((n) => !n.read).length;
+  const [unread, setUnread] = useState(0);
   const canAdmin = role === "Super Admin";
+
+  useEffect(() => {
+    if (!user) return;
+    const updateUnread = () => {
+      apiRequest<{ unread: number }>("notifications?page=1&limit=1")
+        .then((result) => setUnread(result.unread))
+        .catch(() => setUnread(0));
+    };
+    window.addEventListener("biman:data-mutation", updateUnread);
+    updateUnread();
+    return () => window.removeEventListener("biman:data-mutation", updateUnread);
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!loading && (!user || mustChangePassword)) router.replace("/login");
+  }, [loading, mustChangePassword, router, user]);
+
+  const signOut = async () => {
+    try {
+      const response = await fetch("/api/logout", { method: "POST" });
+      if (!response.ok) throw new Error("Unable to complete logout.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to complete logout.");
+    } finally {
+      clearSession();
+      router.replace("/login");
+    }
+  };
+
+  if (loading || !user || mustChangePassword) return null;
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <aside
@@ -82,7 +113,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="mx-4 mb-5 rounded-xl border border-white/10 bg-white/5 px-3 py-3">
           <div className="text-[10px] uppercase tracking-widest text-slate-400">Workspace</div>
           <div className="mt-1 flex items-center justify-between text-sm font-medium">
-            Biman Bangladesh
+            {user.organization === "Biman" ? "Biman Bangladesh" : "NGGL"}
           </div>
         </div>
         <nav className="flex-1 space-y-6 px-3">
@@ -114,19 +145,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             </div>
           ))}
-          {canAdmin && (
+          {(canAdmin || role === "Manager") && (
             <div>
               <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[.18em] text-slate-500">
                 Admin
               </div>
               <div className="space-y-1">
-                <Link
-                  href="/users"
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium ${pathname.startsWith("/users") ? "bg-blue-500 text-white" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}
-                >
-                  <Users className="h-4 w-4" />
-                  User management
-                </Link>
+                {canAdmin && (
+                  <Link
+                    href="/users"
+                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium ${pathname.startsWith("/users") ? "bg-blue-500 text-white" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}
+                  >
+                    <Users className="h-4 w-4" />
+                    User management
+                  </Link>
+                )}
                 <Link
                   href="/settings"
                   className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium ${pathname.startsWith("/settings") ? "bg-blue-500 text-white" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}
@@ -148,12 +181,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <div className="truncate text-[11px] text-slate-500">{user.role}</div>
             </div>
           </div>
-          <Link
-            href="/login"
+          <button
+            type="button"
+            onClick={signOut}
             className="mt-2 flex items-center gap-2 px-2 text-xs text-slate-500 hover:text-white"
           >
-            <LogOut className="h-3.5 w-3.5" /> Switch role
-          </Link>
+            <LogOut className="h-3.5 w-3.5" /> Log out
+          </button>
         </div>
       </aside>
       <div className="lg:pl-[252px]">
@@ -194,7 +228,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </button>
             <div className="hidden h-7 w-px bg-slate-200 dark:bg-slate-800 sm:block" />
             <button
-              onClick={() => router.push("/login")}
+              type="button"
+              onClick={signOut}
               className="flex items-center gap-2 text-left"
             >
               <div className="grid h-8 w-8 place-items-center rounded-full bg-slate-900 text-[11px] font-bold text-white dark:bg-blue-600">
