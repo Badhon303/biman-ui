@@ -5,7 +5,7 @@
 > starting point, not a canonical schema: the backend implementation may improve or restructure
 > the entities and relationships when needed. This document describes **modules, workflows,
 > business rules, and technical architecture** so an AI agent (or engineer) can implement the
-> backend without access to the frontend author's intent.
+> backend. It can also take help from frontend author's intent.
 
 ## 1. Purpose & Domain Summary
 
