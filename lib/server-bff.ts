@@ -9,6 +9,7 @@ type LoginResult = Tokens & {
 const accessCookie = "biman_access";
 const refreshCookie = "biman_refresh";
 const apiBaseUrl = (process.env.API_BASE_URL ?? "http://localhost:3001/api").replace(/\/$/, "");
+const appOrigin = process.env.APP_ORIGIN ? new URL(process.env.APP_ORIGIN).origin : null;
 const secureCookie = process.env.NODE_ENV === "production";
 
 function tokenMaxAge(token: string, fallback: number) {
@@ -50,7 +51,8 @@ export function clearAuthCookies(response: NextResponse) {
 }
 
 export function requireSameOrigin(request: NextRequest) {
-  if (request.headers.get("origin") === new URL(request.url).origin) return null;
+  const expectedOrigin = appOrigin ?? new URL(request.url).origin;
+  if (request.headers.get("origin") === expectedOrigin) return null;
   return NextResponse.json({ message: "Invalid request origin." }, { status: 403 });
 }
 
