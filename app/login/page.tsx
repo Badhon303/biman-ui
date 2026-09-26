@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { useRole } from '@/components/role-context'
 import { ApiUser } from '@/lib/types'
 
@@ -17,6 +18,8 @@ export default function Login() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [mustChangePassword, setMustChangePassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const newPasswordIsValid = newPassword.length >= 6
+  const passwordsMatch = confirmPassword.length > 0 && newPassword === confirmPassword
 
   async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -45,6 +48,10 @@ export default function Login() {
 
   async function changePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters long.')
+      return
+    }
     if (newPassword !== confirmPassword) {
       toast.error('The new passwords do not match.')
       return
@@ -95,15 +102,18 @@ export default function Login() {
           </div>
           {mustChangePassword ? (
             <form className="space-y-4" onSubmit={changePassword}>
-              <label className="block text-xs font-semibold">New password<Input className="mt-2" type="password" minLength={12} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} autoComplete="new-password" required /></label>
-              <label className="block text-xs font-semibold">Confirm new password<Input className="mt-2" type="password" minLength={12} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} autoComplete="new-password" required /></label>
-              <Button className="w-full" type="submit" disabled={submitting}>{submitting ? 'Updating…' : 'Update password'}</Button>
+              <label className="block text-xs font-semibold">New password<PasswordInput minLength={6} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} autoComplete="new-password" required /></label>
+              <p aria-live="polite" className={`text-xs ${newPasswordIsValid ? 'text-emerald-600' : 'text-slate-500'}`}>{newPasswordIsValid ? 'Password meets the 6-character minimum.' : 'Password must be at least 6 characters long.'}</p>
+              <label className="block text-xs font-semibold">Confirm new password<PasswordInput minLength={6} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} autoComplete="new-password" required /></label>
+              {confirmPassword.length > 0 && <p aria-live="polite" className={`text-xs ${passwordsMatch ? 'text-emerald-600' : 'text-rose-600'}`}>{passwordsMatch ? 'Passwords match.' : 'Passwords do not match.'}</p>}
+              <Button className="w-full" type="submit" disabled={submitting || !newPasswordIsValid || !passwordsMatch}>{submitting ? 'Updating…' : 'Update password'}</Button>
             </form>
           ) : (
             <form className="space-y-4" onSubmit={signIn}>
               <label className="block text-xs font-semibold">Email<Input className="mt-2" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="username" required /></label>
-              <label className="block text-xs font-semibold">Password<Input className="mt-2" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required /></label>
-              <Button className="w-full" type="submit" disabled={submitting}>{submitting ? 'Signing in…' : 'Sign in'}</Button>
+              <label className="block text-xs font-semibold">Password<PasswordInput minLength={6} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required /></label>
+              {password.length > 0 && password.length < 6 && <p aria-live="polite" className="text-xs text-rose-600">Password must be at least 6 characters long.</p>}
+              <Button className="w-full" type="submit" disabled={submitting || password.length < 6}>{submitting ? 'Signing in…' : 'Sign in'}</Button>
             </form>
           )}
         </div>

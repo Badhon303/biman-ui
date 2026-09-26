@@ -49,6 +49,7 @@ const nav = [
       ["Notifications", "/notifications", Bell],
     ],
   },
+  { group: "Workspace", items: [["Settings", "/settings", Settings]] },
 ];
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -57,7 +58,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { theme, setTheme } = useTheme();
   const [mobile, setMobile] = useState(false);
   const [unread, setUnread] = useState(0);
-  const canAdmin = role === "Super Admin";
+  const canManageUsers = role === "Super Admin" || role === "Manager";
 
   useEffect(() => {
     if (!user) return;
@@ -145,42 +146,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             </div>
           ))}
-          {(canAdmin || role === "Manager") && (
+          {canManageUsers && (
             <div>
               <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[.18em] text-slate-500">
                 Admin
               </div>
               <div className="space-y-1">
-                {canAdmin && (
-                  <Link
-                    href="/users"
-                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium ${pathname.startsWith("/users") ? "bg-blue-500 text-white" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}
-                  >
-                    <Users className="h-4 w-4" />
-                    User management
-                  </Link>
-                )}
                 <Link
-                  href="/settings"
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium ${pathname.startsWith("/settings") ? "bg-blue-500 text-white" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}
+                  href="/users"
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium ${pathname.startsWith("/users") ? "bg-blue-500 text-white" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}
                 >
-                  <Settings className="h-4 w-4" />
-                  Settings
+                  <Users className="h-4 w-4" />
+                  User management
                 </Link>
               </div>
             </div>
           )}
         </nav>
         <div className="border-t border-white/10 p-4">
-          <div className="flex items-center gap-3 rounded-xl p-2">
-            <div className="grid h-8 w-8 place-items-center rounded-full bg-blue-500/20 text-xs font-bold text-blue-300">
-              {user.initials}
-            </div>
-            <div className="min-w-0">
-              <div className="truncate text-xs font-semibold">{user.name}</div>
-              <div className="truncate text-[11px] text-slate-500">{user.role}</div>
-            </div>
-          </div>
           <button
             type="button"
             onClick={signOut}
@@ -227,9 +210,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               )}
             </button>
             <div className="hidden h-7 w-px bg-slate-200 dark:bg-slate-800 sm:block" />
-            <button
-              type="button"
-              onClick={signOut}
+            <div
               className="flex items-center gap-2 text-left"
             >
               <div className="grid h-8 w-8 place-items-center rounded-full bg-slate-900 text-[11px] font-bold text-white dark:bg-blue-600">
@@ -239,7 +220,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <div className="text-xs font-semibold">{user.name}</div>
                 <div className="text-[11px] text-slate-500">{user.role}</div>
               </div>
-            </button>
+            </div>
           </div>
         </header>
         <main className="mx-auto max-w-[1520px] p-5 lg:p-9">{children}</main>
