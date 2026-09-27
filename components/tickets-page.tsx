@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { FormEvent, useEffect, useState } from 'react'
 import { Pencil, Plus, Search } from 'lucide-react'
 import { useRole } from '@/components/role-context'
-import { ShellPage } from '@/components/app-shell'
 import { PageHeader } from '@/components/page-header'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -49,7 +48,7 @@ export function TicketsPage() {
   const serviceTypes = ['All', ...new Set(rows.map((ticket) => ticket.serviceType))]
   const filteredRows = rows.filter((ticket) => serviceType === 'All' || ticket.serviceType === serviceType)
 
-  return <ShellPage>
+  return <>
     <PageHeader eyebrow="Maintenance / Tickets" title="Tickets" subtitle="One queue for maintenance, breakdown, general and washing work." action={canCreate ? <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" />Create ticket</Button> : undefined} />
     <Card>
       <div className="flex flex-col gap-3 border-b p-5 lg:flex-row lg:items-center lg:justify-between"><div className="relative max-w-sm flex-1"><Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" /><Input className="pl-9" placeholder="Search tickets or equipment" value={search} onChange={(event) => setSearch(event.target.value)} /></div><div className="flex flex-wrap gap-2">{serviceTypes.map((type) => <button key={type} type="button" onClick={() => setServiceType(type)} className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${serviceType === type ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'}`}>{type}</button>)}</div></div>
@@ -67,7 +66,7 @@ export function TicketsPage() {
       </>}
     </Card>
     {createOpen && <TicketModal role={role} onClose={() => setCreateOpen(false)} onCreated={() => { setCreateOpen(false); void load() }} />}
-  </ShellPage>
+  </>
 }
 
 function TicketModal({ role, onClose, onCreated }: { role: Role | null; onClose: () => void; onCreated: () => void }) {

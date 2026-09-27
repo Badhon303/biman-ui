@@ -5,13 +5,13 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Calendar, FileText, Pencil, Plus, Printer, Save, ShieldCheck, Trash2, Upload, X } from 'lucide-react'
 import { useRole } from '@/components/role-context'
-import { ShellPage } from '@/components/app-shell'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { StatusBadge } from '@/components/ui/badge'
 import { HourMeterHistory, HourMeterHistoryModal } from '@/components/hour-meter-history'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { ApiEquipment, ApiTicket, fetchAllPages } from '@/lib/api-data'
 import { apiRequest, bffFileUrl } from '@/lib/api-client'
 import { EquipmentType, HourMeterReading, Specification } from '@/lib/types'
@@ -40,6 +40,8 @@ export default function EquipmentProfile() {
   const [historyOpen, setHistoryOpen] = useState(false)
   const [tab, setTab] = useState<EquipmentTab>('Overview')
   const [uploadingSlot, setUploadingSlot] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const load = async () => {
     try {
@@ -99,13 +101,17 @@ export default function EquipmentProfile() {
   }
 
   const remove = async () => {
-    if (!equipment || !window.confirm(`Delete ${equipment.assetNo}?`)) return
+    if (!equipment) return
+    setDeleting(true)
     try {
       await apiRequest(`equipment/${encodeURIComponent(equipment.id)}`, { method: 'DELETE' })
       toast.success('Equipment deleted')
       router.push('/equipment')
     } catch (cause) {
       toast.error(cause instanceof Error ? cause.message : 'Unable to delete equipment.')
+    } finally {
+      setDeleting(false)
+      setConfirmDelete(false)
     }
   }
 
@@ -131,13 +137,13 @@ export default function EquipmentProfile() {
   const addSpec = () => updateDraft({ specifications: [...(draft?.specifications ?? []), { label: '', value: '' }] })
   const removeSpec = (index: number) => updateDraft({ specifications: draft?.specifications.filter((_, i) => i !== index) ?? [] })
 
-  if (loading) return <ShellPage><Card className="p-10 text-center text-sm text-slate-500">Loading equipment…</Card></ShellPage>
-  if (error || !equipment || !draft) return <ShellPage><Card className="p-10 text-center text-sm text-rose-600">{error || 'Equipment not found.'}</Card></ShellPage>
+  if (loading) return <><Card className="p-10 text-center text-sm text-slate-500">Loading equipment…</Card></>
+  if (error || !equipment || !draft) return <><Card className="p-10 text-center text-sm text-rose-600">{error || 'Equipment not found.'}</Card></>
 
   const history = [...(equipment.hourMeterReadings ?? [])].reverse() as HourMeterReading[]
 
-  return <ShellPage>
-    <div className="mb-6 flex items-center justify-between"><Link href="/equipment" className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-blue-600"><ArrowLeft className="h-4 w-4" />Equipment List</Link><div className="flex gap-2">{canManage && !editing && <><Button variant="outline" onClick={startEditing}><Pencil className="h-4 w-4" />Edit</Button><Button variant="outline" onClick={() => void remove()}><Trash2 className="h-4 w-4" />Delete</Button></>}{editing && <><Button variant="outline" onClick={() => { setDraft(equipment); setEditing(false) }}><X className="h-4 w-4" />Cancel</Button><Button onClick={() => void save()} disabled={saving}><Save className="h-4 w-4" />{saving ? 'Saving…' : 'Save changes'}</Button></>}<Button variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4" />Print</Button></div></div>
+  return <>
+    <div className="mb-6 flex items-center justify-between"><Link href="/equipment" className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-blue-600"><ArrowLeft className="h-4 w-4" />Equipment List</Link><div className="flex gap-2">{canManage && !editing && <><Button variant="outline" onClick={startEditing}><Pencil className="h-4 w-4" />Edit</Button><Button variant="outline" onClick={() => setConfirmDelete(true)}><Trash2 className="h-4 w-4" />Delete</Button></>}{editing && <><Button variant="outline" onClick={() => { setDraft(equipment); setEditing(false) }}><X className="h-4 w-4" />Cancel</Button><Button onClick={() => void save()} disabled={saving}><Save className="h-4 w-4" />{saving ? 'Saving…' : 'Save changes'}</Button></>}<Button variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4" />Print</Button></div></div>
     <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">{editing ? <div className="grid flex-1 gap-3 sm:grid-cols-3"><label className="text-xs font-semibold">Type<Select className="mt-2 w-full" value={draft.equipmentTypeId} onChange={(event) => updateDraft({ equipmentTypeId: event.target.value })}>{types.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}</Select></label><label className="text-xs font-semibold">Manufacturer<Input className="mt-2" value={draft.manufacturer} onChange={(event) => updateDraft({ manufacturer: event.target.value })} /></label><label className="text-xs font-semibold">Model<Input className="mt-2" value={draft.model} onChange={(event) => updateDraft({ model: event.target.value })} /></label><label className="text-xs font-semibold sm:col-span-2">Location<Input className="mt-2" value={draft.location} onChange={(event) => updateDraft({ location: event.target.value })} /></label><label className="text-xs font-semibold">Status<Select className="mt-2 w-full" value={draft.status} onChange={(event) => updateDraft({ status: event.target.value })}>{['Available', 'Under Maintenance', 'Out of Service', 'Inactive'].map((item) => <option key={item}>{item}</option>)}</Select></label></div> : <div><div className="mb-2 text-xs font-semibold uppercase tracking-[.18em] text-blue-600">Digital logbook / {equipment.assetNo}</div><h1 className="text-3xl font-semibold tracking-tight">{equipment.equipmentType}</h1><p className="mt-2 text-sm text-slate-500">{equipment.manufacturer} {equipment.model} · {equipment.location}</p></div>}{!editing && <StatusBadge status={equipment.status} />}</div>
     <div className="grid items-start gap-6 lg:grid-cols-[.7fr_1.3fr]"><Card className="self-start p-6"><UploadPhoto label="Primary image" photo={equipment.photos.find((photo) => photo.slot === 'PRIMARY')} className="h-56 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900" canManage={canManage} uploading={uploadingSlot === 'PRIMARY'} onSelect={(file) => void uploadPhoto('PRIMARY', file)} /><div className="mt-5 grid grid-cols-2 gap-3"><UploadPhoto label="Front view" photo={equipment.photos.find((photo) => photo.slot === 'FRONT')} canManage={canManage} uploading={uploadingSlot === 'FRONT'} onSelect={(file) => void uploadPhoto('FRONT', file)} /><UploadPhoto label="Side view" photo={equipment.photos.find((photo) => photo.slot === 'SIDE')} canManage={canManage} uploading={uploadingSlot === 'SIDE'} onSelect={(file) => void uploadPhoto('SIDE', file)} /></div><div className="mt-5"><HourMeterHistory history={history} currentValue={equipment.hourMeter} onView={() => setHistoryOpen(true)} /></div></Card>
       <Card><div className="flex gap-1 overflow-x-auto border-b px-4 pt-3">{tabs.map((item) => <button key={item} onClick={() => setTab(item)} className={`whitespace-nowrap border-b-2 px-3 py-3 text-sm font-semibold ${tab === item ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>{item}</button>)}</div><div className="p-6">
@@ -148,7 +154,16 @@ export default function EquipmentProfile() {
       </div></Card>
     </div>
     {historyOpen && <HourMeterHistoryModal assetNo={equipment.assetNo} history={history} currentValue={equipment.hourMeter} onClose={() => setHistoryOpen(false)} />}
-  </ShellPage>
+    <ConfirmDialog
+      open={confirmDelete}
+      title="Delete equipment"
+      description={`Delete ${equipment.assetNo}? This action cannot be undone.`}
+      confirmLabel="Delete"
+      loading={deleting}
+      onConfirm={() => void remove()}
+      onCancel={() => setConfirmDelete(false)}
+    />
+  </>
 }
 
 function UploadPhoto({ label, photo, className = 'h-24 rounded-xl', canManage, uploading, onSelect }: { label: string; photo?: ApiEquipment['photos'][number]; className?: string; canManage: boolean; uploading: boolean; onSelect: (file: File) => void }) {
@@ -172,6 +187,8 @@ function Documents({ documents, canManage, editing, equipmentId, onChanged }: { 
   const [type, setType] = useState('Manual')
   const [expiryDate, setExpiryDate] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<{ fileId: string; name: string } | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const upload = async () => {
     if (!file) { toast.error('Choose a file to upload'); return }
@@ -195,19 +212,33 @@ function Documents({ documents, canManage, editing, equipmentId, onChanged }: { 
     } finally { setUploading(false) }
   }
 
-  const remove = async (fileId: string, name: string) => {
-    if (!window.confirm(`Permanently delete ${name}?`)) return
+  const remove = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
     try {
-      await apiRequest(`files/${encodeURIComponent(fileId)}`, { method: 'DELETE' })
+      await apiRequest(`files/${encodeURIComponent(deleteTarget.fileId)}`, { method: 'DELETE' })
       onChanged()
       toast.success('Document permanently deleted')
+      setDeleteTarget(null)
     } catch (cause) {
       toast.error(cause instanceof Error ? cause.message : 'Unable to delete document.')
+    } finally {
+      setDeleting(false)
     }
   }
 
   return <div className="space-y-4">{canManage && editing && <div className="flex flex-col gap-3 rounded-xl border border-dashed p-4 sm:flex-row sm:items-end"><label className="flex-1 text-xs font-semibold">File<input type="file" accept="application/pdf,image/jpeg,image/png" className="mt-2 block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-blue-700 dark:file:bg-blue-950/40" onChange={(event) => setFile(event.target.files?.[0] ?? null)} /></label><label className="text-xs font-semibold">Type<Select className="mt-2 w-full" value={type} onChange={(event) => setType(event.target.value)}><option>Manual</option><option>Insurance</option><option>Certificate</option><option>Other</option></Select></label><label className="text-xs font-semibold">Expiry date (optional)<Input className="mt-2" type="date" value={expiryDate} onChange={(event) => setExpiryDate(event.target.value)} /></label><Button type="button" onClick={() => void upload()} disabled={uploading}><Upload className="h-4 w-4" />{uploading ? 'Uploading…' : 'Upload'}</Button></div>}
-    {documents.length ? <div className="space-y-3">{documents.map((document) => <div key={document.id} className="flex items-center justify-between rounded-xl border p-4"><div className="flex items-center gap-3"><FileText className="h-5 w-5 text-blue-600" /><div><a href={bffFileUrl(document.url)} target="_blank" rel="noreferrer" className="text-sm font-medium hover:text-blue-600">{document.name}</a><div className="mt-1 text-xs text-slate-400">{document.type} · Uploaded {new Date(document.uploadedDate).toLocaleDateString()}</div></div></div><div className="flex items-center gap-2">{document.expiryDate && <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">Expires {document.expiryDate.slice(0, 10)}</span>}{canManage && editing && <button type="button" className="rounded-md p-2 text-slate-500 transition hover:bg-rose-50 hover:text-rose-600" aria-label={`Remove ${document.name}`} onClick={() => void remove(document.fileId, document.name)}><Trash2 className="h-4 w-4" /></button>}</div></div>)}</div> : <EmptyState label="No documents uploaded" />}</div>
+    {documents.length ? <div className="space-y-3">{documents.map((document) => <div key={document.id} className="flex items-center justify-between rounded-xl border p-4"><div className="flex items-center gap-3"><FileText className="h-5 w-5 text-blue-600" /><div><a href={bffFileUrl(document.url)} target="_blank" rel="noreferrer" className="text-sm font-medium hover:text-blue-600">{document.name}</a><div className="mt-1 text-xs text-slate-400">{document.type} · Uploaded {new Date(document.uploadedDate).toLocaleDateString()}</div></div></div><div className="flex items-center gap-2">{document.expiryDate && <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">Expires {document.expiryDate.slice(0, 10)}</span>}{canManage && editing && <button type="button" className="rounded-md p-2 text-slate-500 transition hover:bg-rose-50 hover:text-rose-600" aria-label={`Remove ${document.name}`} onClick={() => setDeleteTarget({ fileId: document.fileId, name: document.name })}><Trash2 className="h-4 w-4" /></button>}</div></div>)}</div> : <EmptyState label="No documents uploaded" />}
+    <ConfirmDialog
+      open={!!deleteTarget}
+      title="Delete document"
+      description={deleteTarget ? `Permanently delete ${deleteTarget.name}? This action cannot be undone.` : undefined}
+      confirmLabel="Delete"
+      loading={deleting}
+      onConfirm={() => void remove()}
+      onCancel={() => setDeleteTarget(null)}
+    />
+  </div>
 }
 
 function Logbook({ tickets }: { tickets: ApiTicket[] }) {

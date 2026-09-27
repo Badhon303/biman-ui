@@ -59,8 +59,8 @@ export interface ApiTicket {
   maintenanceRecord?: {
     id: string;
     problemDescription?: string | null;
-    checklistItems?: { id: string; category: string; label: string; checked: boolean }[];
-    inspectionChecklist?: { id: string; category: string; label: string; checked: boolean }[];
+    checklistItems?: { id: string; category: string; label: string; checked: boolean; applicable?: boolean }[];
+    inspectionChecklist?: { id: string; category: string; label: string; checked: boolean; applicable?: boolean }[];
     partsUsed?: string | null;
     labourHours?: number | null;
     functionalTestPassed?: boolean | null;
@@ -111,21 +111,18 @@ export interface ApiSchedule {
 
 export async function fetchAllPages<T>(path: string, params: Record<string, string> = {}) {
   const limit = 100;
-  let page = 1;
-  let total = Infinity;
-  const items: T[] = [];
-  while (items.length < total) {
-    const query = new URLSearchParams({ ...params, page: String(page), limit: String(limit) });
-    const result = await apiRequest<PaginatedResponse<T>>(`${path}?${query}`);
-    items.push(...result.items);
-    total = result.total;
-    if (!result.items.length) break;
-    page += 1;
-  }
-  return items;
+  const fetchPage = (page: number) =>
+    apiRequest<PaginatedResponse<T>>(`${path}?${new URLSearchParams({ ...params, page: String(page), limit: String(limit) })}`);
+  const first = await fetchPage(1);
+  const pageCount = first.items.length ? Math.ceil(first.total / limit) : 1;
+  if (pageCount <= 1) return first.items;
+  const rest = await Promise.all(Array.from({ length: pageCount - 1 }, (_, index) => fetchPage(index + 2)));
+  return [first, ...rest].flatMap((result) => result.items);
 }
+
+const dateFormatter = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 
 export function displayDate(value?: string | null) {
   if (!value) return "—";
-  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value));
+  return dateFormatter.format(new Date(value));
 }

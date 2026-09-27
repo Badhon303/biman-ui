@@ -15,7 +15,8 @@ const secureCookie = process.env.NODE_ENV === "production";
 function tokenMaxAge(token: string, fallback: number) {
   try {
     const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString());
-    if (typeof payload.exp === "number") return Math.max(0, payload.exp - Math.floor(Date.now() / 1000));
+    if (typeof payload.exp === "number")
+      return Math.max(0, payload.exp - Math.floor(Date.now() / 1000));
   } catch {}
   return fallback;
 }
@@ -60,7 +61,29 @@ function apiUrl(path: string, search = "") {
   return `${apiBaseUrl}/${path.split("/").map(encodeURIComponent).join("/")}${search}`;
 }
 
-async function refreshTokens(refreshToken: string): Promise<Tokens | null> {
+// Refresh tokens are single-use, and a page load fires several BFF requests at
+// once. Share one refresh per token (and briefly reuse its result) so parallel
+// requests don't race, lose, and log the user out.
+const globalRefresh = globalThis as typeof globalThis & {
+  __bimanRefreshes?: Map<string, Promise<Tokens | null>>;
+};
+const refreshes = (globalRefresh.__bimanRefreshes ??= new Map<string, Promise<Tokens | null>>());
+const REFRESH_REUSE_MS = 30_000;
+
+function refreshTokens(refreshToken: string): Promise<Tokens | null> {
+  let pending = refreshes.get(refreshToken);
+  if (!pending) {
+    pending = requestRefresh(refreshToken);
+    refreshes.set(refreshToken, pending);
+    void pending.then((tokens) => {
+      if (tokens) setTimeout(() => refreshes.delete(refreshToken), REFRESH_REUSE_MS);
+      else refreshes.delete(refreshToken);
+    });
+  }
+  return pending;
+}
+
+async function requestRefresh(refreshToken: string): Promise<Tokens | null> {
   try {
     const response = await fetch(apiUrl("auth/refresh"), {
       method: "POST",
@@ -78,11 +101,22 @@ async function refreshTokens(refreshToken: string): Promise<Tokens | null> {
 
 function responseHeaders(source: Headers) {
   const headers = new Headers();
-  for (const name of ["content-type", "content-length", "content-disposition", "cache-control", "etag", "accept-ranges"]) {
+  for (const name of [
+    "content-type",
+    "content-length",
+    "content-disposition",
+    "cache-control",
+    "etag",
+    "accept-ranges",
+  ]) {
     const value = source.get(name);
     if (value) headers.set(name, value);
   }
   headers.set("x-content-type-options", "nosniff");
+  if (headers.get("content-type")?.startsWith("text/event-stream")) {
+    headers.set("cache-control", "no-cache, no-transform");
+    headers.set("x-accel-buffering", "no");
+  }
   return headers;
 }
 
@@ -93,7 +127,12 @@ export async function proxyApiRequest(request: NextRequest, pathSegments: string
     if (rejected) return rejected;
   }
 
-  if (pathSegments.some((segment) => segment === "." || segment === ".." || segment.includes("/") || segment.includes("\\\\"))) {
+  if (
+    pathSegments.some(
+      (segment) =>
+        segment === "." || segment === ".." || segment.includes("/") || segment.includes("\\\\"),
+    )
+  ) {
     return NextResponse.json({ message: "Invalid API path." }, { status: 400 });
   }
   const path = pathSegments.join("/");
@@ -110,6 +149,7 @@ export async function proxyApiRequest(request: NextRequest, pathSegments: string
       },
       ...(body ? { body } : {}),
       cache: "no-store",
+      signal: request.signal,
     });
 
   let accessToken = request.cookies.get(accessCookie)?.value;
@@ -120,7 +160,7 @@ export async function proxyApiRequest(request: NextRequest, pathSegments: string
     rotated = await refreshTokens(refreshToken);
     if (!rotated) {
       const response = NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-      clearAuthCookies(response);
+      if (path !== "notifications/stream") clearAuthCookies(response);
       return response;
     }
     accessToken = rotated.accessToken;
@@ -143,6 +183,15 @@ export async function proxyApiRequest(request: NextRequest, pathSegments: string
         return NextResponse.json({ message: "API unavailable." }, { status: 502 });
       }
     }
+  }
+
+  // A failed event stream must never end the session: don't pipe the error body
+  // (avoids "failed to pipe response") and leave cookies to regular requests.
+  if (path === "notifications/stream" && !upstream.ok) {
+    await upstream.body?.cancel().catch(() => {});
+    const response = new NextResponse(null, { status: upstream.status });
+    if (rotated) setAuthCookies(response, rotated);
+    return response;
   }
 
   const response = new NextResponse(upstream.body, {
@@ -174,7 +223,10 @@ export async function getCurrentUser(accessToken: string) {
   return response.ok ? response.json() : null;
 }
 
-export async function logoutFromApi(accessToken: string | undefined, refreshToken: string | undefined) {
+export async function logoutFromApi(
+  accessToken: string | undefined,
+  refreshToken: string | undefined,
+) {
   if (!refreshToken) return;
   let currentTokens: Tokens | null = null;
   if (!accessToken) currentTokens = await refreshTokens(refreshToken);

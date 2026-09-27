@@ -3,8 +3,8 @@
 import Link from 'next/link'
 import { FormEvent, useEffect, useState } from 'react'
 import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { HourMeterHistoryModal } from '@/components/hour-meter-history'
 import { useRole } from '@/components/role-context'
-import { ShellPage } from '@/components/app-shell'
 import { PageHeader } from '@/components/page-header'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { StatusBadge } from '@/components/ui/badge'
 import { TD, TH, TBody, THead, TR, Table } from '@/components/ui/table'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { apiRequest } from '@/lib/api-client'
 import { ApiEquipment, fetchAllPages } from '@/lib/api-data'
 import { EquipmentType } from '@/lib/types'
@@ -32,6 +33,10 @@ export function EquipmentPage() {
   const [error, setError] = useState('')
   const [addOpen, setAddOpen] = useState(false)
   const [meterEquipment, setMeterEquipment] = useState<ApiEquipment | null>(null)
+  const [historyEquipment, setHistoryEquipment] = useState<ApiEquipment | null>(null)
+  const [historyLoadingId, setHistoryLoadingId] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<ApiEquipment | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -51,14 +56,20 @@ export function EquipmentPage() {
     return () => window.clearTimeout(timer)
   }, [search, status])
 
-  const deleteEquipment = async (item: ApiEquipment) => {
-    if (!window.confirm(`Delete ${item.assetNo}?`)) return
+  const deleteEquipment = (item: ApiEquipment) => setDeleteTarget(item)
+
+  const confirmDeleteEquipment = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
     try {
-      await apiRequest(`equipment/${encodeURIComponent(item.id)}`, { method: 'DELETE' })
+      await apiRequest(`equipment/${encodeURIComponent(deleteTarget.id)}`, { method: 'DELETE' })
       await load()
       toast.success('Equipment deleted')
+      setDeleteTarget(null)
     } catch (cause) {
       toast.error(cause instanceof Error ? cause.message : 'Unable to delete equipment.')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -78,7 +89,18 @@ export function EquipmentPage() {
     }
   }
 
-  return <ShellPage>
+  const viewMeterHistory = async (item: ApiEquipment) => {
+    setHistoryLoadingId(item.id)
+    try {
+      setHistoryEquipment(await apiRequest<ApiEquipment>(`equipment/${encodeURIComponent(item.id)}`))
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : 'Unable to load hour meter history.')
+    } finally {
+      setHistoryLoadingId(null)
+    }
+  }
+
+  return <>
     <PageHeader eyebrow="Assets / Fleet registry" title="Equipment List" subtitle="Your operational fleet, with a digital logbook attached to every asset." action={canManage ? <Button onClick={() => setAddOpen(true)}><Plus className="h-4 w-4" />Add equipment</Button> : undefined} />
     <Card>
       <div className="flex flex-col gap-3 border-b p-5 sm:flex-row"><div className="relative max-w-md flex-1"><Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" /><Input className="pl-9" placeholder="Search asset, manufacturer or location" value={search} onChange={(event) => setSearch(event.target.value)} /></div><Select value={status} onChange={(event) => setStatus(event.target.value)}><option value="All">All statuses</option>{statuses.map((item) => <option key={item}>{item}</option>)}</Select></div>
@@ -86,7 +108,7 @@ export function EquipmentPage() {
         <Table><THead><TR><TH>Asset no.</TH><TH>Equipment Type</TH><TH>Manufacturer / model</TH><TH>Hour meter</TH><TH>Biman serial no.</TH><TH>TLD serial no.</TH><TH>Location</TH><TH>Status</TH><TH>Actions</TH></TR></THead><TBody>
           {rows.map((item) => <TR key={item.id}>
             <TD><Link href={`/equipment/${item.id}`} className="font-semibold text-blue-600">{item.assetNo}</Link></TD><TD><Link href={`/equipment/${item.id}`} className="font-medium hover:text-blue-600">{item.equipmentType}</Link></TD><TD>{item.manufacturer}<div className="text-xs text-slate-400">{item.model}</div></TD>
-            <TD><div className="flex items-center gap-2 whitespace-nowrap"><span className="font-medium">{item.hourMeter} hours</span>{canUpdateMeter && <button type="button" className="rounded-md p-1 text-slate-500 transition hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/40" aria-label={`Update hour meter for ${item.assetNo}`} title="Update hour meter" onClick={() => setMeterEquipment(item)}><Plus className="h-4 w-4" /></button>}</div></TD>
+            <TD><div className="flex items-center gap-2 whitespace-nowrap"><button type="button" className="font-medium text-blue-600 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-wait disabled:opacity-60" aria-label={`View hour meter history for ${item.assetNo}`} title="View hour meter history" onClick={() => void viewMeterHistory(item)} disabled={historyLoadingId === item.id}>{item.hourMeter} hours</button>{canUpdateMeter && <button type="button" className="group inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm transition hover:scale-105 hover:bg-blue-700 hover:shadow-md active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2" aria-label={`Add hour meter reading for ${item.assetNo}`} title="Add hour meter reading" onClick={() => setMeterEquipment(item)}><Plus className="h-4 w-4 transition-transform group-hover:rotate-90" /></button>}</div></TD>
             <TD className="font-mono text-xs">{item.bimanSerialNo ?? '—'}</TD><TD className="font-mono text-xs">{item.tldSerialNo ?? '—'}</TD><TD>{item.location}</TD><TD><StatusBadge status={item.status as typeof statuses[number]} /></TD>
             <TD><div className="flex items-center gap-1"><Link href={`/equipment/${item.id}`} className="rounded-md p-2 text-slate-500 transition hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/40" aria-label={`Edit ${item.assetNo}`} title="Edit equipment"><Pencil className="h-4 w-4" /></Link>{canManage && <button type="button" className="rounded-md p-2 text-slate-500 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40" aria-label={`Delete ${item.assetNo}`} title="Delete equipment" onClick={() => void deleteEquipment(item)}><Trash2 className="h-4 w-4" /></button>}</div></TD>
           </TR>)}
@@ -96,7 +118,17 @@ export function EquipmentPage() {
     </Card>
     {addOpen && <EquipmentModal onClose={() => setAddOpen(false)} onCreated={() => { setAddOpen(false); void load() }} />}
     {meterEquipment && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"><div className="w-full max-w-md rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">Add current hour meter</h2><p className="mt-1 text-sm text-slate-500">Update the current reading for {meterEquipment.assetNo}.</p></div><button type="button" onClick={() => setMeterEquipment(null)} className="text-2xl leading-none text-slate-400" aria-label="Close modal">×</button></div><form className="space-y-4" onSubmit={updateMeter}><label className="text-xs font-semibold">Current hour meter<Input className="mt-2" name="value" type="number" min={meterEquipment.hourMeter} step="any" defaultValue={meterEquipment.hourMeter} required /></label><div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setMeterEquipment(null)}>Cancel</Button><Button type="submit">Update</Button></div></form></div></div>}
-  </ShellPage>
+    {historyEquipment && <HourMeterHistoryModal assetNo={historyEquipment.assetNo} history={historyEquipment.hourMeterReadings ? [...historyEquipment.hourMeterReadings].reverse() : undefined} currentValue={historyEquipment.hourMeter} onClose={() => setHistoryEquipment(null)} />}
+    <ConfirmDialog
+      open={!!deleteTarget}
+      title="Delete equipment"
+      description={deleteTarget ? `Delete ${deleteTarget.assetNo}? This action cannot be undone.` : undefined}
+      confirmLabel="Delete"
+      loading={deleting}
+      onConfirm={() => void confirmDeleteEquipment()}
+      onCancel={() => setDeleteTarget(null)}
+    />
+  </>
 }
 
 function EquipmentModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {

@@ -16,13 +16,13 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { ShellPage } from "@/components/app-shell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/badge";
 import { TD, TH, TBody, THead, TR, Table } from "@/components/ui/table";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   equipment,
   tickets,
@@ -77,7 +77,7 @@ export function TicketsPage() {
         .includes(search.toLowerCase()),
   );
   return (
-    <ShellPage>
+    <>
       <PageHeader
         eyebrow="Maintenance / Tickets"
         title="Tickets"
@@ -195,7 +195,7 @@ export function TicketsPage() {
         </Table>
       </Card>
       {createOpen && <TicketModal onClose={() => setCreateOpen(false)} />}
-    </ShellPage>
+    </>
   );
 }
 function TicketModal({ onClose }: { onClose: () => void }) {
@@ -612,6 +612,7 @@ export function EquipmentPage() {
   const [hourMeterEquipment, setHourMeterEquipment] = useState<Equipment | null>(null);
   const [historyEquipment, setHistoryEquipment] = useState<Equipment | null>(null);
   const [equipmentList, setEquipmentList] = useState<Equipment[]>(equipment);
+  const [deleteTarget, setDeleteTarget] = useState<Equipment | null>(null);
   const rows = equipmentList.filter(
     (e) =>
       (status === "All" || e.status === status) &&
@@ -619,10 +620,12 @@ export function EquipmentPage() {
         .toLowerCase()
         .includes(q.toLowerCase()),
   );
-  const deleteEquipment = (item: Equipment) => {
-    if (!window.confirm(`Delete ${item.assetNo}?`)) return;
-    setEquipmentList((current) => current.filter((e) => e.id !== item.id));
+  const deleteEquipment = (item: Equipment) => setDeleteTarget(item);
+  const confirmDeleteEquipment = () => {
+    if (!deleteTarget) return;
+    setEquipmentList((current) => current.filter((e) => e.id !== deleteTarget.id));
     toast.success("Equipment deleted (mock)");
+    setDeleteTarget(null);
   };
   const updateHourMeter = (item: Equipment, value: string) => {
     const parsed = Number(value.trim());
@@ -651,7 +654,7 @@ export function EquipmentPage() {
     toast.success(`Hour meter updated for ${item.assetNo}`);
   };
   return (
-    <ShellPage>
+    <>
       <PageHeader
         eyebrow="Assets / Fleet registry"
         title="Equipment List"
@@ -794,7 +797,15 @@ export function EquipmentPage() {
           onClose={() => setHistoryEquipment(null)}
         />
       )}
-    </ShellPage>
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Delete equipment"
+        description={deleteTarget ? `Delete ${deleteTarget.assetNo}?` : undefined}
+        confirmLabel="Delete"
+        onConfirm={confirmDeleteEquipment}
+        onCancel={() => setDeleteTarget(null)}
+      />
+    </>
   );
 }
 function RequestModal({
@@ -950,7 +961,7 @@ export function RequestsPage() {
     toast.success("Request submitted for approval");
   };
   return (
-    <ShellPage>
+    <>
       <PageHeader
         eyebrow="Maintenance / Requests"
         title="Equipment & parts requests"
@@ -1045,7 +1056,7 @@ export function RequestsPage() {
         </Table>
       </Card>
       {createOpen && <RequestModal onClose={() => setCreateOpen(false)} onCreate={createRequest} />}
-    </ShellPage>
+    </>
   );
 }
 export function HistoryPage() {
@@ -1058,7 +1069,7 @@ export function HistoryPage() {
         .includes(q.toLowerCase()),
   );
   return (
-    <ShellPage>
+    <>
       <PageHeader
         eyebrow="Maintenance / Closed work"
         title="Maintenance history"
@@ -1103,7 +1114,7 @@ export function HistoryPage() {
           </TBody>
         </Table>
       </Card>
-    </ShellPage>
+    </>
   );
 }
 export function NotificationsPage() {
@@ -1113,7 +1124,7 @@ export function NotificationsPage() {
     toast.success("Notification marked as read");
   };
   return (
-    <ShellPage>
+    <>
       <PageHeader
         eyebrow="Insights / Alerts"
         title="Notifications"
@@ -1148,7 +1159,7 @@ export function NotificationsPage() {
         ))}
         {rows.length === 0 && <Empty message="You’re all caught up" />}
       </div>
-    </ShellPage>
+    </>
   );
 }
 function CircleIcon({ type }: { type: string }) {
@@ -1165,7 +1176,7 @@ function Empty({ message }: { message: string }) {
 }
 export function DocumentsPage() {
   return (
-    <ShellPage>
+    <>
       <PageHeader
         eyebrow="Assets / Records"
         title="Documents"
@@ -1213,6 +1224,6 @@ export function DocumentsPage() {
           </TBody>
         </Table>
       </Card>
-    </ShellPage>
+    </>
   );
 }

@@ -4,9 +4,9 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { CalendarClock, CircleAlert, Search } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
-import { ShellPage } from '@/components/app-shell'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 import { StatusBadge } from '@/components/ui/badge'
 import { TD, TH, TBody, THead, TR, Table } from '@/components/ui/table'
 import { apiRequest } from '@/lib/api-client'
@@ -38,7 +38,7 @@ export default function SchedulePage() {
   const scheduledCount = scheduleRows.filter((schedule) => schedule.status === 'Scheduled').length
 
   return (
-    <ShellPage>
+    <>
       <PageHeader eyebrow="Maintenance / Schedule" title="Maintenance schedule" subtitle="Review maintenance schedules and their linked tickets." />
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <SummaryCard icon={<CalendarClock className="h-5 w-5" />} label="Total schedules" value={scheduleRows.length} detail="Configured maintenance plans" />
@@ -48,9 +48,9 @@ export default function SchedulePage() {
       <Card>
         <div className="flex flex-col gap-4 border-b p-5 xl:flex-row xl:items-center xl:justify-between">
           <div className="relative max-w-sm flex-1"><Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" /><Input className="pl-9" placeholder="Search schedule or equipment" value={search} onChange={(event) => setSearch(event.target.value)} /></div>
-          <select aria-label="Filter schedule status" value={status} onChange={(event) => setStatus(event.target.value)} className="rounded-lg border bg-white px-3 py-2 text-xs font-semibold text-slate-600 outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-900 dark:text-slate-300">
+          <Select aria-label="Filter schedule status" value={status} onChange={(event) => setStatus(event.target.value)} className="sm:w-44">
             <option value="All">All statuses</option><option value="Scheduled">Scheduled</option><option value="Due soon">Due soon</option><option value="Overdue">Overdue</option>
-          </select>
+          </Select>
         </div>
         {loading ? <div className="p-10 text-center text-sm text-slate-500">Loading schedules…</div> : error ? <div className="p-10 text-center text-sm text-rose-600">{error}</div> : <>
           <Table><THead><TR><TH>Schedule</TH><TH>Equipment</TH><TH>Start/last date</TH><TH>Due date</TH><TH>Overdue By</TH><TH>Status</TH><TH>Ticket</TH></TR></THead><TBody>
@@ -67,7 +67,7 @@ export default function SchedulePage() {
           {rows.length === 0 && <div className="p-10 text-center text-sm text-slate-500">No schedules match the selected filters.</div>}
         </>}
       </Card>
-    </ShellPage>
+    </>
   )
 }
 

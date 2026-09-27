@@ -1,5 +1,5 @@
 'use client'
-import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { User } from '@/lib/types'
 
 type SessionResponse = Partial<User> & { mustChangePassword?: boolean }
@@ -77,11 +77,12 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     void refreshSession()
   }, [refreshSession])
 
-  return (
-    <RoleContext.Provider value={{ role: user?.role ?? null, user, loading, mustChangePassword, setSession, clearSession, refreshSession }}>
-      {children}
-    </RoleContext.Provider>
+  const value = useMemo(
+    () => ({ role: user?.role ?? null, user, loading, mustChangePassword, setSession, clearSession, refreshSession }),
+    [user, loading, mustChangePassword, setSession, clearSession, refreshSession],
   )
+
+  return <RoleContext.Provider value={value}>{children}</RoleContext.Provider>
 }
 
 export const useRole = () => useContext(RoleContext)

@@ -9,6 +9,29 @@
 - Suggested result values: **Pass / Fail / Blocked / N/A**.
 - Test role restrictions using both the UI and a direct request where practical; a hidden/disabled control alone does not prove access is denied.
 
+## Current execution status — 2026-09-27
+
+**Overall UAT: BLOCKED — broad partial end-to-end run, not a sign-off.** The UI on port 3000 and API on port 3001 were exercised against the connected database. Run ID: `20260927-1c5f2cc3`. Seven synthetic UAT accounts plus UAT-prefixed equipment, tickets, requests, schedules, notifications, and files were created; no existing business records were deleted. The configured bootstrap account was inactive/deleted, so an isolated Super Admin fixture was created directly in the authorized test database. Other role accounts were created through the API. A separate API-created Manager probe completed the temporary-password workflow; other role fixtures had that first-login flag cleared for permission tests.
+
+Rows are checked only when the full checklist scenario was verified. The table below records results for the assertions actually exercised; partial and blocked cases remain unchecked.
+
+| Area / test IDs | Status | Evidence / notes |
+|---|---|---|
+| UI typecheck and production build | Pass | `pnpm run typecheck` and `pnpm run build` succeeded. |
+| UI-to-API login/session — AUTH-01, AUTH-04/05 | Pass | Super Admin temporary-password login/change/re-login and `/api/session` worked through the BFF. All four active roles authenticated with the expected role. UI route smoke returned 200 for dashboard, equipment, tickets, requests, schedules, notifications, documents, history, reports, settings, and users. This did not exercise every browser form. |
+| Authentication — AUTH-02/03/06/07 | Pass | Known/unknown bad credentials returned indistinguishable 401s; inactive login and revoked refresh were rejected; wrong current password preserved the existing password. |
+| Notifications — NTF-01/02/03/04 | Pass | Private account notification, mark-one/read-all persistence, and a request event delivered to Biman Admin were verified. |
+| User administration — SA-USER-01/02/03/04/05; role restrictions | Pass / Partial | API user creation, Biman default organization, first-password change, deactivation/refresh invalidation, and duplicate-email rejection passed. Manager and Biman Admin direct restrictions were checked; not every role/action permutation was exercised. |
+| Equipment and files — SA-EQP-02/03/04/05/06/08/10/11/18; SA-ACCESS-02/03 | Pass / Partial | Valid/gapped hour bands, V/custom service configuration, in-use type deletion, BGM sequence/equipment edit, document upload/read, lower-meter rejection, no PM on meter update alone, primary-photo replacement, access denial, and soft-delete history/file retention were checked. Photo slots/limits and some file-size cases remain untested. |
+| Same-value hour meter — SA-EQP-09 | Fail | An unchanged meter value returns HTTP 400, although this checklist expects the same or a higher value to save. Higher values do save and append history. |
+| Explicit PM service-check — SA-EQP-12/13/14/15, FLOW-06 | Fail / Blocked | The API rejects the documented `dueDateByServiceId` object with HTTP 400 (`must be a string` / `must be at least 1 character`), so threshold tickets, custom PM association, checklist cloning, idempotency, and service-check notifications could not be exercised. |
+| V-Service schedules — SA-EQP-16/17, FLOW-07 | Partial / Blocked | `Scheduled`, `Due soon`, and `Overdue` labels were verified. The daily schedule worker was not triggered, so linked-ticket creation, duplicate suppression, and next-cycle generation remain unverified. |
+| Tickets, maintenance, requests — SA-TKT-01/02/03/06/07; ENG-02/03/04/06/08/09/12/13/14/15/16/17/18; BA-01/02/04/07/08/09/10/11; FLOW-02/03/04 | Pass / Partial | Manual Breakdown/General/Washing creation, PM exclusion, assignment and cross-engineer denial, work start, incomplete-submit rejection, checklist/maintenance/feedback, sanitization, submission/verification/closure, downtime override, request approval/rejection/receipt, and key role restrictions were exercised. Some audit-field and notification-recipient assertions remain unchecked. |
+| Image validation — ENG-10 | Fail / Partial | Valid work images were converted to WebP with a thumbnail and attached. A mismatched image upload returned HTTP 500 rather than a client validation error. Size/count limits were not tested. |
+| API build and targeted logic test | Pass | Prisma Client generation, API build, and 3 hour-band unit tests passed. No migration or seed command was run. |
+| Existing API test suites | Fail | Full unit run: 1 suite passed (3 tests), 2 suites failed loading NestJS ESM dependencies under Jest. API e2e compile fails at the namespace-style Supertest import (TS2349). |
+| Remaining UAT | Blocked / Not run | This run did not complete every role/action permutation, all upload limits, or the scheduled V-Service cron workflow. Dashboard/report validation remains out of scope as stated above. |
+
 ## Suggested test data
 
 - Active accounts: one Super Admin, Manager, Engineer, and Biman Admin; also prepare one inactive account and one newly created account with a temporary password.

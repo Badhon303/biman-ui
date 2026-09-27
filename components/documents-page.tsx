@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { Download, FileText } from 'lucide-react'
 import { useRole } from '@/components/role-context'
-import { ShellPage } from '@/components/app-shell'
 import { PageHeader } from '@/components/page-header'
 import { Card } from '@/components/ui/card'
 import { StatusBadge } from '@/components/ui/badge'
@@ -41,7 +40,7 @@ export function DocumentsPage() {
     return () => { active = false }
   }, [role])
 
-  return <ShellPage>
+  return <>
     <PageHeader eyebrow="Assets / Records" title="Documents" subtitle="Manuals, certificates and operational documents linked to the right asset." />
     {usage && <div className="mb-5 grid gap-3 sm:grid-cols-3"><UsageCard label="Storage used" value={`${formatBytes(usage.usedBytes)} / ${formatBytes(usage.quotaBytes)}`} /><UsageCard label="Stored files" value={String(usage.assetCount)} /><UsageCard label="Space saved" value={formatBytes(usage.bytesSaved)} /></div>}
     <Card>
@@ -54,7 +53,7 @@ export function DocumentsPage() {
         {rows.length === 0 && <div className="p-10 text-center text-sm text-slate-500">No documents found.</div>}
       </>}
     </Card>
-  </ShellPage>
+  </>
 }
 
 function UsageCard({ label, value }: { label: string; value: string }) {

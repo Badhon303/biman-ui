@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { FormEvent, useEffect, useState } from 'react'
 import { Check, Filter, Plus, X } from 'lucide-react'
 import { useRole } from '@/components/role-context'
-import { ShellPage } from '@/components/app-shell'
 import { PageHeader } from '@/components/page-header'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -81,7 +80,7 @@ export function RequestsPage() {
     }
   }
 
-  return <ShellPage>
+  return <>
     <PageHeader eyebrow="Maintenance / Requests" title="Equipment & parts requests" subtitle="A request-and-approval record linked to maintenance work — not an inventory system." action={canCreate ? <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" />Create request</Button> : undefined} />
     <Card>
       <div className="flex items-center justify-between border-b p-5"><div><h2 className="text-sm font-semibold">All requests</h2><p className="mt-1 text-xs text-slate-500">{rows.length} records across active tickets</p></div><Button variant="outline" disabled><Filter className="h-4 w-4" />Filter</Button></div>
@@ -108,5 +107,5 @@ export function RequestsPage() {
       </div><label className="block text-xs font-semibold">Reason<textarea className="mt-2 min-h-28 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 dark:bg-slate-950" name="reason" placeholder="Explain why this item is needed" minLength={2} required /></label>
       <div className="flex justify-end gap-2 pt-2"><Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button><Button type="submit"><Plus className="h-4 w-4" />Submit request</Button></div></form>
     </div></div>}
-  </ShellPage>
+  </>
 }
