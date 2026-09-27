@@ -59,7 +59,7 @@ export function TicketsPage() {
             <TD><div className="font-medium">{ticket.equipment.assetNo}</div><div className="text-xs text-slate-400">{ticket.equipment.equipmentType}</div></TD>
             <TD><span className="text-xs">{ticket.serviceType}</span></TD><TD><div className="font-medium">{ticket.dueDate.slice(0, 10)}</div><div className="text-xs text-slate-400">{ticket.priority} priority</div></TD>
             <TD className={isOverdue(ticket.dueDate, ticket.closedDate ?? undefined) ? 'font-medium text-rose-600' : ''}>{overdueBy(ticket.dueDate, ticket.closedDate ?? undefined)}</TD><TD>{ticket.assignedEngineer?.name ?? 'Unassigned'}</TD><TD><StatusBadge status={ticket.status} /></TD>
-            <TD><Link href={`/tickets/${ticket.id}`} className="rounded-md p-2 text-slate-500 transition hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/40" aria-label={`Edit ${ticket.ticketNo}`} title="View ticket"><Pencil className="h-4 w-4" /></Link></TD>
+            <TD className="w-16 text-center"><Link href={`/tickets/${ticket.id}`} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:bg-blue-950/40" aria-label={`Open ${ticket.ticketNo}`} title="Open ticket"><Pencil className="h-4 w-4" /></Link></TD>
           </TR>)}
         </TBody></Table>
         {filteredRows.length === 0 && <div className="p-10 text-center text-sm text-slate-500">No tickets match the selected filters.</div>}
