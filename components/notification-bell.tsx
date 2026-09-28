@@ -1,7 +1,8 @@
 'use client'
 import Link from 'next/link'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { Bell, CheckCheck, Inbox, Loader2 } from 'lucide-react'
+import { ArrowUpRight, Bell, CheckCheck, Inbox, Loader2 } from 'lucide-react'
+import { notificationLink } from '@/lib/notification-links'
 import { useNotifications } from './notifications-context'
 
 function timeAgo(value: string) {
@@ -81,15 +82,9 @@ export function NotificationBell() {
                 <div className="mt-1 text-xs text-slate-500">New alerts will appear here instantly.</div>
               </div>
             ) : (
-              items.map((notification) => (
-                <DropdownMenu.Item
-                  key={notification.id}
-                  onSelect={(event) => {
-                    event.preventDefault()
-                    void markRead(notification.id)
-                  }}
-                  className={`flex cursor-pointer gap-3 border-b px-4 py-3 outline-none last:border-0 data-[highlighted]:bg-slate-50 dark:border-slate-800 dark:data-[highlighted]:bg-slate-800/60 ${notification.read ? '' : 'bg-blue-50/40 dark:bg-blue-950/20'}`}
-                >
+              items.map((notification) => {
+                const link = notificationLink(notification)
+                const body = <>
                   <div
                     className={`mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[11px] font-bold ${notification.read ? 'bg-slate-100 text-slate-500 dark:bg-slate-800' : 'bg-blue-100 text-blue-600 dark:bg-blue-950/60 dark:text-blue-300'}`}
                   >
@@ -101,10 +96,30 @@ export function NotificationBell() {
                       {!notification.read && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600" />}
                     </div>
                     <p className="mt-0.5 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">{notification.message}</p>
-                    <div className="mt-1 text-[11px] text-slate-400">{timeAgo(notification.timestamp)}</div>
+                    <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-400">
+                      {timeAgo(notification.timestamp)}
+                      {link && <span className="inline-flex items-center gap-0.5 font-medium text-blue-600 dark:text-blue-400">{link.label}<ArrowUpRight className="h-3 w-3" /></span>}
+                    </div>
                   </div>
-                </DropdownMenu.Item>
-              ))
+                </>
+                const className = `flex cursor-pointer gap-3 border-b px-4 py-3 outline-none last:border-0 data-[highlighted]:bg-slate-50 dark:border-slate-800 dark:data-[highlighted]:bg-slate-800/60 ${notification.read ? '' : 'bg-blue-50/40 dark:bg-blue-950/20'}`
+                return link ? (
+                  <DropdownMenu.Item key={notification.id} asChild onSelect={() => void markRead(notification.id)}>
+                    <Link href={link.href} className={className}>{body}</Link>
+                  </DropdownMenu.Item>
+                ) : (
+                  <DropdownMenu.Item
+                    key={notification.id}
+                    onSelect={(event) => {
+                      event.preventDefault()
+                      void markRead(notification.id)
+                    }}
+                    className={className}
+                  >
+                    {body}
+                  </DropdownMenu.Item>
+                )
+              })
             )}
             {loadingMore && (
               <div className="flex items-center justify-center gap-2 py-3 text-xs text-slate-500">

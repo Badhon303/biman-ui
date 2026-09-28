@@ -35,6 +35,7 @@ import {
   fetchAllPages,
 } from "@/lib/api-data";
 import type { AppNotification, PaginatedResponse } from "@/lib/types";
+import { notificationLink } from "@/lib/notification-links";
 
 type DashboardData = {
   equipment: ApiEquipment[];
@@ -500,7 +501,7 @@ function AttentionNeeded({ rows, loading }: { rows: AppNotification[]; loading: 
         ) : (
           rows.map((n) => (
             <Link
-              href="/notifications"
+              href={notificationLink(n)?.href ?? "/notifications"}
               key={n.id}
               className="block px-5 py-4 transition hover:bg-slate-50 dark:hover:bg-slate-800/50"
             >

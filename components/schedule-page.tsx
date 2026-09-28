@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { CalendarClock, CircleAlert, Search } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
+import { focusedRowClass, useFocusedRow } from '@/components/use-focused-row'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
@@ -20,6 +21,7 @@ export default function SchedulePage() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const focus = useFocusedRow(!loading)
 
   useEffect(() => {
     apiRequest<ApiSchedule[]>('maintenance-schedules')
@@ -54,7 +56,7 @@ export default function SchedulePage() {
         </div>
         {loading ? <div className="p-10 text-center text-sm text-slate-500">Loading schedules…</div> : error ? <div className="p-10 text-center text-sm text-rose-600">{error}</div> : <>
           <Table><THead><TR><TH>Schedule</TH><TH>Equipment</TH><TH>Start/last date</TH><TH>Due date</TH><TH>Overdue By</TH><TH>Status</TH><TH>Ticket</TH></TR></THead><TBody>
-            {rows.map((schedule) => <TR key={schedule.id} className={schedule.status === 'Due soon' ? 'bg-yellow-50/70 dark:bg-yellow-950/20' : schedule.status === 'Overdue' ? 'bg-rose-50/40 dark:bg-rose-950/10' : ''}>
+            {rows.map((schedule) => <TR key={schedule.id} id={`row-${schedule.id}`} className={focus === schedule.id ? focusedRowClass : schedule.status === 'Due soon' ? 'bg-yellow-50/70 dark:bg-yellow-950/20' : schedule.status === 'Overdue' ? 'bg-rose-50/40 dark:bg-rose-950/10' : ''}>
               <TD><div className="font-semibold text-slate-900 dark:text-white">{schedule.scheduleNo}</div></TD>
               <TD><div className="font-medium text-slate-800 dark:text-slate-100">{schedule.equipment.equipmentType.name}</div><div className="text-xs text-slate-400">{schedule.equipment.assetNo}</div></TD>
               <TD>{displayDate(schedule.lastDate)}</TD>

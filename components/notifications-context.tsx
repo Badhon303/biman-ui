@@ -8,8 +8,10 @@ import {
   useRef,
   useState,
 } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { apiRequest } from "@/lib/api-client";
+import { notificationLink } from "@/lib/notification-links";
 import { AppNotification } from "@/lib/types";
 import { useRole } from "./role-context";
 
@@ -56,6 +58,8 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   const [loadingMore, setLoadingMore] = useState(false);
   const [connected, setConnected] = useState(false);
   const seen = useRef(new Set<string>());
+  const router = useRouter();
+  const openRef = useRef<(href: string, id: string) => void>(() => {});
 
   const refresh = useCallback(async () => {
     try {
@@ -107,7 +111,16 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         setItems((current) => [notification, ...current]);
         setTotal((current) => current + 1);
         if (!notification.read) setUnread((current) => current + 1);
-        toast.info(notification.type, { description: notification.message });
+        const link = notificationLink(notification);
+        toast.info(notification.type, {
+          description: notification.message,
+          ...(link && {
+            action: {
+              label: link.label,
+              onClick: () => openRef.current(link.href, notification.id),
+            },
+          }),
+        });
         emit("biman:notification", notification);
       });
       source.onerror = () => {
@@ -171,6 +184,10 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     },
     [refresh],
   );
+  openRef.current = (href, id) => {
+    router.push(href);
+    void markRead(id);
+  };
 
   const markAllRead = useCallback(async () => {
     setItems((current) => current.map((item) => ({ ...item, read: true })));

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { FormEvent, useEffect, useState } from 'react'
 import { Check, Filter, Plus, X } from 'lucide-react'
 import { useRole } from '@/components/role-context'
+import { focusedRowClass, useFocusedRow } from '@/components/use-focused-row'
 import { PageHeader } from '@/components/page-header'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -24,6 +25,7 @@ export function RequestsPage() {
   const [error, setError] = useState('')
   const canCreate = ['Engineer', 'Manager', 'Super Admin'].includes(role ?? '')
   const canApprove = ['Biman Admin', 'Manager', 'Super Admin'].includes(role ?? '')
+  const focus = useFocusedRow(!loading)
 
   const load = async () => {
     try {
@@ -86,7 +88,7 @@ export function RequestsPage() {
       <div className="flex items-center justify-between border-b p-5"><div><h2 className="text-sm font-semibold">All requests</h2><p className="mt-1 text-xs text-slate-500">{rows.length} records across active tickets</p></div><Button variant="outline" disabled><Filter className="h-4 w-4" />Filter</Button></div>
       {loading ? <div className="p-10 text-center text-sm text-slate-500">Loading requests…</div> : error ? <div className="p-10 text-center text-sm text-rose-600">{error}</div> : <>
         <Table><THead><TR><TH>Request ID</TH><TH>Item</TH><TH>Linked ticket / asset</TH><TH>Requested by</TH><TH>Date</TH><TH>Status</TH><TH>Approved by</TH><TH></TH></TR></THead><TBody>
-          {rows.map((request) => <TR key={request.id}>
+          {rows.map((request) => <TR key={request.id} id={`row-${request.id}`} className={focus === request.id ? focusedRowClass : ''}>
             <TD className="font-semibold">{request.requestNo}</TD>
             <TD><div className="font-medium">{request.item} ×{request.quantity}</div><div className="max-w-[220px] truncate text-xs text-slate-400">{request.reason}</div></TD>
             <TD><Link href={`/tickets/${request.ticket?.id ?? request.ticketId}`} className="font-medium text-blue-600">{request.ticket?.ticketNo ?? request.ticketId}</Link><div className="text-xs text-slate-400">{request.equipment?.assetNo ?? request.ticket?.equipment?.assetNo ?? '—'}</div></TD>

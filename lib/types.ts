@@ -141,12 +141,15 @@ export interface EquipmentRequest {
   approvedBy?: string;
   approvedDate?: string;
 }
+export type NotificationEntity = "TICKET" | "REQUEST" | "SCHEDULE" | "EQUIPMENT";
 export interface AppNotification {
   id: string;
   type: string;
   message: string;
   timestamp: string;
   read: boolean;
+  entityType?: NotificationEntity | null;
+  entityId?: string | null;
 }
 export type Notification = AppNotification;
 export interface ApiUser {
