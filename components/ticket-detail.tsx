@@ -44,6 +44,7 @@ export default function TicketDetail() {
   const [error, setError] = useState('')
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [maintenanceAction, setMaintenanceAction] = useState<'save' | 'submit' | null>(null)
   const [priority, setPriority] = useState('Medium')
   const [dueDate, setDueDate] = useState('')
   const [requestingParty, setRequestingParty] = useState('')
@@ -123,10 +124,11 @@ export default function TicketDetail() {
 
   const saveProgress = async () => {
     if (!ticket) return
+    setMaintenanceAction('save')
     setSaving(true)
     try { await saveMaintenance(ticket.id); await load(); toast.success('Maintenance record saved') }
     catch (cause) { toast.error(cause instanceof Error ? cause.message : 'Unable to save maintenance record.') }
-    finally { setSaving(false) }
+    finally { setSaving(false); setMaintenanceAction(null) }
   }
 
   const uploadWorkImages = async (files: File[]) => {
@@ -170,6 +172,7 @@ export default function TicketDetail() {
     if (pending) { toast.error(`Complete the inspection checklist first (${pending} item${pending === 1 ? '' : 's'} remaining)`); return }
     if (!functionalTestPassed || !safetyCheckPassed) { toast.error('Functional test and safety check must pass before submitting'); return }
     if (!bodyHtml || bodyHtml === '<br>') { toast.error('Add engineer feedback before submitting the maintenance record'); return }
+    setMaintenanceAction('submit')
     setSaving(true)
     try {
       await saveMaintenance(ticket.id)
@@ -182,7 +185,7 @@ export default function TicketDetail() {
     } catch (cause) {
       await load()
       toast.error(cause instanceof Error ? cause.message : 'Unable to submit maintenance record.')
-    } finally { setSaving(false) }
+    } finally { setSaving(false); setMaintenanceAction(null) }
   }
 
   const verifyAndClose = async () => {
@@ -308,7 +311,7 @@ export default function TicketDetail() {
         <WorkImages images={images} canUpload={canEditRecord} uploading={uploading} onUpload={(files) => void uploadWorkImages(files)} />
       </div>
       <div className="mt-6 space-y-4"><h3 className="text-sm font-semibold">Engineer feedback</h3>{!canEditRecord && feedback.length === 0 && <div className="rounded-xl border border-dashed p-5 text-center text-sm text-slate-400">No feedback submitted yet.</div>}{feedback.map((entry) => <FeedbackCard key={entry.id} entry={entry} />)}</div>
-      {canEditRecord && <><FeedbackComposer key={composerKey} onChange={setFeedbackDraft} /><div className="mt-4 flex justify-end gap-2"><Button variant="outline" onClick={() => void saveProgress()} disabled={saving}><Save className="h-4 w-4" />Save progress</Button><Button onClick={() => void submitForVerification()} disabled={saving}><Send className="h-4 w-4" />{saving ? 'Submitting…' : 'Final submit'}</Button></div></>}</Card></div>
+      {canEditRecord && <><FeedbackComposer key={composerKey} onChange={setFeedbackDraft} /><div className="mt-4 flex justify-end gap-2"><Button variant="outline" onClick={() => void saveProgress()} disabled={saving}>{maintenanceAction === 'save' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}{maintenanceAction === 'save' ? 'Saving…' : 'Save progress'}</Button><Button onClick={() => void submitForVerification()} disabled={saving}>{maintenanceAction === 'submit' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}{maintenanceAction === 'submit' ? 'Submitting…' : 'Final submit'}</Button></div></>}</Card></div>
       <div className="space-y-6"><Card className="p-6"><h2 className="text-base font-semibold">Ticket information</h2>{editing ? <form id="ticket-edit" className="mt-5 grid gap-4" onSubmit={saveDetails}><Info label="Type" value={ticket.serviceType} /><label className="flex items-center justify-between gap-4 border-b pb-3 text-xs"><span className="text-slate-500">Priority</span><Select className="h-8 w-32 text-xs" value={priority} onChange={(event) => setPriority(event.target.value)}>{priorities.map((value) => <option key={value}>{value}</option>)}</Select></label><Info label="Asset" value={`${ticket.equipment.assetNo} · ${ticket.equipment.equipmentType}`} />{canListEngineers && <label className="flex items-center justify-between gap-4 border-b pb-3 text-xs"><span className="text-slate-500">Assigned engineer</span><Select className="h-8 w-40 text-xs" value={assignedEngineerId} onChange={(event) => setAssignedEngineerId(event.target.value)}><option value="" disabled>Select engineer</option>{engineers.map((engineer) => <option key={engineer.id} value={engineer.id}>{engineer.name}</option>)}</Select></label>}<label className="flex items-center justify-between gap-4 border-b pb-3 text-xs"><span className="text-slate-500">Due date</span><Input type="date" className="h-8 w-40 text-xs" value={dueDate} onChange={(event) => setDueDate(event.target.value)} required /></label><label className="block border-b pb-3 text-xs"><span className="text-slate-500">Requesting party</span><Input className="mt-2 h-8 text-xs" value={requestingParty} onChange={(event) => setRequestingParty(event.target.value)} /></label></form> : <div className="mt-5 grid gap-4"><Info label="Type" value={ticket.serviceType} /><Info label="Priority" value={ticket.priority} /><Info label="Asset" value={`${ticket.equipment.assetNo} · ${ticket.equipment.equipmentType}`} /><Info label="Assigned engineer" value={ticket.assignedEngineer?.name ?? 'Unassigned'} /><Info label="Due date" value={ticket.dueDate.slice(0, 10)} /><Info label="Created by" value={ticket.createdBy?.name ?? '—'} /><Info label="Requesting party" value={ticket.requestingParty ?? '—'} /></div>}</Card>
         <Card><div className="flex items-center justify-between border-b p-5"><div><h2 className="text-sm font-semibold">Equipment / parts</h2><p className="mt-1 text-xs text-slate-500">Linked requests for this ticket, if parts are needed</p></div>{canRequestParts && ticket.status !== 'Closed' && <Button variant="outline" className="h-8 px-2 text-xs" onClick={() => setRequestOpen(true)}><Plus className="h-3.5 w-3.5" />Request</Button>}</div><div className="divide-y">{(ticket.requests ?? []).map((request: ApiRequest) => <div key={request.id} className="flex items-center justify-between p-4"><div><div className="text-sm font-medium">{request.item} ×{request.quantity}</div><div className="text-xs text-slate-400">{request.reason}</div></div><StatusBadge status={request.status} /></div>)}{(ticket.requests ?? []).length === 0 && <div className="p-5 text-sm text-slate-500">No requests linked yet.</div>}</div></Card>
       </div></div>
