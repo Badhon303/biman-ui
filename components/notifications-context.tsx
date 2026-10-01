@@ -47,6 +47,24 @@ const NotificationsContext = createContext<NotificationsContextValue>({
 const emit = (name: string, detail: unknown) =>
   window.dispatchEvent(new CustomEvent(name, { detail }));
 
+const playNotificationSound = (context: AudioContext) => {
+  if (context.state !== "running") return;
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  const now = context.currentTime;
+  oscillator.type = "sine";
+  oscillator.frequency.setValueAtTime(880, now);
+  oscillator.frequency.setValueAtTime(1174.66, now + 0.12);
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(0.12, now + 0.015);
+  gain.gain.setValueAtTime(0.12, now + 0.12);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+  oscillator.connect(gain);
+  gain.connect(context.destination);
+  oscillator.start(now);
+  oscillator.stop(now + 0.32);
+};
+
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
   const { user, mustChangePassword } = useRole();
   const userId = user && !mustChangePassword ? user.id : null;
@@ -58,6 +76,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   const [loadingMore, setLoadingMore] = useState(false);
   const [connected, setConnected] = useState(false);
   const seen = useRef(new Set<string>());
+  const audioContext = useRef<AudioContext | null>(null);
   const router = useRouter();
   const openRef = useRef<(href: string, id: string) => void>(() => {});
 
@@ -87,6 +106,15 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     setLoading(true);
     void refresh();
 
+    const unlockAudio = () => {
+      if (!("AudioContext" in window)) return;
+      const context = audioContext.current ?? new AudioContext();
+      audioContext.current = context;
+      if (context.state === "suspended") void context.resume().catch(() => {});
+    };
+    document.addEventListener("pointerdown", unlockAudio, { once: true });
+    document.addEventListener("keydown", unlockAudio, { once: true });
+
     let source: EventSource | null = null;
     let retry: ReturnType<typeof setTimeout> | undefined;
     let disposed = false;
@@ -108,6 +136,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         }
         if (seen.current.has(notification.id)) return;
         seen.current.add(notification.id);
+        if (audioContext.current) playNotificationSound(audioContext.current);
         setItems((current) => [notification, ...current]);
         setTotal((current) => current + 1);
         if (!notification.read) setUnread((current) => current + 1);
@@ -137,6 +166,8 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       disposed = true;
       clearTimeout(retry);
       source?.close();
+      document.removeEventListener("pointerdown", unlockAudio);
+      document.removeEventListener("keydown", unlockAudio);
     };
   }, [userId, refresh]);
 
