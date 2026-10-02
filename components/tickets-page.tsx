@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { FormEvent, useEffect, useState } from 'react'
+import { FormEvent, useEffect, useRef, useState } from 'react'
 import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { useRole } from '@/components/role-context'
 import { PageHeader } from '@/components/page-header'
@@ -29,19 +29,26 @@ export function TicketsPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const latestLoad = useRef(0)
   const [deleteTarget, setDeleteTarget] = useState<ApiTicket | null>(null)
   const [deleting, setDeleting] = useState(false)
   const canCreate = ['Super Admin', 'Manager', 'Biman Admin'].includes(role ?? '')
   const canDelete = role === 'Super Admin' || role === 'Manager'
 
   const load = async () => {
+    const requestId = ++latestLoad.current
+    const normalizedSearch = search.trim()
     setLoading(true)
     try {
-      setRows(await fetchAllPages<ApiTicket>('tickets', search ? { search } : {}))
+      const result = await fetchAllPages<ApiTicket>('tickets', normalizedSearch ? { search: normalizedSearch } : {})
+      if (requestId !== latestLoad.current) return
+      setRows(result)
       setError('')
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to load tickets.')
-    } finally { setLoading(false) }
+      if (requestId === latestLoad.current) setError(cause instanceof Error ? cause.message : 'Unable to load tickets.')
+    } finally {
+      if (requestId === latestLoad.current) setLoading(false)
+    }
   }
 
   useEffect(() => {

@@ -17,6 +17,7 @@ export interface ApiEquipment {
   status: string;
   hourMeter: number;
   actualGTDate?: string | null;
+  lastVServiceDate?: string | null;
   shipDate?: string | null;
   shippingStatus?: string | null;
   emissionRating?: string | null;

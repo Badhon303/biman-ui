@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { FormEvent, useEffect, useState } from 'react'
+import { FormEvent, useEffect, useRef, useState } from 'react'
 import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { HourMeterHistoryModal } from '@/components/hour-meter-history'
 import { useRole } from '@/components/role-context'
@@ -31,6 +31,7 @@ export function EquipmentPage() {
   const [rows, setRows] = useState<ApiEquipment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const latestLoad = useRef(0)
   const [addOpen, setAddOpen] = useState(false)
   const [meterEquipment, setMeterEquipment] = useState<ApiEquipment | null>(null)
   const [historyEquipment, setHistoryEquipment] = useState<ApiEquipment | null>(null)
@@ -39,15 +40,18 @@ export function EquipmentPage() {
   const [deleting, setDeleting] = useState(false)
 
   const load = async () => {
+    const requestId = ++latestLoad.current
+    const normalizedSearch = search.trim()
     setLoading(true)
     try {
-      const result = await fetchAllPages<ApiEquipment>('equipment', { ...(status !== 'All' ? { status } : {}), ...(search ? { search } : {}) })
+      const result = await fetchAllPages<ApiEquipment>('equipment', { ...(status !== 'All' ? { status } : {}), ...(normalizedSearch ? { search: normalizedSearch } : {}) })
+      if (requestId !== latestLoad.current) return
       setRows(result)
       setError('')
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to load equipment.')
+      if (requestId === latestLoad.current) setError(cause instanceof Error ? cause.message : 'Unable to load equipment.')
     } finally {
-      setLoading(false)
+      if (requestId === latestLoad.current) setLoading(false)
     }
   }
 
@@ -80,10 +84,14 @@ export function EquipmentPage() {
     const value = Number(form.get('value'))
     if (!Number.isFinite(value) || value < 0) { toast.error('Enter a valid hour meter value'); return }
     try {
-      await apiRequest(`equipment/${encodeURIComponent(meterEquipment.id)}/hour-meter`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ value }) })
+      const result = await apiRequest<{ serviceTicketsCreated: number }>(`equipment/${encodeURIComponent(meterEquipment.id)}/hour-meter`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ value }) })
       setMeterEquipment(null)
       await load()
-      toast.success(`Hour meter updated for ${meterEquipment.assetNo}`)
+      const ticketMessage = result.serviceTicketsCreated
+        ? ` ${result.serviceTicketsCreated} service ticket${result.serviceTicketsCreated === 1 ? '' : 's'} created.`
+        : ''
+      const actionMessage = value === meterEquipment.hourMeter ? 'Hour meter checked' : 'Hour meter updated'
+      toast.success(`${actionMessage} for ${meterEquipment.assetNo}.${ticketMessage}`)
     } catch (cause) {
       toast.error(cause instanceof Error ? cause.message : 'Unable to update hour meter.')
     }
@@ -150,6 +158,7 @@ function EquipmentModal({ onClose, onCreated }: { onClose: () => void; onCreated
       bimanSerialNo: String(form.get('bimanSerialNo')).trim() || undefined,
       tldSerialNo: String(form.get('tldSerialNo')).trim() || undefined,
       ...(String(form.get('hourMeter')).trim() ? { hourMeter: Number(form.get('hourMeter')) } : {}),
+      ...(String(form.get('lastVServiceDate')).trim() ? { lastVServiceDate: String(form.get('lastVServiceDate')) } : {}),
     }
     setSaving(true)
     try {
@@ -165,7 +174,7 @@ function EquipmentModal({ onClose, onCreated }: { onClose: () => void; onCreated
     <form className="space-y-4" onSubmit={submit}><div className="grid gap-4 sm:grid-cols-2">
       <label className="text-xs font-semibold">Equipment type<Select className="mt-2 w-full" name="equipmentTypeId" required disabled={loading}><option value="">{loading ? 'Loading types…' : 'Select equipment type'}</option>{types.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}</Select></label>
       <label className="text-xs font-semibold">Manufacturer<Input className="mt-2" name="manufacturer" placeholder="Manufacturer name" required /></label><label className="text-xs font-semibold">Model<Input className="mt-2" name="model" placeholder="Model number" required /></label><label className="text-xs font-semibold">Location<Input className="mt-2" name="location" defaultValue="Not assigned" required /></label>
-      <label className="text-xs font-semibold">Engine model<Input className="mt-2" name="engineModel" /></label><label className="text-xs font-semibold">Engine S/L<Input className="mt-2" name="engineSerialNo" /></label><label className="text-xs font-semibold">Biman serial no.<Input className="mt-2" name="bimanSerialNo" /></label><label className="text-xs font-semibold">TLD serial no.<Input className="mt-2" name="tldSerialNo" /></label><label className="text-xs font-semibold">Hour meter<Input className="mt-2" name="hourMeter" type="number" min="0" step="any" /></label>
+      <label className="text-xs font-semibold">Engine model<Input className="mt-2" name="engineModel" /></label><label className="text-xs font-semibold">Engine S/L<Input className="mt-2" name="engineSerialNo" /></label><label className="text-xs font-semibold">Biman serial no.<Input className="mt-2" name="bimanSerialNo" /></label><label className="text-xs font-semibold">TLD serial no.<Input className="mt-2" name="tldSerialNo" /></label><label className="text-xs font-semibold">Hour meter<Input className="mt-2" name="hourMeter" type="number" min="0" step="any" /></label><label className="text-xs font-semibold">V-Service Start date<Input className="mt-2" name="lastVServiceDate" type="date" /></label>
     </div><div className="flex justify-end gap-2 pt-2"><Button type="button" variant="outline" onClick={onClose}>Cancel</Button><Button type="submit" disabled={saving || loading || !types.length}><Plus className="h-4 w-4" />{saving ? 'Adding…' : 'Add equipment'}</Button></div></form>
   </div></div>
 }
