@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  Archive,
   Bell,
   Box,
   CalendarClock,
@@ -59,7 +60,10 @@ const nav: NavSection[] = [
 ];
 const adminSection: NavSection = {
   group: "Admin",
-  items: [{ label: "User management", href: "/users", icon: Users }],
+  items: [
+    { label: "User management", href: "/users", icon: Users },
+    { label: "Archive", href: "/archive", icon: Archive },
+  ],
 };
 
 const dateFormatter = new Intl.DateTimeFormat("en-GB", {

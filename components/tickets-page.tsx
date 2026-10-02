@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { FormEvent, useEffect, useState } from 'react'
-import { Pencil, Plus, Search } from 'lucide-react'
+import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { useRole } from '@/components/role-context'
 import { PageHeader } from '@/components/page-header'
 import { Card } from '@/components/ui/card'
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { StatusBadge } from '@/components/ui/badge'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { TD, TH, TBody, THead, TR, Table } from '@/components/ui/table'
 import { ApiEquipment, ApiTicket, fetchAllPages } from '@/lib/api-data'
 import { apiRequest } from '@/lib/api-client'
@@ -28,7 +29,10 @@ export function TicketsPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState<ApiTicket | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const canCreate = ['Super Admin', 'Manager', 'Biman Admin'].includes(role ?? '')
+  const canDelete = role === 'Super Admin' || role === 'Manager'
 
   const load = async () => {
     setLoading(true)
@@ -45,6 +49,21 @@ export function TicketsPage() {
     return () => window.clearTimeout(timer)
   }, [search])
 
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      await apiRequest(`tickets/${encodeURIComponent(deleteTarget.id)}`, { method: 'DELETE' })
+      setRows((current) => current.filter((ticket) => ticket.id !== deleteTarget.id))
+      toast.success('Ticket deleted')
+      setDeleteTarget(null)
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : 'Unable to delete ticket.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   const serviceTypes = ['All', ...new Set(rows.map((ticket) => ticket.serviceType))]
   const filteredRows = rows.filter((ticket) => serviceType === 'All' || ticket.serviceType === serviceType)
 
@@ -59,13 +78,14 @@ export function TicketsPage() {
             <TD><div className="font-medium">{ticket.equipment.assetNo}</div><div className="text-xs text-slate-400">{ticket.equipment.equipmentType}</div></TD>
             <TD><span className="text-xs">{ticket.serviceType}</span></TD><TD><div className="font-medium">{ticket.dueDate.slice(0, 10)}</div><div className="text-xs text-slate-400">{ticket.priority} priority</div></TD>
             <TD className={isOverdue(ticket.dueDate, ticket.closedDate ?? undefined) ? 'font-medium text-rose-600' : ''}>{overdueBy(ticket.dueDate, ticket.closedDate ?? undefined)}</TD><TD>{ticket.assignedEngineer?.name ?? 'Unassigned'}</TD><TD><StatusBadge status={ticket.status} /></TD>
-            <TD className="w-16 text-center"><Link href={`/tickets/${ticket.id}`} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:bg-blue-950/40" aria-label={`Open ${ticket.ticketNo}`} title="Open ticket"><Pencil className="h-4 w-4" /></Link></TD>
+            <TD className="w-24 text-center"><div className="flex justify-center gap-1"><Link href={`/tickets/${ticket.id}`} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:bg-blue-950/40" aria-label={`Open ${ticket.ticketNo}`} title="Open ticket"><Pencil className="h-4 w-4" /></Link>{canDelete && <button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-rose-50 hover:text-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 dark:hover:bg-rose-950/40" aria-label={`Delete ${ticket.ticketNo}`} title="Delete ticket" onClick={() => setDeleteTarget(ticket)}><Trash2 className="h-4 w-4" /></button>}</div></TD>
           </TR>)}
         </TBody></Table>
         {filteredRows.length === 0 && <div className="p-10 text-center text-sm text-slate-500">No tickets match the selected filters.</div>}
       </>}
     </Card>
     {createOpen && <TicketModal role={role} onClose={() => setCreateOpen(false)} onCreated={() => { setCreateOpen(false); void load() }} />}
+    <ConfirmDialog open={!!deleteTarget} title="Delete ticket" description={deleteTarget ? `Delete ${deleteTarget.ticketNo}? It will be removed from ticket lists, but its history will be retained.` : undefined} confirmLabel="Delete" loading={deleting} onConfirm={() => void confirmDelete()} onCancel={() => setDeleteTarget(null)} />
   </>
 }
 

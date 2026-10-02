@@ -1,7 +1,7 @@
 'use client'
 
 import { FormEvent, useEffect, useState } from 'react'
-import { KeyRound, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ArrowRight, Check, KeyRound, Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react'
 import { PasswordInput } from '@/components/ui/password-input'
 import { PageHeader } from '@/components/page-header'
 import { Card } from '@/components/ui/card'
@@ -372,15 +372,33 @@ export function SettingsPage() {
     <PageHeader eyebrow="Workspace" title="Settings" subtitle="Change your password or view equipment type settings." />
     <div className="grid gap-6 lg:grid-cols-[220px_1fr]"><Card className="h-fit p-2"><SettingsTab active={activeTab === 'changePassword'} onClick={() => setActiveTab('changePassword')}>Change Password</SettingsTab><SettingsTab active={activeTab === 'equipmentTypes'} onClick={() => setActiveTab('equipmentTypes')}>Equipment types</SettingsTab></Card>
       <div className="space-y-6">{activeTab === 'changePassword' ? <>
-        <Card className="p-6"><h2 className="text-base font-semibold">Change your password</h2><p className="mt-1 text-sm text-slate-500">Enter your current password and choose a new password with at least 6 characters.</p>
-          <form className="mt-6 max-w-xl space-y-4" onSubmit={changeOwnPassword}>
-            <label className="block text-xs font-semibold">Current password<PasswordInput autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required /></label>
-            <label className="block text-xs font-semibold">New password<PasswordInput autoComplete="new-password" minLength={6} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /></label>
-            <p aria-live="polite" className={`text-xs ${ownPasswordIsValid ? 'text-emerald-600' : 'text-slate-500'}`}>{ownPasswordIsValid ? 'Password meets the 6-character minimum.' : 'Password must be at least 6 characters long.'}</p>
-            <label className="block text-xs font-semibold">Confirm new password<PasswordInput autoComplete="new-password" minLength={6} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required /></label>
-            {confirmPassword.length > 0 && <p aria-live="polite" className={`text-xs ${ownPasswordsMatch ? 'text-emerald-600' : 'text-rose-600'}`}>{ownPasswordsMatch ? 'Passwords match.' : 'Passwords do not match.'}</p>}
-            <Button type="submit" disabled={passwordSaving || !ownPasswordIsValid || !ownPasswordsMatch}>{passwordSaving ? 'Updating…' : 'Update password'}</Button>
-          </form>
+        <Card className="overflow-hidden">
+          <div className="flex items-start gap-4 border-b p-5 sm:p-6">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/40"><KeyRound className="h-5 w-5" /></div>
+            <div><h2 className="text-base font-semibold">Change your password</h2><p className="mt-1 text-sm leading-6 text-slate-500">Update the password you use to sign in to your workspace.</p></div>
+          </div>
+          <div className="grid gap-6 p-5 sm:p-6 xl:grid-cols-[minmax(0,1fr)_280px]">
+            <form className="space-y-5" onSubmit={changeOwnPassword}>
+              <label className="block text-sm font-medium">Current password<PasswordInput autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required /></label>
+              <div>
+                <label className="block text-sm font-medium">New password<PasswordInput autoComplete="new-password" minLength={6} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /></label>
+                <p aria-live="polite" className={`mt-2 text-xs ${ownPasswordIsValid ? 'text-emerald-600' : newPassword.length > 0 ? 'text-rose-600' : 'text-slate-500'}`}>{ownPasswordIsValid ? 'Password meets the 6-character minimum.' : 'Use at least 6 characters.'}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Confirm new password<PasswordInput autoComplete="new-password" minLength={6} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required /></label>
+                {confirmPassword.length > 0 && <p aria-live="polite" className={`mt-2 text-xs ${ownPasswordsMatch ? 'text-emerald-600' : 'text-rose-600'}`}>{ownPasswordsMatch ? 'Passwords match.' : 'Passwords do not match.'}</p>}
+              </div>
+              <Button className="w-full sm:w-auto" type="submit" disabled={passwordSaving || !ownPasswordIsValid || !ownPasswordsMatch}>{passwordSaving ? 'Updating…' : <><span>Update password</span><ArrowRight className="h-4 w-4" /></>}</Button>
+            </form>
+            <aside className="h-fit rounded-xl border bg-slate-50/70 p-4 dark:bg-slate-950/50">
+              <div className="flex items-center gap-2 text-sm font-semibold"><ShieldCheck className="h-4 w-4 text-blue-600" />Password checklist</div>
+              <div className="mt-4 space-y-3 text-sm">
+                <div className="flex items-center gap-2"><span className={`grid h-4 w-4 place-items-center rounded-full ${ownPasswordIsValid ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-200 text-slate-500 dark:bg-slate-800'}`}>{ownPasswordIsValid && <Check className="h-3 w-3" />}</span><span className={ownPasswordIsValid ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-600 dark:text-slate-300'}>At least 6 characters</span></div>
+                <div className="flex items-center gap-2"><span className={`grid h-4 w-4 place-items-center rounded-full ${ownPasswordsMatch ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-200 text-slate-500 dark:bg-slate-800'}`}>{ownPasswordsMatch && <Check className="h-3 w-3" />}</span><span className={ownPasswordsMatch ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-600 dark:text-slate-300'}>Passwords match</span></div>
+              </div>
+              <p className="mt-4 border-t pt-4 text-xs leading-5 text-slate-500">You’ll be asked to sign in again after your password is updated.</p>
+            </aside>
+          </div>
         </Card>
       </> : <Card>
         <div className="flex items-start justify-between border-b p-6"><div><h2 className="text-base font-semibold">Equipment types</h2><p className="mt-1 text-sm text-slate-500">View equipment types and their service bands. Only Super Admins and Managers can make changes.</p></div>{canManageTypes && <Button onClick={() => openTypeModal()}><Plus className="h-4 w-4" />Add type</Button>}</div>

@@ -3,10 +3,11 @@
 import { DragEvent, FormEvent, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { ArrowLeft, Ban, Bold, Check, ClipboardCheck, Image as ImageIcon, Italic, List, Loader2, Lock, Pencil, Plus, Save, Send, Undo2, Wrench, X } from 'lucide-react'
+import { ArrowLeft, Ban, Bold, Check, ClipboardCheck, Image as ImageIcon, Italic, List, Loader2, Lock, Pencil, Plus, Save, Send, Trash2, Undo2, Wrench, X } from 'lucide-react'
 import { useRole } from '@/components/role-context'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { StatusBadge } from '@/components/ui/badge'
@@ -148,6 +149,19 @@ export default function TicketDetail() {
       toast.success(`${files.length} image${files.length === 1 ? '' : 's'} uploaded`)
     } catch (cause) { toast.error(cause instanceof Error ? cause.message : 'Unable to upload images.') }
     finally { await load(); setUploading(false) }
+  }
+
+  const deleteWorkImage = async (imageId: string) => {
+    if (!ticket) return false
+    try {
+      await apiRequest(`files/${encodeURIComponent(imageId)}`, { method: 'DELETE' })
+      await load()
+      toast.success('Work image deleted')
+      return true
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : 'Unable to delete work image.')
+      return false
+    }
   }
 
   const returnToEngineer = async (event: FormEvent<HTMLFormElement>) => {
@@ -310,7 +324,7 @@ export default function TicketDetail() {
         <RecordInput label="Labour hours" type="number" min="0" step="0.5" value={labourHours} disabled={!canEditRecord} onChange={setLabourHours} />
         <RecordToggle label="Functional test" checked={functionalTestPassed} disabled={!canEditRecord} onChange={setFunctionalTestPassed} />
         <RecordToggle label="Safety check" checked={safetyCheckPassed} disabled={!canEditRecord} onChange={setSafetyCheckPassed} />
-        <WorkImages images={images} canUpload={canEditRecord} uploading={uploading} onUpload={(files) => void uploadWorkImages(files)} />
+        <WorkImages images={images} canUpload={canEditRecord} uploading={uploading} onUpload={(files) => void uploadWorkImages(files)} onDelete={deleteWorkImage} />
       </div>
       <div className="mt-6 space-y-4"><h3 className="text-sm font-semibold">Engineer feedback</h3>{!canEditRecord && feedback.length === 0 && <div className="rounded-xl border border-dashed p-5 text-center text-sm text-slate-400">No feedback submitted yet.</div>}{feedback.map((entry) => <FeedbackCard key={entry.id} entry={entry} />)}</div>
       {canEditRecord && <><FeedbackComposer key={composerKey} onChange={setFeedbackDraft} /><div className="mt-4 flex justify-end gap-2"><Button variant="outline" onClick={() => void saveProgress()} disabled={saving}>{maintenanceAction === 'save' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}{maintenanceAction === 'save' ? 'Saving…' : 'Save progress'}</Button><Button onClick={() => void submitForVerification()} disabled={saving}>{maintenanceAction === 'submit' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}{maintenanceAction === 'submit' ? 'Submitting…' : 'Final submit'}</Button></div></>}</Card></div>
@@ -377,8 +391,19 @@ function RecordToggle({ label, checked, disabled, onChange }: Readonly<{ label: 
 
 const acceptedImageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif']
 
-function WorkImages({ images, canUpload, uploading, onUpload }: Readonly<{ images: { id: string; thumb: string; full: string }[]; canUpload: boolean; uploading: boolean; onUpload: (files: File[]) => void }>) {
+function WorkImages({ images, canUpload, uploading, onUpload, onDelete }: Readonly<{ images: { id: string; thumb: string; full: string }[]; canUpload: boolean; uploading: boolean; onUpload: (files: File[]) => void; onDelete: (id: string) => Promise<boolean> }>) {
   const [isDragging, setIsDragging] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string } | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      if (await onDelete(deleteTarget.id)) setDeleteTarget(null)
+    } finally {
+      setDeleting(false)
+    }
+  }
   const addFiles = (list: FileList | null) => {
     const files = Array.from(list ?? []).filter((file) => acceptedImageTypes.includes(file.type))
     if (list?.length && !files.length) toast.error('Only JPEG, PNG, WebP and AVIF images are accepted.')
@@ -419,12 +444,16 @@ function WorkImages({ images, canUpload, uploading, onUpload }: Readonly<{ image
       {images.length > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {images.map((image) => (
-            <a key={image.id} href={image.full} target="_blank" rel="noreferrer" className="block aspect-video overflow-hidden rounded-xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-950">
-              <img src={image.thumb} alt="Work attachment" className="h-full w-full object-cover transition hover:scale-105" />
-            </a>
+            <div key={image.id} className="group relative aspect-video overflow-hidden rounded-xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-950">
+              <a href={image.full} target="_blank" rel="noreferrer" className="block h-full w-full">
+                <img src={image.thumb} alt="Work attachment" className="h-full w-full object-cover transition group-hover:scale-105" />
+              </a>
+              {canUpload && <button type="button" className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-lg bg-rose-600 text-white shadow transition hover:bg-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 disabled:opacity-50" aria-label="Delete work image" title="Delete work image" disabled={uploading || deleting} onClick={() => setDeleteTarget({ id: image.id })}><Trash2 className="h-4 w-4" /></button>}
+            </div>
           ))}
         </div>
       )}
+      <ConfirmDialog open={!!deleteTarget} title="Delete work image" description="Permanently delete this image from the maintenance record?" confirmLabel="Delete image" loading={deleting} onConfirm={() => void confirmDelete()} onCancel={() => setDeleteTarget(null)} />
     </div>
   )
 }
