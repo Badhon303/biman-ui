@@ -5,3 +5,13 @@
 .dark { --background: 222 47% 8%; --foreground: 210 40% 98%; --muted: 215 20% 65%; --line: 217 33% 18%; --primary: 216 92% 65%; }
 @layer base { * { @apply border-slate-200 dark:border-slate-800; } body { @apply bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-slate-50; font-feature-settings: "rlig" 1, "calt" 1; } }
 @layer utilities { .text-balance { text-wrap: balance; } }
+html { scrollbar-gutter: stable; }
+html body[data-scroll-locked] { margin-right: 0 !important; padding-right: 0 !important; }
+.dark { color-scheme: dark; }
+input[type="date"] { appearance: none; -webkit-appearance: none; display: block; min-width: 0; line-height: 1.25rem; cursor: text; }
+input[type="date"]::-webkit-date-and-time-value { text-align: left; }
+input[type="date"]::-webkit-datetime-edit { padding: 0; }
+input[type="date"]::-webkit-datetime-edit-fields-wrapper { padding: 0; }
+input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: .55; border-radius: 4px; padding: 2px; margin-right: -4px; transition: opacity .15s, background-color .15s; }
+input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; background-color: rgb(148 163 184 / .2); }
+.dark input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
