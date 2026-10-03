@@ -5,6 +5,7 @@
 .dark { --background: 222 47% 8%; --foreground: 210 40% 98%; --muted: 215 20% 65%; --line: 217 33% 18%; --primary: 216 92% 65%; }
 @layer base { * { @apply border-slate-200 dark:border-slate-800; } body { @apply bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-slate-50; font-feature-settings: "rlig" 1, "calt" 1; } }
 @layer utilities { .text-balance { text-wrap: balance; } }
+label:has(:required)::before { content: "*"; display: inline-block; margin-right: 0.25rem; color: #dc2626; }
 html { scrollbar-gutter: stable; }
 html body[data-scroll-locked] { margin-right: 0 !important; padding-right: 0 !important; }
 .dark { color-scheme: dark; }

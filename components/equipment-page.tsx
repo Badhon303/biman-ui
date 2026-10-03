@@ -141,13 +141,18 @@ export function EquipmentPage() {
 
 function EquipmentModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [types, setTypes] = useState<EquipmentType[]>([])
+  const [selectedTypeId, setSelectedTypeId] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   useEffect(() => { apiRequest<EquipmentType[]>('equipment-types').then(setTypes).catch((cause) => toast.error(cause instanceof Error ? cause.message : 'Unable to load equipment types.')).finally(() => setLoading(false)) }, [])
 
+  const selectedType = types.find((type) => type.id === selectedTypeId)
+  const hasVService = selectedType?.services.some((service) => service.name.trim().toLowerCase() === 'v-service') ?? false
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
+    const lastVServiceDate = form.get('lastVServiceDate')
     const body = {
       equipmentTypeId: String(form.get('equipmentTypeId')),
       manufacturer: String(form.get('manufacturer')).trim(),
@@ -158,7 +163,7 @@ function EquipmentModal({ onClose, onCreated }: { onClose: () => void; onCreated
       bimanSerialNo: String(form.get('bimanSerialNo')).trim() || undefined,
       tldSerialNo: String(form.get('tldSerialNo')).trim() || undefined,
       ...(String(form.get('hourMeter')).trim() ? { hourMeter: Number(form.get('hourMeter')) } : {}),
-      ...(String(form.get('lastVServiceDate')).trim() ? { lastVServiceDate: String(form.get('lastVServiceDate')) } : {}),
+      ...(hasVService && typeof lastVServiceDate === 'string' && lastVServiceDate.trim() ? { lastVServiceDate } : {}),
     }
     setSaving(true)
     try {
@@ -172,9 +177,9 @@ function EquipmentModal({ onClose, onCreated }: { onClose: () => void; onCreated
 
   return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"><div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">Add equipment</h2><p className="mt-1 text-sm text-slate-500">Enter the basic details for a new fleet asset.</p></div><button type="button" onClick={onClose} className="text-2xl leading-none text-slate-400" aria-label="Close modal">×</button></div>
     <form className="space-y-4" onSubmit={submit}><div className="grid gap-4 sm:grid-cols-2">
-      <label className="text-xs font-semibold">Equipment type<Select className="mt-2 w-full" name="equipmentTypeId" required disabled={loading}><option value="">{loading ? 'Loading types…' : 'Select equipment type'}</option>{types.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}</Select></label>
+      <label className="text-xs font-semibold">Equipment type<Select className="mt-2 w-full" name="equipmentTypeId" value={selectedTypeId} onChange={(event) => setSelectedTypeId(event.target.value)} required disabled={loading}><option value="">{loading ? 'Loading types…' : 'Select equipment type'}</option>{types.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}</Select></label>
       <label className="text-xs font-semibold">Manufacturer<Input className="mt-2" name="manufacturer" placeholder="Manufacturer name" required /></label><label className="text-xs font-semibold">Model<Input className="mt-2" name="model" placeholder="Model number" required /></label><label className="text-xs font-semibold">Location<Input className="mt-2" name="location" defaultValue="Not assigned" required /></label>
-      <label className="text-xs font-semibold">Engine model<Input className="mt-2" name="engineModel" /></label><label className="text-xs font-semibold">Engine S/L<Input className="mt-2" name="engineSerialNo" /></label><label className="text-xs font-semibold">Biman serial no.<Input className="mt-2" name="bimanSerialNo" /></label><label className="text-xs font-semibold">TLD serial no.<Input className="mt-2" name="tldSerialNo" /></label><label className="text-xs font-semibold">Hour meter<Input className="mt-2" name="hourMeter" type="number" min="0" step="any" /></label><label className="text-xs font-semibold">V-Service Start date<Input className="mt-2" name="lastVServiceDate" type="date" /></label>
+      <label className="text-xs font-semibold">Engine model<Input className="mt-2" name="engineModel" /></label><label className="text-xs font-semibold">Engine S/L<Input className="mt-2" name="engineSerialNo" /></label><label className="text-xs font-semibold">Biman serial no.<Input className="mt-2" name="bimanSerialNo" /></label><label className="text-xs font-semibold">TLD serial no.<Input className="mt-2" name="tldSerialNo" /></label><label className="text-xs font-semibold">Hour meter<Input className="mt-2" name="hourMeter" type="number" min="0" step="any" /></label>{hasVService && <label className="text-xs font-semibold">V-Service Start date<Input className="mt-2" name="lastVServiceDate" type="date" required /></label>}
     </div><div className="flex justify-end gap-2 pt-2"><Button type="button" variant="outline" onClick={onClose}>Cancel</Button><Button type="submit" disabled={saving || loading || !types.length}><Plus className="h-4 w-4" />{saving ? 'Adding…' : 'Add equipment'}</Button></div></form>
   </div></div>
 }

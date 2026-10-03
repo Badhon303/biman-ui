@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { FormEvent, useEffect, useState } from 'react'
-import { Check, Filter, Plus, X } from 'lucide-react'
+import { Check, Plus, X } from 'lucide-react'
 import { useRole } from '@/components/role-context'
 import { focusedRowClass, useFocusedRow } from '@/components/use-focused-row'
 import { PageHeader } from '@/components/page-header'
@@ -21,11 +21,13 @@ export function RequestsPage() {
   const [rows, setRows] = useState<ApiRequest[]>([])
   const [tickets, setTickets] = useState<ApiTicket[]>([])
   const [createOpen, setCreateOpen] = useState(false)
+  const [statusFilter, setStatusFilter] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const canCreate = ['Engineer', 'Manager', 'Super Admin'].includes(role ?? '')
   const canApprove = ['Biman Admin', 'Manager', 'Super Admin'].includes(role ?? '')
   const focus = useFocusedRow(!loading)
+  const filteredRows = statusFilter ? rows.filter((request) => request.status === statusFilter) : rows
 
   const load = async () => {
     try {
@@ -85,10 +87,10 @@ export function RequestsPage() {
   return <>
     <PageHeader eyebrow="Maintenance / Requests" title="Equipment & parts requests" subtitle="A request-and-approval record linked to maintenance work — not an inventory system." action={canCreate ? <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" />Create request</Button> : undefined} />
     <Card>
-      <div className="flex items-center justify-between border-b p-5"><div><h2 className="text-sm font-semibold">All requests</h2><p className="mt-1 text-xs text-slate-500">{rows.length} records across active tickets</p></div><Button variant="outline" disabled><Filter className="h-4 w-4" />Filter</Button></div>
+      <div className="flex items-center justify-between gap-4 border-b p-5"><div><h2 className="text-sm font-semibold">All requests</h2><p className="mt-1 text-xs text-slate-500">{filteredRows.length} of {rows.length} records across active tickets</p></div><Select className="h-9" aria-label="Filter requests by status" value={statusFilter} onValueChange={setStatusFilter}><option value="">All statuses</option>{['Pending', 'Approved', 'Rejected', 'Received'].map((status) => <option key={status} value={status}>{status}</option>)}</Select></div>
       {loading ? <div className="p-10 text-center text-sm text-slate-500">Loading requests…</div> : error ? <div className="p-10 text-center text-sm text-rose-600">{error}</div> : <>
         <Table><THead><TR><TH>Request ID</TH><TH>Item</TH><TH>Linked ticket / asset</TH><TH>Requested by</TH><TH>Date</TH><TH>Status</TH><TH>Approved by</TH><TH></TH></TR></THead><TBody>
-          {rows.map((request) => <TR key={request.id} id={`row-${request.id}`} className={focus === request.id ? focusedRowClass : ''}>
+          {filteredRows.map((request) => <TR key={request.id} id={`row-${request.id}`} className={focus === request.id ? focusedRowClass : ''}>
             <TD className="font-semibold">{request.requestNo}</TD>
             <TD><div className="font-medium">{request.item} ×{request.quantity}</div><div className="max-w-[220px] truncate text-xs text-slate-400">{request.reason}</div></TD>
             <TD><Link href={`/tickets/${request.ticket?.id ?? request.ticketId}`} className="font-medium text-blue-600">{request.ticket?.ticketNo ?? request.ticketId}</Link><div className="text-xs text-slate-400">{request.equipment?.assetNo ?? request.ticket?.equipment?.assetNo ?? '—'}</div></TD>
@@ -97,7 +99,7 @@ export function RequestsPage() {
             <TD>{canApprove && request.status === 'Pending' ? <div className="flex gap-1"><Button className="h-8 px-2 text-xs" onClick={() => void decide(request, 'approve')}><Check className="h-3 w-3" />Approve</Button><Button variant="danger" className="h-8 px-2 text-xs" onClick={() => void decide(request, 'reject')}><X className="h-3 w-3" />Reject</Button></div> : canApprove && request.status === 'Approved' ? <Button className="h-8 px-2 text-xs" onClick={() => void decide(request, 'receive')}>Mark received</Button> : null}</TD>
           </TR>)}
         </TBody></Table>
-        {rows.length === 0 && <div className="p-10 text-center text-sm text-slate-500">No requests found.</div>}
+        {filteredRows.length === 0 && <div className="p-10 text-center text-sm text-slate-500">{rows.length === 0 ? 'No requests found.' : 'No requests match this status.'}</div>}
       </>}
     </Card>
     {createOpen && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"><div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900">
