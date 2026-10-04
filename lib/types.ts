@@ -62,12 +62,21 @@ export interface Equipment {
   documents: EquipmentDocument[];
 }
 
+export interface EquipmentTypeChecklistItem {
+  category: string;
+  label: string;
+  sortOrder: number;
+  enabled: boolean;
+  applicable?: boolean;
+}
 export interface EquipmentTypeService {
   id: string;
   name: string;
+  kind?: string;
   minHours?: number;
   maxHours?: number;
   months?: number;
+  checklistItems?: EquipmentTypeChecklistItem[];
 }
 export interface EquipmentType {
   id: string;

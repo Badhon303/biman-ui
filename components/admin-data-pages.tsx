@@ -14,11 +14,11 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useRole } from '@/components/role-context'
 import { apiRequest } from '@/lib/api-client'
 import { fetchAllPages } from '@/lib/api-data'
-import { ApiUser, EquipmentType, Role, User } from '@/lib/types'
+import { ApiUser, EquipmentType, EquipmentTypeChecklistItem, Role, User } from '@/lib/types'
 import { toast } from 'sonner'
 
 type ApiEquipmentType = EquipmentType & { _count?: { equipment: number } }
-type ServiceDraft = { id?: string; name: string; minHours: string; maxHours: string; months: string }
+type ServiceDraft = { id?: string; name: string; minHours: string; maxHours: string; months: string; checklistItems: EquipmentTypeChecklistItem[] }
 
 // Fixed hour bands for the standard F through E services (not user-editable).
 const STANDARD_SLIDER_SERVICES: { name: string; minHours: number; maxHours: number }[] = [
@@ -28,6 +28,17 @@ const STANDARD_SLIDER_SERVICES: { name: string; minHours: number; maxHours: numb
   { name: 'D-Service', minHours: 2000, maxHours: 2500 },
   { name: 'E-Service', minHours: 2500, maxHours: 3000 },
 ]
+
+const checklistKindForService = (name: string) => {
+  const kind = name.trim().toLowerCase().replace(/-service$/, '').toUpperCase()
+  return ['F', 'B', 'C', 'D', 'E', 'V'].includes(kind) ? `${kind}_SERVICE` : 'OTHERS'
+}
+const checklistSettingsKey = (name: string) => name.trim().toLowerCase()
+
+function ChecklistServiceSetting({ name, items, onToggle, defaultOpen = false, loading = false }: { name: string; items: EquipmentTypeChecklistItem[]; onToggle: (index: number, enabled: boolean) => void; defaultOpen?: boolean; loading?: boolean }) {
+  const categories = items.reduce<Record<string, EquipmentTypeChecklistItem[]>>((groups, item) => { (groups[item.category] ??= []).push(item); return groups }, {})
+  return <details open={defaultOpen} className="rounded-lg border"><summary className="cursor-pointer px-3 py-3 text-sm font-semibold">{name} <span className="ml-1 text-xs font-normal text-slate-500">{loading && !items.length ? 'Loading checklist…' : `${items.filter((item) => item.enabled).length}/${items.length} enabled`}</span></summary><div className="space-y-3 border-t p-3">{loading && !items.length ? <p className="text-xs text-slate-500">Loading checklist items…</p> : Object.entries(categories).map(([category, categoryItems]) => <fieldset key={category}><legend className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{category}</legend><div className="grid gap-2 sm:grid-cols-2">{categoryItems.map((item) => <label key={`${item.sortOrder}-${item.label}`} className="flex items-center gap-2 rounded-md border px-3 py-2 text-xs"><input type="checkbox" checked={item.enabled} onChange={(event) => onToggle(items.indexOf(item), event.target.checked)} className="h-4 w-4 accent-blue-600" />{item.label}</label>)}</div></fieldset>)}</div></details>
+}
 
 function getInitials(name: string) {
   return name.split(/\s+/).slice(0, 2).map((part) => part[0] ?? '').join('').toUpperCase()
@@ -245,6 +256,9 @@ export function SettingsPage() {
   const [typeName, setTypeName] = useState('')
   const [serviceLevel, setServiceLevel] = useState(0)
   const [sliderServiceIds, setSliderServiceIds] = useState<(string | undefined)[]>([])
+  const [checklistSettings, setChecklistSettings] = useState<Record<string, EquipmentTypeChecklistItem[]>>({})
+  const [checklistCatalog, setChecklistCatalog] = useState<Record<string, EquipmentTypeChecklistItem[]>>({})
+  const [checklistCatalogLoading, setChecklistCatalogLoading] = useState(false)
   const [vServiceEnabled, setVServiceEnabled] = useState(false)
   const [vServiceId, setVServiceId] = useState<string | undefined>(undefined)
   const [customServices, setCustomServices] = useState<ServiceDraft[]>([])
@@ -271,20 +285,42 @@ export function SettingsPage() {
   }
 
   useEffect(() => { if (activeTab === 'equipmentTypes') void loadTypes() }, [activeTab])
+  useEffect(() => {
+    if (!typeModalOpen) return
+    let cancelled = false
+    setChecklistCatalogLoading(true)
+    void apiRequest<Record<string, EquipmentTypeChecklistItem[]>>('equipment-types/checklists')
+      .then((catalog) => { if (!cancelled) setChecklistCatalog(catalog) })
+      .catch((cause) => { if (!cancelled) toast.error(cause instanceof Error ? cause.message : 'Unable to load inspection checklists.') })
+      .finally(() => { if (!cancelled) setChecklistCatalogLoading(false) })
+    return () => { cancelled = true }
+  }, [typeModalOpen])
 
-  const openTypeModal = (type?: ApiEquipmentType) => {
-    setEditingType(type ?? null)
-    setTypeName(type?.name ?? '')
-    const existing = type?.services ?? []
+  const openTypeModal = async (type?: ApiEquipmentType) => {
+    let selected = type
+    if (type) {
+      try {
+        selected = await apiRequest<ApiEquipmentType>(`equipment-types/${encodeURIComponent(type.id)}`)
+      } catch (cause) {
+        toast.error(cause instanceof Error ? cause.message : 'Unable to load equipment type.')
+        return
+      }
+    }
+    setEditingType(selected ?? null)
+    setTypeName(selected?.name ?? '')
+    const existing = selected?.services ?? []
     const matchedSlider = STANDARD_SLIDER_SERVICES.map((std) => existing.find((service) => service.name.trim().toLowerCase() === std.name.toLowerCase()))
     const highestIndex = matchedSlider.reduce((max, service, index) => service ? index : max, -1)
     setServiceLevel(highestIndex >= 0 ? highestIndex : 0)
     setSliderServiceIds(matchedSlider.map((service) => service?.id))
+    setChecklistSettings(Object.fromEntries(existing.map((service) => [checklistSettingsKey(service.name), service.checklistItems ?? []])))
+    setChecklistCatalog({})
+    setChecklistCatalogLoading(true)
     const vService = existing.find((service) => service.name.trim().toLowerCase() === 'v-service')
     setVServiceEnabled(!!vService)
     setVServiceId(vService?.id)
     const standardNames = new Set([...STANDARD_SLIDER_SERVICES.map((service) => service.name.toLowerCase()), 'v-service'])
-    setCustomServices(existing.filter((service) => !standardNames.has(service.name.trim().toLowerCase())).map((service) => ({ id: service.id, name: service.name, minHours: service.minHours?.toString() ?? '', maxHours: service.maxHours?.toString() ?? '', months: service.months?.toString() ?? '' })))
+    setCustomServices(existing.filter((service) => !standardNames.has(service.name.trim().toLowerCase())).map((service) => ({ id: service.id, name: service.name, minHours: service.minHours?.toString() ?? '', maxHours: service.maxHours?.toString() ?? '', months: service.months?.toString() ?? '', checklistItems: service.checklistItems ?? [] })))
     setTypeModalOpen(true)
   }
 
@@ -294,12 +330,25 @@ export function SettingsPage() {
     setTypeName('')
     setServiceLevel(0)
     setSliderServiceIds([])
+    setChecklistSettings({})
+    setChecklistCatalog({})
+    setChecklistCatalogLoading(false)
     setVServiceEnabled(false)
     setVServiceId(undefined)
     setCustomServices([])
   }
 
   const updateCustomService = (index: number, patch: Partial<ServiceDraft>) => setCustomServices((current) => current.map((service, i) => i === index ? { ...service, ...patch } : service))
+  const checklistItemsFor = (name: string, kind: string) => checklistSettings[checklistSettingsKey(name)] ?? checklistCatalog[kind] ?? []
+  const updateChecklistItem = (name: string, kind: string, itemIndex: number, enabled: boolean) => setChecklistSettings((current) => {
+    const key = checklistSettingsKey(name)
+    const items = current[key] ?? checklistCatalog[kind] ?? []
+    return { ...current, [key]: items.map((item, index) => index === itemIndex ? { ...item, enabled } : item) }
+  })
+  const updateCustomChecklistItem = (service: ServiceDraft, serviceIndex: number, itemIndex: number, enabled: boolean) => {
+    const items = service.checklistItems.length ? service.checklistItems : checklistCatalog.OTHERS ?? []
+    updateCustomService(serviceIndex, { checklistItems: items.map((item, index) => index === itemIndex ? { ...item, enabled } : item) })
+  }
   const removeCustomService = (index: number) => setCustomServices((current) => current.filter((_, i) => i !== index))
 
   const changeOwnPassword = async (event: FormEvent<HTMLFormElement>) => {
@@ -330,18 +379,21 @@ export function SettingsPage() {
 
   const saveEquipmentType = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    const toChecklistPayload = (items: EquipmentTypeChecklistItem[]) => items.map(({ category, label, sortOrder, enabled }) => ({ category, label, sortOrder, enabled }))
     const sliderPayload = STANDARD_SLIDER_SERVICES.slice(0, serviceLevel + 1).map((service, index) => ({
       ...(sliderServiceIds[index] ? { id: sliderServiceIds[index] } : {}),
       name: service.name,
       minHours: service.minHours,
       maxHours: service.maxHours,
+      checklistItems: toChecklistPayload(checklistItemsFor(service.name, checklistKindForService(service.name))),
     }))
-    const vServicePayload = vServiceEnabled ? [{ ...(vServiceId ? { id: vServiceId } : {}), name: 'V-Service', months: 6 }] : []
+    const vServicePayload = vServiceEnabled ? [{ ...(vServiceId ? { id: vServiceId } : {}), name: 'V-Service', months: 6, checklistItems: toChecklistPayload(checklistItemsFor('V-Service', 'V_SERVICE')) }] : []
     const customPayload = customServices.filter((service) => service.name.trim()).map((service) => ({
       ...(service.id ? { id: service.id } : {}),
       name: service.name.trim(),
       ...(service.minHours !== '' ? { minHours: Number(service.minHours) } : {}),
       ...(service.maxHours !== '' ? { maxHours: Number(service.maxHours) } : {}),
+      checklistItems: toChecklistPayload(service.checklistItems.length ? service.checklistItems : checklistCatalog.OTHERS ?? []),
     }))
     const servicePayload = [...sliderPayload, ...vServicePayload, ...customPayload]
     if (!typeName.trim() || !servicePayload.length) { toast.error('Enter a type name and at least one service.'); return }
@@ -428,10 +480,11 @@ export function SettingsPage() {
           </div>
           <label className="mt-3 flex items-center justify-between rounded-xl border p-3 text-sm">V-Service (6 months)<input type="checkbox" checked={vServiceEnabled} onChange={() => setVServiceEnabled((current) => !current)} className="h-4 w-4 accent-blue-600" /></label>
         </div>
-        <div><div className="flex items-center justify-between"><span className="text-xs font-semibold">Custom services</span><Button type="button" variant="outline" className="h-8 px-2 text-xs" onClick={() => setCustomServices((current) => [...current, { name: '', minHours: '', maxHours: '', months: '' }])}><Plus className="h-3.5 w-3.5" />Add custom</Button></div>
+        <div className="rounded-xl border p-4"><div className="text-xs font-semibold">Inspection checklist items</div><p className="mt-1 text-xs text-slate-500">Select the parts to include for each service type. All items are enabled by default.</p><div className="mt-3 space-y-2">{STANDARD_SLIDER_SERVICES.slice(0, serviceLevel + 1).map((service, index) => <ChecklistServiceSetting key={service.name} name={service.name} items={checklistItemsFor(service.name, checklistKindForService(service.name))} onToggle={(itemIndex, enabled) => updateChecklistItem(service.name, checklistKindForService(service.name), itemIndex, enabled)} defaultOpen={index === 0} loading={checklistCatalogLoading} />)}{vServiceEnabled && <ChecklistServiceSetting name="V-Service" items={checklistItemsFor('V-Service', 'V_SERVICE')} onToggle={(itemIndex, enabled) => updateChecklistItem('V-Service', 'V_SERVICE', itemIndex, enabled)} loading={checklistCatalogLoading} />}{customServices.map((service, index) => <ChecklistServiceSetting key={service.id ?? index} name={service.name.trim() || `Custom service ${index + 1}`} items={service.checklistItems.length ? service.checklistItems : checklistCatalog.OTHERS ?? []} onToggle={(itemIndex, enabled) => updateCustomChecklistItem(service, index, itemIndex, enabled)} loading={checklistCatalogLoading} />)}</div></div>
+        <div><div className="flex items-center justify-between"><span className="text-xs font-semibold">Custom services</span><Button type="button" variant="outline" className="h-8 px-2 text-xs" onClick={() => setCustomServices((current) => [...current, { name: '', minHours: '', maxHours: '', months: '', checklistItems: [] }])}><Plus className="h-3.5 w-3.5" />Add custom</Button></div>
           {customServices.length ? <div className="mt-2 space-y-2">{customServices.map((service, index) => <div key={service.id ?? index} className="space-y-2 rounded-xl border p-3"><div className="flex items-center gap-2"><Input placeholder="Service name" value={service.name} onChange={(event) => updateCustomService(index, { name: event.target.value })} /><Button type="button" variant="ghost" className="px-2 text-rose-600 hover:bg-rose-50" aria-label="Remove custom service" onClick={() => removeCustomService(index)}><Trash2 className="h-4 w-4" /></Button></div><div className="flex items-center gap-2"><Input type="number" min={0} placeholder="Start hours" className="flex-1" value={service.minHours} onChange={(event) => updateCustomService(index, { minHours: event.target.value })} /><span className="text-xs text-slate-400">to</span><Input type="number" min={0} placeholder="End hours" className="flex-1" value={service.maxHours} onChange={(event) => updateCustomService(index, { maxHours: event.target.value })} /></div></div>)}</div> : <p className="mt-2 text-xs text-slate-400">Add a custom service with its own name and hour range.</p>}
         </div>
-        <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={closeTypeModal}>Cancel</Button><Button type="submit" disabled={saving}>{saving ? 'Saving…' : editingType ? 'Save changes' : 'Create type'}</Button></div>
+        <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={closeTypeModal}>Cancel</Button><Button type="submit" disabled={saving || checklistCatalogLoading}>{checklistCatalogLoading ? 'Loading checklist…' : saving ? 'Saving…' : editingType ? 'Save changes' : 'Create type'}</Button></div>
       </form></div></div>}
     <ConfirmDialog
       open={!!deleteTypeTarget}

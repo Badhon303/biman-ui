@@ -249,7 +249,7 @@ export default function TicketDetail() {
   if (error || !ticket) return <><Card className="p-10 text-center text-sm text-rose-600">{error || 'Ticket not found.'}</Card></>
 
   const checklist = ticket.maintenanceRecord?.inspectionChecklist ?? ticket.maintenanceRecord?.checklistItems ?? []
-  const showInspectionChecklist = !['Breakdown', 'Washing', 'General'].includes(ticket.serviceType)
+  const showInspectionChecklist = !['Breakdown', 'Washing', 'General'].includes(ticket.serviceType) && checklist.length > 0
   const checklistByCategory = checklist.reduce<Record<string, typeof checklist>>((groups, item) => { (groups[item.category] ??= []).push(item); return groups }, {})
   const isApplicable = (item: (typeof checklist)[number]) => item.applicable !== false
   const applicableChecklist = checklist.filter(isApplicable)
