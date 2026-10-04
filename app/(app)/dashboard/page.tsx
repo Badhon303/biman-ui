@@ -335,9 +335,9 @@ export default function Dashboard() {
         </Card>
       </div>
       <div className="mt-5 grid gap-5 xl:grid-cols-[1.65fr_1fr]">
-        <Card className="min-w-0 p-6">
+        <Card className="flex min-w-0 flex-col p-6">
           <SectionTitle title="Maintenance workload" subtitle="Open tickets by service type" bare />
-          <div className="mt-5"><TicketChart data={stats.ticketChart} loading={loading} /></div>
+          <div className="mt-5 flex-1"><TicketChart data={stats.ticketChart} loading={loading} /></div>
         </Card>
         <AttentionNeeded rows={notifications} loading={loading} />
       </div>

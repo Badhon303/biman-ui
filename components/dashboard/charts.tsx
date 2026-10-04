@@ -29,9 +29,9 @@ export function EquipmentChart({ data, loading = false }: { data: ChartDatum[]; 
 }
 
 export function TicketChart({ data, loading = false }: { data: ChartDatum[]; loading?: boolean }) {
-  if (loading || !data.length) return <div className="grid h-[230px] place-items-center rounded-2xl bg-blue-50/40 text-sm text-slate-500" aria-busy={loading}>{loading ? 'Loading maintenance workload…' : 'No open tickets.'}</div>
+  if (loading || !data.length) return <div className="grid h-full min-h-[230px] place-items-center rounded-2xl bg-blue-50/40 text-sm text-slate-500" aria-busy={loading}>{loading ? 'Loading maintenance workload…' : 'No open tickets.'}</div>
   return (
-    <div className="h-[230px] w-full min-w-0" role="img" aria-label={`Open tickets: ${data.map(item => `${item.name}: ${item.value}`).join(', ')}`}>
+    <div className="h-full min-h-[230px] w-full min-w-0" role="img" aria-label={`Open tickets: ${data.map(item => `${item.name}: ${item.value}`).join(', ')}`}>
       <ResponsiveContainer>
         <BarChart data={data} barSize={34} margin={{ left: -20, right: 4, top: 10, bottom: 0 }}>
           <CartesianGrid vertical={false} stroke="#edf1f7" strokeDasharray="4 4" />
