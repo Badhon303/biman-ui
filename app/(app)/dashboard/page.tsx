@@ -11,10 +11,12 @@ import {
   Clock3,
   Plus,
   Search,
-  Sparkles,
+  Plane,
+  Radar,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Kpi } from "@/components/dashboard/kpi";
+import { AirlinerSilhouette } from "@/components/aviation-backdrop";
 import type { ChartDatum } from "@/components/dashboard/charts";
 import dynamic from "next/dynamic";
 
@@ -209,28 +211,29 @@ export default function Dashboard() {
         />
         {errorBanner}
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Kpi
+          <Kpi colorful
+            featured
             label="Open tickets assigned to me"
             value={show(openAssigned.length)}
             delta={loading ? undefined : `${stats.closedThisWeek} closed in the last 7 days`}
             icon="ticket"
             href="/tickets"
           />
-          <Kpi
+          <Kpi colorful
             label="In progress"
             value={show(openAssigned.filter((t) => t.status === "In Progress").length)}
             icon="wrench"
             color="amber"
             href="/tickets"
           />
-          <Kpi
+          <Kpi colorful
             label="Awaiting parts"
             value={show(openAssigned.filter((t) => t.status === "Awaiting Parts").length)}
             icon="box"
             color="sky"
             href="/requests"
           />
-          <Kpi label="Overdue tickets" value={show(stats.overdueTickets.length)} icon="alert" color="rose" href="/tickets" />
+          <Kpi colorful label="Overdue tickets" value={show(stats.overdueTickets.length)} icon="alert" color="rose" href="/tickets" />
         </div>
         <div className="mt-7 grid gap-6 xl:grid-cols-[1.35fr_.65fr]">
           <Card>
@@ -258,16 +261,17 @@ export default function Dashboard() {
         />
         {errorBanner}
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Kpi label="Pending approvals" value={show(stats.pendingRequests.length)} icon="box" color="amber" href="/requests" />
-          <Kpi
+          <Kpi colorful featured label="Pending approvals" value={show(stats.pendingRequests.length)} icon="box" color="amber" href="/requests" />
+          <Kpi colorful
             label="Open tickets"
             value={show(stats.openTickets.length)}
             delta={loading ? undefined : `${stats.overdueTickets.length} overdue`}
             icon="ticket"
+            color="sky"
             href="/tickets"
           />
-          <Kpi label="Under maintenance" value={show(stats.maintenance)} icon="wrench" color="rose" href="/equipment" />
-          <Kpi
+          <Kpi colorful label="Under maintenance" value={show(stats.maintenance)} icon="wrench" color="rose" href="/equipment" />
+          <Kpi colorful
             label="Available equipment"
             value={show(stats.available)}
             delta={loading ? undefined : `${stats.availability}% fleet availability`}
@@ -302,45 +306,42 @@ export default function Dashboard() {
         action={createTicket}
       />
       {errorBanner}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-        <Kpi
-          label="Total equipment"
-          value={show(equipment.length)}
-          delta={loading ? undefined : `${stats.availability}% available`}
-          icon="box"
-          href="/equipment"
-        />
-        <Kpi label="Under maintenance" value={show(stats.maintenance)} icon="wrench" color="amber" href="/equipment" />
-        <Kpi label="Open tickets" value={show(stats.openTickets.length)} icon="ticket" href="/tickets" />
-        <Kpi label="Overdue tickets" value={show(stats.overdueTickets.length)} icon="alert" color="rose" href="/tickets" />
-        <Kpi label="V-Service due soon" value={show(stats.vDueSoon)} icon="calendar" color="sky" href="/schedule" />
-        <Kpi label="V-Service overdue" value={show(stats.vOverdue)} icon="calendar" color="rose" href="/schedule" />
-      </div>
-      <div className="mt-7 grid gap-6 xl:grid-cols-[.8fr_1.2fr]">
-        <Card className="p-6">
-          <SectionTitle title="Equipment status" subtitle="Current fleet readiness" bare />
-          <div className="mt-2 flex items-center gap-6">
-            <EquipmentChart data={stats.equipmentChart} />
-            <div className="space-y-3 text-xs">
-              {equipmentStatuses.map((s, i) => (
-                <div key={s.name} className="flex items-center gap-2">
-                  <span className={`h-2 w-2 rounded-full ${s.dot}`} />
-                  <span className="w-28 text-slate-500">{s.name}</span>
-                  <b>{stats.equipmentChart[i].value}</b>
-                </div>
-              ))}
-            </div>
+      <div className="grid gap-5 xl:grid-cols-[1.65fr_1fr]">
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+          <Kpi colorful featured label="Total equipment" value={show(equipment.length)} delta={loading ? undefined : `${stats.availability}% available`} icon="box" href="/equipment" />
+          <Kpi colorful label="Under maintenance" value={show(stats.maintenance)} icon="wrench" color="amber" href="/equipment" />
+          <Kpi colorful label="Open tickets" value={show(stats.openTickets.length)} icon="ticket" color="lime" href="/tickets" />
+          <Kpi colorful label="Overdue tickets" value={show(stats.overdueTickets.length)} icon="alert" color="rose" href="/tickets" />
+          <Kpi colorful label="V-Service due soon" value={show(stats.vDueSoon)} icon="calendar" color="violet" href="/schedule" />
+          <Kpi colorful label="V-Service overdue" value={show(stats.vOverdue)} icon="calendar" color="emerald" href="/schedule" />
+        </div>
+        <Card className="relative flex min-w-0 flex-col overflow-hidden p-6">
+          <AirlinerSilhouette className="pointer-events-none absolute -right-5 -top-8 w-36 rotate-[30deg] text-blue-600/[0.06]" />
+          <div className="relative"><SectionTitle title="Fleet readiness" subtitle="Ground support equipment status" bare /></div>
+          <div className="my-auto py-2"><EquipmentChart data={stats.equipmentChart} loading={loading} /></div>
+          <div className="relative space-y-3 text-xs">
+            {equipmentStatuses.map((s, i) => (
+              <div key={s.name} className="flex items-center gap-2">
+                <span className={`h-2 w-2 rounded-full ${s.dot}`} />
+                <span className="flex-1 text-slate-600">{s.name}</span>
+                <b className="tabular-nums">{show(stats.equipmentChart[i].value)}</b>
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 flex items-center justify-between rounded-xl bg-blue-50 px-3 py-2.5 text-xs text-blue-700">
+            <span className="flex items-center gap-2"><Plane className="h-3.5 w-3.5" /> Equipment availability</span>
+            <b>{loading ? "…" : equipment.length ? `${stats.availability}%` : "—"}</b>
           </div>
         </Card>
-        <Card className="p-6">
-          <SectionTitle title="Open tickets by type" subtitle="Current workload across the operation" bare />
-          <TicketChart data={stats.ticketChart} />
-        </Card>
       </div>
-      <div className="mt-6 grid gap-6 xl:grid-cols-[1.2fr_.8fr]">
-        {vServicePanel}
+      <div className="mt-5 grid gap-5 xl:grid-cols-[1.65fr_1fr]">
+        <Card className="min-w-0 p-6">
+          <SectionTitle title="Maintenance workload" subtitle="Open tickets by service type" bare />
+          <div className="mt-5"><TicketChart data={stats.ticketChart} loading={loading} /></div>
+        </Card>
         <AttentionNeeded rows={notifications} loading={loading} />
       </div>
+      <div className="mt-5">{vServicePanel}</div>
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
         <Card>
           <SectionTitle title="Open tickets" subtitle="Sorted by due date" action="Open tickets" href="/tickets" />
@@ -541,17 +542,31 @@ function PageIntro({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-7 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-      <div>
-        <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[.18em] text-blue-600">
-          <Sparkles className="h-3.5 w-3.5" />
+    <section className="relative mb-5 isolate overflow-hidden rounded-[28px] border border-white bg-gradient-to-r from-white via-[#f5f9ff] to-[#dbeafe] p-6 shadow-[0_8px_32px_-20px_rgba(37,99,235,0.25)] sm:p-8">
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-[45%] overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_30%)]" aria-hidden="true">
+        <div className="absolute -right-12 -top-24 h-96 w-96 rounded-full border border-blue-300/30" />
+        <div className="absolute -right-4 -top-16 h-80 w-80 rounded-full border border-dashed border-blue-400/30" />
+        <svg viewBox="0 0 400 260" className="absolute inset-0 h-full w-full text-blue-400/50" fill="none">
+          <path d="M-20 240C100 260 90 100 230 135S360 100 420-20" stroke="currentColor" strokeDasharray="4 7" />
+        </svg>
+        <AirlinerSilhouette illustrated className="absolute -right-12 -top-7 w-64 rotate-[32deg] text-white drop-shadow-[0_16px_12px_rgba(37,99,235,0.25)] sm:right-4 sm:w-72 lg:right-10" />
+        <AirlinerSilhouette className="absolute bottom-7 left-[25%] w-12 rotate-[32deg] text-blue-500/40" />
+        <AirlinerSilhouette className="absolute right-5 top-6 w-8 rotate-[32deg] text-blue-600/40" />
+        <span className="absolute bottom-5 right-6 hidden font-mono text-[9px] tracking-[.22em] text-blue-700/70 sm:block">DAC / GROUND OPERATIONS</span>
+      </div>
+      <div className="relative max-w-[82%] sm:max-w-[65%]">
+        <div className="mb-4 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.18em] text-blue-700">
+          <Radar className="h-4 w-4 shrink-0" />
           {eyebrow}
         </div>
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-[32px]">{title}</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{subtitle}</p>
+        <h1 className="text-2xl font-semibold leading-tight tracking-tight text-slate-900 sm:text-[30px]">{title}</h1>
+        <p className="mt-2 max-w-lg text-sm leading-6 text-slate-600">{subtitle}</p>
+        <div className="mt-5 flex flex-wrap items-center gap-4">
+          {action}
+          <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-blue-700"><Plane className="h-3.5 w-3.5" /> Precision on the ground</span>
+        </div>
       </div>
-      {action}
-    </div>
+    </section>
   );
 }
 
@@ -569,9 +584,9 @@ function SectionTitle({
   bare?: boolean;
 }) {
   return (
-    <div className={`flex items-start justify-between ${bare ? "" : "border-b px-5 py-5"}`}>
+    <div className={`flex items-start justify-between gap-3 ${bare ? "" : "border-b border-slate-100 px-5 py-5"}`}>
       <div>
-        <h2 className="text-sm font-semibold">{title}</h2>
+        <h2 className="flex items-center gap-2 text-sm font-semibold"><Plane className="h-3.5 w-3.5 shrink-0 text-blue-600" aria-hidden="true" />{title}</h2>
         {subtitle && <p className="mt-1 text-xs text-slate-500">{subtitle}</p>}
       </div>
       {action && href && (

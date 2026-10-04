@@ -12,19 +12,18 @@ import {
   LayoutDashboard,
   Loader2,
   LogOut,
-  Moon,
+  Plane,
   Settings,
-  Sun,
   Users,
   Wrench,
   Menu,
   X,
   type LucideIcon,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import { useRole } from "./role-context";
 import { useNotifications } from "./notifications-context";
 import { NotificationBell } from "./notification-bell";
+import { AirlinerSilhouette, AviationBackdrop } from "./aviation-backdrop";
 import { memo, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -104,27 +103,30 @@ const Sidebar = memo(function Sidebar({
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 z-50 flex w-[252px] flex-col border-r border-slate-800 bg-[#101d31] text-white transition-transform duration-200 ease-out lg:z-40 lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-50 flex w-[252px] flex-col overflow-hidden border border-white bg-white text-slate-800 shadow-soft transition-transform duration-200 ease-out lg:inset-y-4 lg:left-4 lg:z-40 lg:w-[228px] lg:translate-x-0 lg:rounded-[28px]",
         open ? "translate-x-0" : "-translate-x-full",
       )}
     >
-      <div className="flex h-20 shrink-0 items-center justify-between px-6">
+      <div className="flex h-24 shrink-0 items-center justify-between px-5">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-blue-500 font-bold tracking-tighter">NG</div>
+          <div className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/20"><Plane className="h-6 w-6" aria-hidden="true" /></div>
           <div>
-            <div className="text-[15px] font-bold tracking-tight">NGGL</div>
-            <div className="text-[10px] uppercase tracking-[.18em] text-slate-400">GSE logbook</div>
+            <div className="text-lg font-bold tracking-tight">NGGL<span className="text-blue-600">.</span></div>
+            <div className="text-[9px] font-semibold uppercase tracking-[.18em] text-slate-500">Ground operations</div>
           </div>
         </Link>
-        <button type="button" className="rounded-lg p-1 text-slate-400 hover:text-white lg:hidden" onClick={onClose} aria-label="Close menu">
+        <button type="button" className="rounded-lg p-1 text-slate-500 hover:text-blue-600 lg:hidden" onClick={onClose} aria-label="Close menu">
           <X className="h-5 w-5" />
         </button>
       </div>
-      <div className="mx-4 mb-5 shrink-0 rounded-xl border border-white/10 bg-white/5 px-3 py-3">
-        <div className="text-[10px] uppercase tracking-widest text-slate-400">Workspace</div>
-        <div className="mt-1 text-sm font-medium">{organization === "Biman" ? "Biman Bangladesh" : "NGGL"}</div>
+      <div className="mx-4 mb-5 flex shrink-0 items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50/60 px-3 py-3">
+        <span className="grid h-9 w-9 place-items-center rounded-xl bg-white text-[11px] font-bold text-blue-700">DAC</span>
+        <div>
+          <div className="text-[9px] font-semibold uppercase tracking-widest text-slate-500">Workspace</div>
+          <div className="mt-1 text-xs font-semibold">{organization === "Biman" ? "Biman Bangladesh" : "NGGL"}</div>
+        </div>
       </div>
-      <nav className="flex-1 space-y-6 overflow-y-auto px-3 pb-4">
+      <nav className="sidebar-nav-scroll flex-1 space-y-6 overflow-y-auto px-3 pb-4">
         {sections.map((section) => (
           <div key={section.group}>
             <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[.18em] text-slate-500">{section.group}</div>
@@ -139,7 +141,7 @@ const Sidebar = memo(function Sidebar({
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors",
-                      active ? "bg-blue-500 text-white shadow-lg shadow-blue-950/30" : "text-slate-400 hover:bg-white/5 hover:text-white",
+                      active ? "bg-blue-600 text-white shadow-md shadow-blue-600/20" : "text-slate-600 hover:bg-blue-50 hover:text-blue-700",
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -154,8 +156,13 @@ const Sidebar = memo(function Sidebar({
           </div>
         ))}
       </nav>
-      <div className="shrink-0 border-t border-white/10 p-4">
-        <button type="button" onClick={onSignOut} className="flex items-center gap-2 px-2 text-xs text-slate-500 transition-colors hover:text-white">
+      <div className="relative mx-3 mb-3 shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-sky-100 p-4">
+        <AirlinerSilhouette className="pointer-events-none absolute -right-5 -top-4 w-28 rotate-[30deg] text-blue-600/15" />
+        <div className="relative mb-4">
+          <div className="text-[10px] font-bold uppercase tracking-[.16em] text-blue-700">Ground control</div>
+          <div className="mt-1 text-xs text-slate-600">Precision on the ground.</div>
+        </div>
+        <button type="button" onClick={onSignOut} className="relative flex items-center gap-2 rounded-lg text-xs font-medium text-slate-600 transition-colors hover:text-blue-700">
           <LogOut className="h-3.5 w-3.5" /> Log out
         </button>
       </div>
@@ -167,7 +174,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { role, user, loading, mustChangePassword, clearSession } = useRole();
-  const { resolvedTheme, setTheme } = useTheme();
   const [mobile, setMobile] = useState(false);
   const { unread } = useNotifications();
   const today = useToday();
@@ -199,16 +205,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (loading || !user || mustChangePassword) {
     return (
-      <div className="grid min-h-screen place-items-center bg-slate-50 dark:bg-slate-950" aria-busy="true">
+      <div className="grid min-h-screen place-items-center bg-[#eef2fb]" aria-busy="true">
         <Loader2 className="h-6 w-6 animate-spin text-blue-600" aria-label="Loading" />
       </div>
     );
   }
 
-  const isDark = resolvedTheme === "dark";
-
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="relative min-h-screen bg-[#eef2fb]">
+      <AviationBackdrop className="fixed z-0 lg:left-[252px]" />
       <Sidebar
         pathname={pathname}
         open={mobile}
@@ -219,8 +224,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         onSignOut={signOut}
       />
       {mobile && <div className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-sm lg:hidden" onClick={closeMobile} aria-hidden="true" />}
-      <div className="lg:pl-[252px]">
-        <header className="sticky top-0 z-30 flex h-20 items-center justify-between border-b bg-white/85 px-5 backdrop-blur-xl dark:bg-slate-950/85 lg:px-9">
+      <div className="relative z-10 lg:pl-[252px]">
+        <header className="sticky top-0 z-30 flex h-[76px] items-center justify-between gap-3 bg-[#eef2fb]/90 px-5 backdrop-blur-xl lg:px-8">
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -232,32 +237,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </button>
             <div>
               <div className="text-sm font-semibold">GSE Maintenance Operations</div>
-              <div className="hidden text-xs text-slate-500 sm:block">{today} · Dhaka, Bangladesh</div>
+              <div className="hidden text-xs text-slate-500 sm:block">{today} · Dhaka (DAC), Bangladesh</div>
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <NotificationBell />
-            <button
-              type="button"
-              onClick={() => setTheme(isDark ? "light" : "dark")}
-              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-              className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-white"
-            >
-              {isDark ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
-            </button>
-            <div className="hidden h-7 w-px bg-slate-200 dark:bg-slate-800 sm:block" />
-            <div className="flex items-center gap-2 text-left">
-              <div className="grid h-8 w-8 place-items-center rounded-full bg-slate-900 text-[11px] font-bold text-white dark:bg-blue-600">
-                {user.initials}
-              </div>
-              <div className="hidden md:block">
-                <div className="text-xs font-semibold">{user.name}</div>
-                <div className="text-[11px] text-slate-500">{user.role}</div>
-              </div>
+            <div className="hidden h-8 w-px bg-slate-200 sm:block" aria-hidden="true" />
+            <div className="flex min-w-0 items-center gap-2 rounded-full border border-white bg-white/80 py-1 pl-1 pr-2 shadow-[0_2px_12px_-6px_rgba(15,23,42,0.18)] sm:gap-2.5 sm:pl-1.5 sm:pr-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-blue-100 to-sky-200 text-xs font-bold text-blue-800 ring-2 ring-white">{user.initials}</span>
+              <span className="hidden min-w-0 sm:block">
+                <span className="block max-w-[160px] truncate text-xs font-semibold text-slate-900">{user.name}</span>
+                <span className="mt-0.5 block max-w-[160px] truncate text-[10px] text-slate-500">{user.role}</span>
+              </span>
             </div>
           </div>
         </header>
-        <main className="mx-auto max-w-[1520px] p-5 lg:p-9">{children}</main>
+        <main className="mx-auto max-w-[1520px] px-4 pb-8 pt-2 sm:px-5 lg:px-8">{children}</main>
       </div>
     </div>
   );

@@ -30,11 +30,11 @@ export function NotificationBell() {
         <button
           type="button"
           aria-label={unread ? `Notifications (${unread} unread)` : 'Notifications'}
-          className="relative rounded-lg p-2 text-slate-500 outline-none transition hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 data-[state=open]:bg-slate-100 data-[state=open]:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-white dark:data-[state=open]:bg-slate-800 dark:data-[state=open]:text-white"
+          className="relative grid h-10 w-10 place-items-center rounded-full border border-white bg-white text-slate-600 shadow-[0_2px_12px_-6px_rgba(15,23,42,0.18)] outline-none transition hover:bg-blue-50 hover:text-blue-700 focus-visible:ring-2 focus-visible:ring-blue-500 data-[state=open]:bg-blue-50 data-[state=open]:text-blue-700"
         >
           <Bell className="h-[18px] w-[18px]" />
           {unread > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-white dark:ring-slate-950">
+            <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-white">
               {unread > 99 ? '99+' : unread}
             </span>
           )}

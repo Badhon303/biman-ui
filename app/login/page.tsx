@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/ui/password-input'
 import { useRole } from '@/components/role-context'
+import { AviationBackdrop } from '@/components/aviation-backdrop'
 import { ApiUser } from '@/lib/types'
 
 export default function Login() {
@@ -75,25 +76,26 @@ export default function Login() {
   }
 
   return (
-    <main className="flex min-h-screen bg-[#f4f7fb] dark:bg-slate-950">
-      <div className="hidden w-[42%] flex-col justify-between bg-[#101d31] p-12 text-white lg:flex">
+    <main className="flex min-h-screen bg-[#eef2fb]">
+      <div className="hidden w-[42%] flex-col justify-between border-r border-white bg-gradient-to-br from-white to-blue-100 p-12 text-slate-900 lg:flex">
         <div>
           <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-xl bg-blue-500 font-bold">NG</div>
-            <div><div className="font-bold">NGGL</div><div className="text-[10px] uppercase tracking-[.2em] text-slate-400">GSE operations</div></div>
+            <div className="grid h-11 w-11 place-items-center rounded-xl bg-blue-600 font-bold text-white">NG</div>
+            <div><div className="font-bold">NGGL</div><div className="text-[10px] uppercase tracking-[.2em] text-slate-600">GSE operations</div></div>
           </div>
           <div className="mt-32 max-w-sm">
-            <div className="mb-5 text-xs font-semibold uppercase tracking-[.2em] text-blue-300">Biman Bangladesh</div>
+            <div className="mb-5 text-xs font-semibold uppercase tracking-[.2em] text-blue-700">Biman Bangladesh</div>
             <h1 className="text-5xl font-semibold leading-[1.08] tracking-tight">Keep every aircraft movement moving.</h1>
-            <p className="mt-6 text-base leading-7 text-slate-400">A single source of truth for ground support equipment health, maintenance workflows and service readiness.</p>
+            <p className="mt-6 text-base leading-7 text-slate-600">A single source of truth for ground support equipment health, maintenance workflows and service readiness.</p>
           </div>
         </div>
         <div className="text-xs text-slate-500">Secure access to GSE operations</div>
       </div>
-      <div className="flex flex-1 items-center justify-center p-6 sm:p-12">
-        <div className="w-full max-w-md">
+      <div className="relative flex flex-1 items-center justify-center overflow-hidden p-6 sm:p-12">
+        <AviationBackdrop className="absolute" intensity="bold" layout="login" />
+        <div className="relative z-10 w-full max-w-md rounded-[28px] border border-white bg-white p-6 shadow-soft sm:p-8">
           <div className="mb-10 lg:hidden">
-            <div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-blue-600 font-bold text-white">NG</div><div className="font-bold">NGGL <span className="font-normal text-slate-400">/ GSE Logbook</span></div></div>
+            <div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-blue-600 font-bold text-white">NG</div><div className="font-bold">NGGL <span className="font-normal text-slate-600">/ GSE Logbook</span></div></div>
           </div>
           <div className="mb-8">
             <div className="mb-3 text-sm font-semibold text-blue-600">Welcome back</div>
