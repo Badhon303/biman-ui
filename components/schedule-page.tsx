@@ -2,10 +2,12 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
-import { CalendarClock, CircleAlert, Search } from 'lucide-react'
+import { CalendarClock, CircleAlert, Search, Trash2 } from 'lucide-react'
+import { useRole } from '@/components/role-context'
 import { PageHeader } from '@/components/page-header'
 import { focusedRowClass, useFocusedRow } from '@/components/use-focused-row'
 import { Card } from '@/components/ui/card'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { StatusBadge } from '@/components/ui/badge'
@@ -14,9 +16,14 @@ import { apiRequest } from '@/lib/api-client'
 import { displayDate, ApiSchedule } from '@/lib/api-data'
 import { ScheduleStatus } from '@/lib/types'
 import { overdueBy } from '@/lib/utils'
+import { toast } from 'sonner'
 
 export default function SchedulePage() {
+  const { role } = useRole()
+  const canDelete = role === 'Super Admin' || role === 'Manager'
   const [scheduleRows, setScheduleRows] = useState<ApiSchedule[]>([])
+  const [deleteTarget, setDeleteTarget] = useState<ApiSchedule | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const [status, setStatus] = useState('All')
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
@@ -39,6 +46,21 @@ export default function SchedulePage() {
   const totalDue = scheduleRows.filter((schedule) => schedule.status === 'Overdue' || schedule.status === 'Due soon').length
   const scheduledCount = scheduleRows.filter((schedule) => schedule.status === 'Scheduled').length
 
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      await apiRequest(`maintenance-schedules/${encodeURIComponent(deleteTarget.id)}`, { method: 'DELETE' })
+      setScheduleRows((current) => current.filter((schedule) => schedule.id !== deleteTarget.id))
+      toast.success('V-Service schedule archived')
+      setDeleteTarget(null)
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : 'Unable to delete schedule.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <>
       <PageHeader eyebrow="Maintenance / Schedule" title="Maintenance schedule" subtitle="Review maintenance schedules and their linked tickets." />
@@ -55,7 +77,7 @@ export default function SchedulePage() {
           </Select>
         </div>
         {loading ? <div className="p-10 text-center text-sm text-slate-500">Loading schedules…</div> : error ? <div className="p-10 text-center text-sm text-rose-600">{error}</div> : <>
-          <Table><THead><TR><TH>Schedule</TH><TH>Equipment</TH><TH>Start/last date</TH><TH>Due date</TH><TH>Overdue By</TH><TH>Status</TH><TH>Ticket</TH></TR></THead><TBody>
+          <Table><THead><TR><TH>Schedule</TH><TH>Equipment</TH><TH>Start/last date</TH><TH>Due date</TH><TH>Overdue By</TH><TH>Status</TH><TH>Ticket</TH>{canDelete && <TH>Action</TH>}</TR></THead><TBody>
             {rows.map((schedule) => <TR key={schedule.id} id={`row-${schedule.id}`} className={focus === schedule.id ? focusedRowClass : schedule.status === 'Due soon' ? 'bg-yellow-50/70 dark:bg-yellow-950/20' : schedule.status === 'Overdue' ? 'bg-rose-50/40 dark:bg-rose-950/10' : ''}>
               <TD><div className="font-semibold text-slate-900 dark:text-white">{schedule.scheduleNo}</div></TD>
               <TD><div className="font-medium text-slate-800 dark:text-slate-100">{schedule.equipment.equipmentType.name}</div><div className="text-xs text-slate-400">{schedule.equipment.assetNo}</div></TD>
@@ -64,11 +86,13 @@ export default function SchedulePage() {
               <TD>{schedule.status === 'Overdue' ? overdueBy(schedule.dueDate) : '—'}</TD>
               <TD><StatusBadge status={schedule.status as ScheduleStatus} /></TD>
               <TD>{schedule.ticket ? <Link href={`/tickets/${schedule.ticket.id}`} className="text-xs font-semibold text-blue-600">{schedule.ticket.ticketNo}</Link> : <span className="text-xs text-slate-400">No ticket</span>}</TD>
+              {canDelete && <TD className="w-16 text-center"><button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-rose-50 hover:text-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 dark:hover:bg-rose-950/40" aria-label={`Archive ${schedule.scheduleNo}`} title="Archive schedule" onClick={() => setDeleteTarget(schedule)}><Trash2 className="h-4 w-4" /></button></TD>}
             </TR>)}
           </TBody></Table>
           {rows.length === 0 && <div className="p-10 text-center text-sm text-slate-500">No schedules match the selected filters.</div>}
         </>}
       </Card>
+      <ConfirmDialog open={!!deleteTarget} title="Archive V-Service schedule" description={deleteTarget ? `Archive ${deleteTarget.scheduleNo}? Any ticket already generated from this schedule will remain active. You can restore the schedule from Archive.` : undefined} confirmLabel="Archive schedule" loading={deleting} onConfirm={() => void confirmDelete()} onCancel={() => setDeleteTarget(null)} />
     </>
   )
 }

@@ -106,6 +106,7 @@ export interface ApiSchedule {
   dueDate: string;
   status: string;
   ticketId?: string | null;
+  deletedAt?: string | null;
   equipment: { id: string; assetNo: string; equipmentType: { name: string } };
   ticket?: { id: string; ticketNo: string; status: string } | null;
 }

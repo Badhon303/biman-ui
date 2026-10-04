@@ -1,7 +1,7 @@
 'use client'
 
 import { FormEvent, useEffect, useState } from 'react'
-import { ArrowRight, Check, KeyRound, Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react'
+import { ArrowRight, Check, Copy, KeyRound, Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react'
 import { PasswordInput } from '@/components/ui/password-input'
 import { PageHeader } from '@/components/page-header'
 import { Card } from '@/components/ui/card'
@@ -40,6 +40,7 @@ export function UsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [invite, setInvite] = useState(false)
   const [temporaryPassword, setTemporaryPassword] = useState('')
+  const [passwordCopied, setPasswordCopied] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [resetTarget, setResetTarget] = useState<User | null>(null)
@@ -75,6 +76,7 @@ export function UsersPage() {
     try {
       const result = await apiRequest<ApiUser & { temporaryPassword: string }>('users', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
       setTemporaryPassword(result.temporaryPassword)
+      setPasswordCopied(false)
       setUsers((current) => [{ ...result, initials: getInitials(result.name) }, ...current])
       toast.success('User created. Share the temporary password securely.')
     } catch (cause) {
@@ -156,7 +158,17 @@ export function UsersPage() {
     }
   }
 
-  const closeInvite = () => { setInvite(false); setTemporaryPassword('') }
+  const copyTemporaryPassword = async () => {
+    try {
+      await navigator.clipboard.writeText(temporaryPassword)
+      setPasswordCopied(true)
+      toast.success('Temporary password copied.')
+    } catch {
+      toast.error('Unable to copy the temporary password.')
+    }
+  }
+
+  const closeInvite = () => { setInvite(false); setTemporaryPassword(''); setPasswordCopied(false) }
   const ngglUsers = users.filter((user) => user.organization === 'NGGL')
   const bimanUsers = users.filter((user) => user.organization === 'Biman')
 
@@ -171,7 +183,7 @@ export function UsersPage() {
     </Card>
     {invite && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"><div className="w-full max-w-md rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900">
       <div className="mb-5 flex items-center justify-between"><h2 className="text-lg font-semibold">Invite user</h2><button type="button" onClick={closeInvite} className="text-2xl leading-none text-slate-400" aria-label="Close modal">×</button></div>
-      {temporaryPassword ? <div className="space-y-4"><p className="text-sm text-slate-500">Copy this temporary password and share it securely. It will not be shown again after closing.</p><Input readOnly value={temporaryPassword} aria-label="Temporary password" /><Button className="w-full" onClick={closeInvite}>Done</Button></div> : <form className="space-y-4" onSubmit={createUser}>
+      {temporaryPassword ? <div className="space-y-4"><p className="text-sm text-slate-500">Copy this temporary password and share it securely. It will not be shown again after closing.</p><div className="relative"><Input readOnly value={temporaryPassword} aria-label="Temporary password" className="pr-12" /><button type="button" onClick={() => void copyTemporaryPassword()} className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" aria-label={passwordCopied ? 'Temporary password copied' : 'Copy temporary password'} title={passwordCopied ? 'Copied' : 'Copy password'}>{passwordCopied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}</button></div><Button className="w-full" onClick={closeInvite}>Done</Button></div> : <form className="space-y-4" onSubmit={createUser}>
         <label className="block text-xs font-semibold">Full name<Input className="mt-2" name="name" minLength={2} required /></label>
         <label className="block text-xs font-semibold">Work email<Input className="mt-2" name="email" type="email" required /></label>
         <label className="block text-xs font-semibold">Role<Select className="mt-2 w-full" name="role" defaultValue="Engineer">{(['Manager', 'Engineer', 'Biman Admin'] as Exclude<Role, 'Super Admin'>[]).map((role) => <option key={role}>{role}</option>)}</Select></label>
@@ -402,7 +414,7 @@ export function SettingsPage() {
         </Card>
       </> : <Card>
         <div className="flex items-start justify-between border-b p-6"><div><h2 className="text-base font-semibold">Equipment types</h2><p className="mt-1 text-sm text-slate-500">View equipment types and their service bands. Only Super Admins and Managers can make changes.</p></div>{canManageTypes && <Button onClick={() => openTypeModal()}><Plus className="h-4 w-4" />Add type</Button>}</div>
-        {loading ? <div className="p-10 text-center text-sm text-slate-500">Loading equipment types…</div> : <Table><THead><TR><TH>Equipment type</TH><TH>Services</TH><TH>Equipment</TH><TH></TH></TR></THead><TBody>{types.map((type) => <TR key={type.id}><TD className="font-semibold">{type.name}</TD><TD>{type.services.map((service) => service.name).join(', ')}</TD><TD>{type._count?.equipment ?? '—'}</TD><TD>{canManageTypes && <div className="flex gap-1"><Button variant="ghost" className="text-xs" onClick={() => openTypeModal(type)}>Edit</Button><Button variant="ghost" className="text-xs text-rose-600" onClick={() => void deleteEquipmentType(type)}><Trash2 className="h-4 w-4" />Delete</Button></div>}</TD></TR>)}</TBody></Table>}{!loading && types.length === 0 && <div className="p-10 text-center text-sm text-slate-500">No equipment types found.</div>}
+        {loading ? <div className="p-10 text-center text-sm text-slate-500">Loading equipment types…</div> : <Table><THead><TR><TH>Equipment type</TH><TH>Services</TH><TH>Equipment</TH>{canManageTypes && <TH>Action</TH>}</TR></THead><TBody>{types.map((type) => <TR key={type.id}><TD className="font-semibold">{type.name}</TD><TD>{type.services.map((service) => service.name).join(', ')}</TD><TD>{type._count?.equipment ?? '—'}</TD>{canManageTypes && <TD><div className="flex items-center gap-1"><Button type="button" variant="ghost" className="h-8 w-8 p-0 text-slate-600" aria-label={`Edit ${type.name}`} title="Edit equipment type" onClick={() => openTypeModal(type)}><Pencil className="h-4 w-4" /></Button><Button type="button" variant="ghost" className="h-8 w-8 p-0 text-rose-600" aria-label={`Delete ${type.name}`} title="Delete equipment type" onClick={() => void deleteEquipmentType(type)}><Trash2 className="h-4 w-4" /></Button></div></TD>}</TR>)}</TBody></Table>}{!loading && types.length === 0 && <div className="p-10 text-center text-sm text-slate-500">No equipment types found.</div>}
       </Card>}</div>
     </div>
     {typeModalOpen && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"><div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">{editingType ? 'Edit equipment type' : 'Add equipment type'}</h2><p className="mt-1 text-sm text-slate-500">Service-band continuity is validated by the API.</p></div><button type="button" onClick={closeTypeModal} className="text-2xl leading-none text-slate-400" aria-label="Close modal">×</button></div>

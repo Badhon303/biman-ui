@@ -9,13 +9,14 @@ import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { TD, TH, TBody, THead, TR, Table } from '@/components/ui/table'
 import { apiRequest } from '@/lib/api-client'
-import { ApiEquipment, ApiTicket } from '@/lib/api-data'
+import { ApiEquipment, ApiSchedule, ApiTicket } from '@/lib/api-data'
 import { toast } from 'sonner'
 
-type ArchiveTab = 'tickets' | 'equipment' | 'equipment-types'
-type ArchiveRow = { id: string; title: string; details: string; deletedAt: string; endpoint: string }
+type ArchiveTab = 'tickets' | 'equipment' | 'equipment-types' | 'maintenance-schedules'
+type ArchiveRow = { id: string; title: string; details: string; deletedAt: string; endpoint: string; deleteDescription?: string }
 type ArchivedTicket = ApiTicket & { deletedAt: string }
 type ArchivedEquipment = ApiEquipment & { deletedAt: string }
+type ArchivedSchedule = ApiSchedule & { deletedAt: string }
 type ArchivedEquipmentType = {
   id: string
   name: string
@@ -28,6 +29,7 @@ const tabs: { id: ArchiveTab; label: string; endpoint: string }[] = [
   { id: 'tickets', label: 'Tickets', endpoint: 'tickets' },
   { id: 'equipment', label: 'Equipment', endpoint: 'equipment' },
   { id: 'equipment-types', label: 'Equipment types', endpoint: 'equipment-types' },
+  { id: 'maintenance-schedules', label: 'V-Service schedules', endpoint: 'maintenance-schedules' },
 ]
 
 export function ArchivePage() {
@@ -63,7 +65,7 @@ export function ArchivePage() {
           deletedAt: item.deletedAt,
           endpoint: 'equipment',
         }))
-      } else {
+      } else if (tab === 'equipment-types') {
         const types = await apiRequest<ArchivedEquipmentType[]>('equipment-types/archive')
         records = types.map((item) => ({
           id: item.id,
@@ -71,6 +73,16 @@ export function ArchivePage() {
           details: item.services.map((service) => service.name).join(', ') || 'No services',
           deletedAt: item.deletedAt,
           endpoint: 'equipment-types',
+        }))
+      } else {
+        const schedules = await apiRequest<ArchivedSchedule[]>('maintenance-schedules/archive')
+        records = schedules.map((schedule) => ({
+          id: schedule.id,
+          title: schedule.scheduleNo,
+          details: `${schedule.equipment.equipmentType.name} · ${schedule.equipment.assetNo} · Due ${schedule.dueDate.slice(0, 10)}`,
+          deletedAt: schedule.deletedAt,
+          endpoint: 'maintenance-schedules',
+          deleteDescription: `Permanently delete ${schedule.scheduleNo}? Any ticket already generated from this schedule will remain active.`,
         }))
       }
       setRows(records)
@@ -117,7 +129,7 @@ export function ArchivePage() {
   if (!canManage) return <Card className="p-8 text-sm text-slate-500">Archive is available to Managers and Super Admins.</Card>
 
   return <>
-    <PageHeader eyebrow="Admin / Archive" title="Archive" subtitle="Restore archived tickets, equipment, and equipment types, or permanently remove records you no longer need." />
+    <PageHeader eyebrow="Admin / Archive" title="Archive" subtitle="Restore archived tickets, equipment, equipment types, and V-Service schedules, or permanently remove records you no longer need." />
     <Card>
       <div className="flex flex-wrap gap-2 border-b p-5">
         {tabs.map((item) => <button key={item.id} type="button" onClick={() => setTab(item.id)} className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${tab === item.id ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'}`}>{item.label}</button>)}
@@ -135,6 +147,6 @@ export function ArchivePage() {
         </TR>)}</TBody>
       </Table> : <div className="grid place-items-center p-12 text-center text-sm text-slate-500"><Archive className="mb-3 h-8 w-8 text-slate-300" />No archived {tabs.find((item) => item.id === tab)?.label.toLowerCase()}.</div>}
     </Card>
-    <ConfirmDialog open={!!deleteTarget} title="Permanently delete record" description={deleteTarget ? `Permanently delete ${deleteTarget.title}? This cannot be undone and linked pictures/files will also be removed.` : undefined} confirmLabel="Permanently delete" loading={deleting} onConfirm={() => void permanentlyDelete()} onCancel={() => setDeleteTarget(null)} />
+    <ConfirmDialog open={!!deleteTarget} title="Permanently delete record" description={deleteTarget ? deleteTarget.deleteDescription ?? `Permanently delete ${deleteTarget.title}? This cannot be undone and linked pictures/files will also be removed.` : undefined} confirmLabel="Permanently delete" loading={deleting} onConfirm={() => void permanentlyDelete()} onCancel={() => setDeleteTarget(null)} />
   </>
 }
