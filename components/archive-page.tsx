@@ -5,6 +5,7 @@ import { Archive, RotateCcw, Trash2 } from 'lucide-react'
 import { useRole } from '@/components/role-context'
 import { PageHeader } from '@/components/page-header'
 import { Card } from '@/components/ui/card'
+import { PlaneLoader } from '@/components/ui/plane-loader'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { TD, TH, TBody, THead, TR, Table } from '@/components/ui/table'
@@ -148,7 +149,7 @@ export function ArchivePage() {
       <div className="flex flex-wrap gap-2 border-b p-5">
         {visibleTabs.map((item) => <button key={item.id} type="button" onClick={() => setTab(item.id)} className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${tab === item.id ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'}`}>{item.label}</button>)}
       </div>
-      {loading ? <div className="p-10 text-center text-sm text-slate-500">Loading archive…</div> : error ? <div className="p-10 text-center text-sm text-rose-600">{error}</div> : rows.length ? <Table>
+      {loading ? <PlaneLoader label="Loading archive…" /> : error ? <div className="p-10 text-center text-sm text-rose-600">{error}</div> : rows.length ? <Table>
         <THead><TR><TH>Record</TH><TH>Details</TH><TH>Archived on</TH><TH>Actions</TH></TR></THead>
         <TBody>{rows.map((row) => <TR key={row.id}>
           <TD className="font-semibold">{row.title}</TD>

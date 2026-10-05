@@ -5,6 +5,7 @@ import { Archive, ArrowUpRight, CheckCheck, Loader2 } from 'lucide-react'
 import { notificationLink } from '@/lib/notification-links'
 import { PageHeader } from '@/components/page-header'
 import { Card } from '@/components/ui/card'
+import { PlaneLoader } from '@/components/ui/plane-loader'
 import { Button } from '@/components/ui/button'
 import { useNotifications } from '@/components/notifications-context'
 
@@ -14,7 +15,7 @@ export function NotificationsPage() {
   return <>
     <PageHeader eyebrow="Insights / Alerts" title="Notifications" subtitle="Stay ahead of due dates, approvals and equipment readiness signals." action={unread > 0 ? <Button variant="outline" onClick={() => void markAllRead()}><CheckCheck className="h-4 w-4" />Mark all read</Button> : undefined} />
     <div className="mx-auto max-w-4xl space-y-3">
-      {loading && !rows.length ? <Card className="p-10 text-center text-sm text-slate-500">Loading notifications…</Card> : rows.map((notification) => { const link = notificationLink(notification); return <Card key={notification.id} className={!notification.read ? 'border-blue-200 dark:border-blue-900/60' : ''}>
+      {loading && !rows.length ? <PlaneLoader label="Loading notifications…" /> : rows.map((notification) => { const link = notificationLink(notification); return <Card key={notification.id} className={!notification.read ? 'border-blue-200 dark:border-blue-900/60' : ''}>
         <div className="flex items-start gap-4 p-5">
           <div className={`mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl ${notification.read ? 'bg-slate-100 text-slate-500 dark:bg-slate-800' : 'bg-blue-50 text-blue-600 dark:bg-blue-950/40'}`}><div className="text-xs font-bold">{notification.type.slice(0, 2).toUpperCase()}</div></div>
           <div className="min-w-0 flex-1">

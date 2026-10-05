@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation'
 import { ArrowLeft, Ban, Bold, Check, ClipboardCheck, Image as ImageIcon, Italic, List, Loader2, Lock, Pencil, Plus, Save, Send, Trash2, Undo2, Wrench, X } from 'lucide-react'
 import { useRole } from '@/components/role-context'
 import { Card } from '@/components/ui/card'
+import { PlaneLoader } from '@/components/ui/plane-loader'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Input } from '@/components/ui/input'
@@ -245,7 +246,7 @@ export default function TicketDetail() {
     } catch (cause) { toast.error(cause instanceof Error ? cause.message : 'Unable to submit request.') }
   }
 
-  if (loading) return <><Card className="p-10 text-center text-sm text-slate-500">Loading ticket…</Card></>
+  if (loading) return <><PlaneLoader label="Loading ticket…" /></>
   if (error || !ticket) return <><Card className="p-10 text-center text-sm text-rose-600">{error || 'Ticket not found.'}</Card></>
 
   const checklist = ticket.maintenanceRecord?.inspectionChecklist ?? ticket.maintenanceRecord?.checklistItems ?? []

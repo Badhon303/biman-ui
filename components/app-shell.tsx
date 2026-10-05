@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { PlaneLoader } from '@/components/ui/plane-loader'
 import { usePathname, useRouter } from "next/navigation";
 import {
   Archive,
@@ -205,9 +206,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (loading || !user || mustChangePassword) {
     return (
-      <div className="grid min-h-screen place-items-center bg-[#eef2fb]" aria-busy="true">
-        <Loader2 className="h-6 w-6 animate-spin text-blue-600" aria-label="Loading" />
-      </div>
+      <PlaneLoader fullScreen label="Loading…" />
     );
   }
 

@@ -7,6 +7,7 @@ import { HourMeterHistoryModal } from '@/components/hour-meter-history'
 import { useRole } from '@/components/role-context'
 import { PageHeader } from '@/components/page-header'
 import { Card } from '@/components/ui/card'
+import { PlaneLoader } from '@/components/ui/plane-loader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
@@ -112,7 +113,7 @@ export function EquipmentPage() {
     <PageHeader eyebrow="Assets / Fleet registry" title="Equipment List" subtitle="Your operational fleet, with a digital logbook attached to every asset." action={canManage ? <Button onClick={() => setAddOpen(true)}><Plus className="h-4 w-4" />Add equipment</Button> : undefined} />
     <Card>
       <div className="flex flex-col gap-3 border-b p-5 sm:flex-row"><div className="relative max-w-md flex-1"><Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" /><Input className="pl-9" placeholder="Search asset, manufacturer or location" value={search} onChange={(event) => setSearch(event.target.value)} /></div><Select value={status} onChange={(event) => setStatus(event.target.value)}><option value="All">All statuses</option>{statuses.map((item) => <option key={item}>{item}</option>)}</Select></div>
-      {loading ? <div className="p-10 text-center text-sm text-slate-500">Loading equipment…</div> : error ? <div className="p-10 text-center text-sm text-rose-600">{error}</div> : <>
+      {loading ? <PlaneLoader label="Loading equipment…" /> : error ? <div className="p-10 text-center text-sm text-rose-600">{error}</div> : <>
         <Table><THead><TR><TH>Asset no.</TH><TH>Equipment Type</TH><TH>Manufacturer / model</TH><TH>Hour meter</TH><TH>Biman serial no.</TH><TH>TLD serial no.</TH><TH>Location</TH><TH>Status</TH><TH>Actions</TH></TR></THead><TBody>
           {rows.map((item) => <TR key={item.id}>
             <TD><Link href={`/equipment/${item.id}`} className="font-semibold text-blue-600">{item.assetNo}</Link></TD><TD><Link href={`/equipment/${item.id}`} className="font-medium hover:text-blue-600">{item.equipmentType}</Link></TD><TD>{item.manufacturer}<div className="text-xs text-slate-400">{item.model}</div></TD>

@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Calendar, FileText, Pencil, Plus, Printer, Save, ShieldCheck, Trash2, Upload, X } from 'lucide-react'
 import { useRole } from '@/components/role-context'
 import { Card } from '@/components/ui/card'
+import { PlaneLoader } from '@/components/ui/plane-loader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
@@ -168,7 +169,7 @@ export default function EquipmentProfile() {
   const addSpec = () => updateDraft({ specifications: [...(draft?.specifications ?? []), { label: '', value: '' }] })
   const removeSpec = (index: number) => updateDraft({ specifications: draft?.specifications.filter((_, i) => i !== index) ?? [] })
 
-  if (loading) return <><Card className="p-10 text-center text-sm text-slate-500">Loading equipment…</Card></>
+  if (loading) return <><PlaneLoader label="Loading equipment…" /></>
   if (error || !equipment || !draft) return <><Card className="p-10 text-center text-sm text-rose-600">{error || 'Equipment not found.'}</Card></>
 
   const history = [...(equipment.hourMeterReadings ?? [])].reverse() as HourMeterReading[]

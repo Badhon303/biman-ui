@@ -6,6 +6,7 @@ import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { useRole } from '@/components/role-context'
 import { PageHeader } from '@/components/page-header'
 import { Card } from '@/components/ui/card'
+import { PlaneLoader } from '@/components/ui/plane-loader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
@@ -78,7 +79,7 @@ export function TicketsPage() {
     <PageHeader eyebrow="Maintenance / Tickets" title="Tickets" subtitle="One queue for maintenance, breakdown, general and washing work." action={canCreate ? <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" />Create ticket</Button> : undefined} />
     <Card>
       <div className="flex flex-col gap-3 border-b p-5 lg:flex-row lg:items-center lg:justify-between"><div className="relative max-w-sm flex-1"><Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" /><Input className="pl-9" placeholder="Search tickets or equipment" value={search} onChange={(event) => setSearch(event.target.value)} /></div><div className="flex flex-wrap gap-2">{serviceTypes.map((type) => <button key={type} type="button" onClick={() => setServiceType(type)} className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${serviceType === type ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'}`}>{type}</button>)}</div></div>
-      {loading ? <div className="p-10 text-center text-sm text-slate-500">Loading tickets…</div> : error ? <div className="p-10 text-center text-sm text-rose-600">{error}</div> : <>
+      {loading ? <PlaneLoader label="Loading tickets…" /> : error ? <div className="p-10 text-center text-sm text-rose-600">{error}</div> : <>
         <Table><THead><TR><TH>Ticket</TH><TH>Equipment</TH><TH>Service type</TH><TH>Due date</TH><TH>Overdue by</TH><TH>Assigned engineer</TH><TH>Status</TH><TH>Action</TH></TR></THead><TBody>
           {filteredRows.map((ticket) => <TR key={ticket.id} className={ticket.status === 'Closed' || ticket.status === 'Completed' ? 'bg-emerald-50/40 dark:bg-emerald-950/10' : isOverdue(ticket.dueDate) ? 'bg-rose-50/50 dark:bg-rose-950/10' : ''}>
             <TD><Link className="font-semibold text-blue-600" href={`/tickets/${ticket.id}`}>{ticket.ticketNo}</Link><div className="mt-1 text-xs text-slate-400">Raised {ticket.createdDate.slice(0, 10)}</div></TD>

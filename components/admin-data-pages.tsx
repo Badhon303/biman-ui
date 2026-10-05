@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { ArrowRight, Check, Copy, KeyRound, Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react'
 import { PasswordInput } from '@/components/ui/password-input'
+import { PlaneLoader } from '@/components/ui/plane-loader'
 import { PageHeader } from '@/components/page-header'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -186,7 +187,7 @@ export function UsersPage() {
   return <>
     <PageHeader eyebrow="Admin / Access" title="User management" subtitle="Manage NGGL operators and connected Biman users." action={isSuperAdmin && <Button onClick={() => setInvite(true)}><Plus className="h-4 w-4" />Invite user</Button>} />
     <Card>
-      {loading ? <div className="p-10 text-center text-sm text-slate-500">Loading users…</div> : error ? <div className="p-10 text-center text-sm text-rose-600">{error}</div> : <>
+      {loading ? <PlaneLoader label="Loading users…" /> : error ? <div className="p-10 text-center text-sm text-rose-600">{error}</div> : <>
         <UserTable title="NGGL users" users={ngglUsers} onDelete={isSuperAdmin ? deleteUser : undefined} onResetPassword={isSuperAdmin ? openResetDialog : undefined} onEditStatus={canManageUsers ? openStatusDialog : undefined} canEditSuperAdminStatus={isSuperAdmin} />
         <div className="border-b p-5"><h2 className="text-sm font-semibold">Biman users</h2></div>
         <UserRows users={bimanUsers} onDelete={isSuperAdmin ? deleteUser : undefined} onResetPassword={isSuperAdmin ? openResetDialog : undefined} onEditStatus={canManageUsers ? openStatusDialog : undefined} canEditSuperAdminStatus={isSuperAdmin} />
@@ -466,7 +467,7 @@ export function SettingsPage() {
         </Card>
       </> : <Card>
         <div className="flex items-start justify-between border-b p-6"><div><h2 className="text-base font-semibold">Equipment types</h2><p className="mt-1 text-sm text-slate-500">View equipment types and their service bands. Only Super Admins and Managers can make changes.</p></div>{canManageTypes && <Button onClick={() => openTypeModal()}><Plus className="h-4 w-4" />Add type</Button>}</div>
-        {loading ? <div className="p-10 text-center text-sm text-slate-500">Loading equipment types…</div> : <Table><THead><TR><TH>Equipment type</TH><TH>Services</TH><TH>Equipment</TH>{canManageTypes && <TH>Action</TH>}</TR></THead><TBody>{types.map((type) => <TR key={type.id}><TD className="font-semibold">{type.name}</TD><TD>{type.services.map((service) => service.name).join(', ')}</TD><TD>{type._count?.equipment ?? '—'}</TD>{canManageTypes && <TD><div className="flex items-center gap-1"><Button type="button" variant="ghost" className="h-8 w-8 p-0 text-slate-600" aria-label={`Edit ${type.name}`} title="Edit equipment type" onClick={() => openTypeModal(type)}><Pencil className="h-4 w-4" /></Button><Button type="button" variant="ghost" className="h-8 w-8 p-0 text-rose-600" aria-label={`Delete ${type.name}`} title="Delete equipment type" onClick={() => void deleteEquipmentType(type)}><Trash2 className="h-4 w-4" /></Button></div></TD>}</TR>)}</TBody></Table>}{!loading && types.length === 0 && <div className="p-10 text-center text-sm text-slate-500">No equipment types found.</div>}
+        {loading ? <PlaneLoader label="Loading equipment types…" /> : <Table><THead><TR><TH>Equipment type</TH><TH>Services</TH><TH>Equipment</TH>{canManageTypes && <TH>Action</TH>}</TR></THead><TBody>{types.map((type) => <TR key={type.id}><TD className="font-semibold">{type.name}</TD><TD>{type.services.map((service) => service.name).join(', ')}</TD><TD>{type._count?.equipment ?? '—'}</TD>{canManageTypes && <TD><div className="flex items-center gap-1"><Button type="button" variant="ghost" className="h-8 w-8 p-0 text-slate-600" aria-label={`Edit ${type.name}`} title="Edit equipment type" onClick={() => openTypeModal(type)}><Pencil className="h-4 w-4" /></Button><Button type="button" variant="ghost" className="h-8 w-8 p-0 text-rose-600" aria-label={`Delete ${type.name}`} title="Delete equipment type" onClick={() => void deleteEquipmentType(type)}><Trash2 className="h-4 w-4" /></Button></div></TD>}</TR>)}</TBody></Table>}{!loading && types.length === 0 && <div className="p-10 text-center text-sm text-slate-500">No equipment types found.</div>}
       </Card>}</div>
     </div>
     {typeModalOpen && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"><div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">{editingType ? 'Edit equipment type' : 'Add equipment type'}</h2><p className="mt-1 text-sm text-slate-500">Service-band continuity is validated by the API.</p></div><button type="button" onClick={closeTypeModal} className="text-2xl leading-none text-slate-400" aria-label="Close modal">×</button></div>

@@ -5,6 +5,7 @@ import { Download, FileText } from 'lucide-react'
 import { useRole } from '@/components/role-context'
 import { PageHeader } from '@/components/page-header'
 import { Card } from '@/components/ui/card'
+import { PlaneLoader } from '@/components/ui/plane-loader'
 import { StatusBadge } from '@/components/ui/badge'
 import { TD, TH, TBody, THead, TR, Table } from '@/components/ui/table'
 import { ApiEquipment, fetchAllPages } from '@/lib/api-data'
@@ -44,7 +45,7 @@ export function DocumentsPage() {
     <PageHeader eyebrow="Assets / Records" title="Documents" subtitle="Manuals, certificates and operational documents linked to the right asset." />
     {usage && <div className="mb-5 grid gap-3 sm:grid-cols-3"><UsageCard label="Storage used" value={`${formatBytes(usage.usedBytes)} / ${formatBytes(usage.quotaBytes)}`} /><UsageCard label="Stored files" value={String(usage.assetCount)} /><UsageCard label="Space saved" value={formatBytes(usage.bytesSaved)} /></div>}
     <Card>
-      {loading ? <div className="p-10 text-center text-sm text-slate-500">Loading documents…</div> : error ? <div className="p-10 text-center text-sm text-rose-600">{error}</div> : <>
+      {loading ? <PlaneLoader label="Loading documents…" /> : error ? <div className="p-10 text-center text-sm text-rose-600">{error}</div> : <>
         <Table><THead><TR><TH>Document</TH><TH>Linked asset</TH><TH>Type</TH><TH></TH></TR></THead><TBody>{rows.map((document) => <TR key={document.id}>
           <TD><div className="flex items-center gap-3"><div className="grid h-9 w-9 place-items-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/40"><FileText className="h-4 w-4" /></div><span className="font-medium">{document.name}</span></div></TD>
           <TD>{document.assetNo}</TD><TD><StatusBadge status={document.type} /></TD>

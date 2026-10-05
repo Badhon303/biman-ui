@@ -33,3 +33,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; backgr
 .aviation-plane { transform: rotate(-22deg); animation: aviation-drift 7s ease-in-out infinite; }
 .aviation-flightpath path { animation: aviation-path-flow 30s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .aviation-plane, .aviation-flightpath path { animation: none; } }
+
+@keyframes plane-fly { 0% { transform: translateX(-34px) translateY(4px) rotate(-8deg); opacity: 0; } 20%,80% { opacity: 1; } 50% { transform: translateX(0) translateY(-4px) rotate(0deg); } 100% { transform: translateX(34px) translateY(4px) rotate(8deg); opacity: 0; } }
+@keyframes plane-trail { 0% { transform: scaleX(0); opacity: .6; transform-origin: left; } 100% { transform: scaleX(1); opacity: 0; transform-origin: left; } }
+@media (prefers-reduced-motion: reduce) { .plane-loader-plane, .plane-loader-trail { animation: none !important; opacity: 1 !important; } }

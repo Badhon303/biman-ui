@@ -7,6 +7,7 @@ import { useRole } from '@/components/role-context'
 import { PageHeader } from '@/components/page-header'
 import { focusedRowClass, useFocusedRow } from '@/components/use-focused-row'
 import { Card } from '@/components/ui/card'
+import { PlaneLoader } from '@/components/ui/plane-loader'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
@@ -76,7 +77,7 @@ export default function SchedulePage() {
             <option value="All">All statuses</option><option value="Scheduled">Scheduled</option><option value="Due soon">Due soon</option><option value="Overdue">Overdue</option>
           </Select>
         </div>
-        {loading ? <div className="p-10 text-center text-sm text-slate-500">Loading schedules…</div> : error ? <div className="p-10 text-center text-sm text-rose-600">{error}</div> : <>
+        {loading ? <PlaneLoader label="Loading schedules…" /> : error ? <div className="p-10 text-center text-sm text-rose-600">{error}</div> : <>
           <Table><THead><TR><TH>Schedule</TH><TH>Equipment</TH><TH>Start/last date</TH><TH>Due date</TH><TH>Overdue By</TH><TH>Status</TH><TH>Ticket</TH>{canDelete && <TH>Action</TH>}</TR></THead><TBody>
             {rows.map((schedule) => <TR key={schedule.id} id={`row-${schedule.id}`} className={focus === schedule.id ? focusedRowClass : schedule.status === 'Due soon' ? 'bg-yellow-50/70 dark:bg-yellow-950/20' : schedule.status === 'Overdue' ? 'bg-rose-50/40 dark:bg-rose-950/10' : ''}>
               <TD><div className="font-semibold text-slate-900 dark:text-white">{schedule.scheduleNo}</div></TD>

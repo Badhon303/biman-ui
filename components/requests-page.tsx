@@ -7,6 +7,7 @@ import { useRole } from '@/components/role-context'
 import { focusedRowClass, useFocusedRow } from '@/components/use-focused-row'
 import { PageHeader } from '@/components/page-header'
 import { Card } from '@/components/ui/card'
+import { PlaneLoader } from '@/components/ui/plane-loader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
@@ -99,7 +100,7 @@ export function RequestsPage() {
     <PageHeader eyebrow="Maintenance / Requests" title="Equipment & parts requests" subtitle="A request-and-approval record linked to maintenance work — not an inventory system." action={canCreate ? <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" />Create request</Button> : undefined} />
     <Card>
       <div className="flex items-center justify-between gap-4 border-b p-5"><div><h2 className="text-sm font-semibold">All requests</h2><p className="mt-1 text-xs text-slate-500">{filteredRows.length} of {rows.length} records across active tickets</p></div><Select className="h-9" aria-label="Filter requests by status" value={statusFilter} onValueChange={setStatusFilter}><option value="">All statuses</option>{['Pending', 'Approved', 'Rejected', 'Received'].map((status) => <option key={status} value={status}>{status}</option>)}</Select></div>
-      {loading ? <div className="p-10 text-center text-sm text-slate-500">Loading requests…</div> : error ? <div className="p-10 text-center text-sm text-rose-600">{error}</div> : <>
+      {loading ? <PlaneLoader label="Loading requests…" /> : error ? <div className="p-10 text-center text-sm text-rose-600">{error}</div> : <>
         <Table><THead><TR><TH>Request ID</TH><TH>Item</TH><TH>Linked ticket / asset</TH><TH>Requested by</TH><TH>Date</TH><TH>Status</TH><TH>Approved by</TH><TH></TH></TR></THead><TBody>
           {filteredRows.map((request) => <TR key={request.id} id={`row-${request.id}`} className={focus === request.id ? focusedRowClass : ''}>
             <TD className="font-semibold">{request.requestNo}</TD>
