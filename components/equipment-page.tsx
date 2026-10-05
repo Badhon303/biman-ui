@@ -20,7 +20,7 @@ import { toast } from 'sonner'
 
 const statuses = ['Available', 'Under Maintenance', 'Out of Service', 'Inactive'] as const
 const meterRoles = ['Engineer', 'Manager', 'Super Admin']
-type EquipmentCreated = { id: string; assetNo: string }
+type EquipmentCreated = { id: string; assetNo: string; serviceTicketsCreated: number; vServiceScheduleCreated: boolean }
 
 export function EquipmentPage() {
   const { role } = useRole()
@@ -167,9 +167,13 @@ function EquipmentModal({ onClose, onCreated }: { onClose: () => void; onCreated
     }
     setSaving(true)
     try {
-      await apiRequest<EquipmentCreated>('equipment', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+      const created = await apiRequest<EquipmentCreated>('equipment', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
       onCreated()
-      toast.success('Equipment added')
+      const ticketMessage = created.serviceTicketsCreated
+        ? ` ${created.serviceTicketsCreated} service ticket${created.serviceTicketsCreated === 1 ? '' : 's'} created.`
+        : ''
+      const scheduleMessage = created.vServiceScheduleCreated ? ' V-Service schedule created.' : ''
+      toast.success(`Equipment added.${ticketMessage}${scheduleMessage}`)
     } catch (cause) {
       toast.error(cause instanceof Error ? cause.message : 'Unable to create equipment.')
     } finally { setSaving(false) }

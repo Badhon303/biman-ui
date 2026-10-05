@@ -10,11 +10,13 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { TD, TH, TBody, THead, TR, Table } from '@/components/ui/table'
 import { apiRequest } from '@/lib/api-client'
 import { ApiEquipment, ApiSchedule, ApiTicket } from '@/lib/api-data'
+import { ApiUser } from '@/lib/types'
 import { toast } from 'sonner'
 
-type ArchiveTab = 'tickets' | 'equipment' | 'equipment-types' | 'maintenance-schedules'
-type ArchiveRow = { id: string; title: string; details: string; deletedAt: string; endpoint: string; deleteDescription?: string }
+type ArchiveTab = 'tickets' | 'equipment' | 'equipment-types' | 'maintenance-schedules' | 'users'
+type ArchiveRow = { id: string; title: string; details: string; deletedAt: string; endpoint: string; deleteDescription?: string; allowPermanentDelete?: boolean }
 type ArchivedTicket = ApiTicket & { deletedAt: string }
+type ArchivedUser = ApiUser & { deletedAt: string }
 type ArchivedEquipment = ApiEquipment & { deletedAt: string }
 type ArchivedSchedule = ApiSchedule & { deletedAt: string }
 type ArchivedEquipmentType = {
@@ -27,14 +29,16 @@ type ArchivedEquipmentType = {
 
 const tabs: { id: ArchiveTab; label: string; endpoint: string }[] = [
   { id: 'tickets', label: 'Tickets', endpoint: 'tickets' },
+  { id: 'maintenance-schedules', label: 'V-Service schedules', endpoint: 'maintenance-schedules' },
   { id: 'equipment', label: 'Equipment', endpoint: 'equipment' },
   { id: 'equipment-types', label: 'Equipment types', endpoint: 'equipment-types' },
-  { id: 'maintenance-schedules', label: 'V-Service schedules', endpoint: 'maintenance-schedules' },
+  { id: 'users', label: 'Users', endpoint: 'users' },
 ]
 
 export function ArchivePage() {
   const { role } = useRole()
   const canManage = role === 'Super Admin' || role === 'Manager'
+  const visibleTabs = tabs.filter((item) => item.id !== 'users' || role === 'Super Admin')
   const [tab, setTab] = useState<ArchiveTab>('tickets')
   const [rows, setRows] = useState<ArchiveRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -74,6 +78,16 @@ export function ArchivePage() {
           deletedAt: item.deletedAt,
           endpoint: 'equipment-types',
         }))
+      } else if (tab === 'users') {
+        const users = await apiRequest<ArchivedUser[]>('users/archive')
+        records = users.map((user) => ({
+          id: user.id,
+          title: user.name,
+          details: `${user.email} · ${user.role} · ${user.organization}`,
+          deletedAt: user.deletedAt,
+          endpoint: 'users',
+          deleteDescription: `Permanently delete ${user.name}? This cannot be undone. Deletion is blocked while historical or operational records reference this user.`,
+        }))
       } else {
         const schedules = await apiRequest<ArchivedSchedule[]>('maintenance-schedules/archive')
         records = schedules.map((schedule) => ({
@@ -112,7 +126,7 @@ export function ArchivePage() {
   }
 
   const permanentlyDelete = async () => {
-    if (!deleteTarget) return
+    if (!deleteTarget || deleteTarget.allowPermanentDelete === false) return
     setDeleting(true)
     try {
       await apiRequest(`${deleteTarget.endpoint}/${encodeURIComponent(deleteTarget.id)}/permanent`, { method: 'DELETE' })
@@ -129,10 +143,10 @@ export function ArchivePage() {
   if (!canManage) return <Card className="p-8 text-sm text-slate-500">Archive is available to Managers and Super Admins.</Card>
 
   return <>
-    <PageHeader eyebrow="Admin / Archive" title="Archive" subtitle="Restore archived tickets, equipment, equipment types, and V-Service schedules, or permanently remove records you no longer need." />
+    <PageHeader eyebrow="Admin / Archive" title="Archive" subtitle="Restore archived tickets, equipment, equipment types, and V-Service schedules. Super Admins can also restore or permanently delete users." />
     <Card>
       <div className="flex flex-wrap gap-2 border-b p-5">
-        {tabs.map((item) => <button key={item.id} type="button" onClick={() => setTab(item.id)} className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${tab === item.id ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'}`}>{item.label}</button>)}
+        {visibleTabs.map((item) => <button key={item.id} type="button" onClick={() => setTab(item.id)} className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${tab === item.id ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'}`}>{item.label}</button>)}
       </div>
       {loading ? <div className="p-10 text-center text-sm text-slate-500">Loading archive…</div> : error ? <div className="p-10 text-center text-sm text-rose-600">{error}</div> : rows.length ? <Table>
         <THead><TR><TH>Record</TH><TH>Details</TH><TH>Archived on</TH><TH>Actions</TH></TR></THead>
@@ -142,11 +156,11 @@ export function ArchivePage() {
           <TD className="text-sm text-slate-500">{new Date(row.deletedAt).toLocaleDateString()}</TD>
           <TD><div className="flex items-center gap-1">
             <Button type="button" variant="ghost" className="h-9 px-2 text-blue-600" onClick={() => void restore(row)} disabled={busyId === row.id || deleting}><RotateCcw className="h-4 w-4" />Restore</Button>
-            <Button type="button" variant="ghost" className="h-9 w-9 p-0 text-rose-600" aria-label={`Permanently delete ${row.title}`} title="Permanently delete" onClick={() => setDeleteTarget(row)} disabled={busyId === row.id || deleting}><Trash2 className="h-4 w-4" /></Button>
+            {row.allowPermanentDelete !== false && <Button type="button" variant="ghost" className="h-9 w-9 p-0 text-rose-600" aria-label={`Permanently delete ${row.title}`} title="Permanently delete" onClick={() => setDeleteTarget(row)} disabled={busyId === row.id || deleting}><Trash2 className="h-4 w-4" /></Button>}
           </div></TD>
         </TR>)}</TBody>
-      </Table> : <div className="grid place-items-center p-12 text-center text-sm text-slate-500"><Archive className="mb-3 h-8 w-8 text-slate-300" />No archived {tabs.find((item) => item.id === tab)?.label.toLowerCase()}.</div>}
+      </Table> : <div className="grid place-items-center p-12 text-center text-sm text-slate-500"><Archive className="mb-3 h-8 w-8 text-slate-300" />No archived {visibleTabs.find((item) => item.id === tab)?.label.toLowerCase()}.</div>}
     </Card>
-    <ConfirmDialog open={!!deleteTarget} title="Permanently delete record" description={deleteTarget ? deleteTarget.deleteDescription ?? `Permanently delete ${deleteTarget.title}? This cannot be undone and linked pictures/files will also be removed.` : undefined} confirmLabel="Permanently delete" loading={deleting} onConfirm={() => void permanentlyDelete()} onCancel={() => setDeleteTarget(null)} />
+    <ConfirmDialog open={!!deleteTarget} title={deleteTarget?.endpoint === 'users' ? 'Permanently delete user' : 'Permanently delete record'} description={deleteTarget ? deleteTarget.deleteDescription ?? `Permanently delete ${deleteTarget.title}? This cannot be undone and linked pictures/files will also be removed.` : undefined} confirmLabel="Permanently delete" loading={deleting} onConfirm={() => void permanentlyDelete()} onCancel={() => setDeleteTarget(null)} />
   </>
 }

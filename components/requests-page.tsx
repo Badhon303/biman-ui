@@ -21,6 +21,9 @@ export function RequestsPage() {
   const [rows, setRows] = useState<ApiRequest[]>([])
   const [tickets, setTickets] = useState<ApiTicket[]>([])
   const [createOpen, setCreateOpen] = useState(false)
+  const [rejectionRequest, setRejectionRequest] = useState<ApiRequest | null>(null)
+  const [rejectionReason, setRejectionReason] = useState('')
+  const [rejecting, setRejecting] = useState(false)
   const [statusFilter, setStatusFilter] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -45,23 +48,31 @@ export function RequestsPage() {
     if (canCreate) void fetchAllPages<ApiTicket>('tickets').then(setTickets).catch((cause) => toast.error(cause instanceof Error ? cause.message : 'Unable to load tickets.'))
   }, [canCreate])
 
-  const decide = async (request: ApiRequest, action: 'approve' | 'reject' | 'receive') => {
+  const decide = async (request: ApiRequest, action: 'approve' | 'reject' | 'receive', reason?: string) => {
     let body: { reason: string } | undefined
     if (action === 'reject') {
-      const reason = window.prompt('Enter a reason for rejecting this request:')?.trim()
-      if (!reason) return
-      if (reason.length < 2) { toast.error('Enter a rejection reason of at least two characters.'); return }
-      body = { reason }
+      if (reason === undefined) {
+        setRejectionRequest(request)
+        setRejectionReason('')
+        return
+      }
+      const trimmedReason = reason.trim()
+      if (trimmedReason.length < 2) { toast.error('Enter a rejection reason of at least two characters.'); return }
+      body = { reason: trimmedReason }
+      setRejecting(true)
     }
     try {
       await apiRequest(`requests/${encodeURIComponent(request.id)}/${action}`, {
         method: 'POST',
         ...(body ? { headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : {}),
       })
+      if (action === 'reject') setRejectionRequest(null)
       await load()
       toast.success(action === 'receive' ? 'Request marked as received' : action === 'approve' ? 'Request approved' : 'Request rejected')
     } catch (cause) {
       toast.error(cause instanceof Error ? cause.message : 'Unable to update request.')
+    } finally {
+      if (action === 'reject') setRejecting(false)
     }
   }
 
@@ -102,6 +113,13 @@ export function RequestsPage() {
         {filteredRows.length === 0 && <div className="p-10 text-center text-sm text-slate-500">{rows.length === 0 ? 'No requests found.' : 'No requests match this status.'}</div>}
       </>}
     </Card>
+    {rejectionRequest && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"><div role="dialog" aria-modal="true" aria-labelledby="reject-request-title" className="w-full max-w-md rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900">
+      <div className="mb-5 flex items-start justify-between"><div><h2 id="reject-request-title" className="text-lg font-semibold">Reject request</h2><p className="mt-1 text-sm text-slate-500">Provide a reason for rejecting {rejectionRequest.requestNo} ({rejectionRequest.item}).</p></div><button type="button" onClick={() => setRejectionRequest(null)} disabled={rejecting} className="text-2xl leading-none text-slate-400 disabled:opacity-50" aria-label="Close modal">×</button></div>
+      <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void decide(rejectionRequest, 'reject', rejectionReason) }}>
+        <label className="block text-xs font-semibold">Rejection reason<textarea autoFocus className="mt-2 min-h-28 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 dark:bg-slate-950" value={rejectionReason} onChange={(event) => setRejectionReason(event.target.value)} minLength={2} required disabled={rejecting} placeholder="Explain why this request is being rejected" /></label>
+        <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setRejectionRequest(null)} disabled={rejecting}>Cancel</Button><Button type="submit" variant="danger" disabled={rejecting}>{rejecting ? 'Rejecting…' : 'Reject request'}</Button></div>
+      </form>
+    </div></div>}
     {createOpen && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"><div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900">
       <div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">Create equipment request</h2><p className="mt-1 text-sm text-slate-500">Submit a parts or equipment request for approval.</p></div><button type="button" onClick={() => setCreateOpen(false)} className="text-2xl leading-none text-slate-400" aria-label="Close modal">×</button></div>
       <form className="space-y-4" onSubmit={create}><div className="grid gap-4 sm:grid-cols-2">

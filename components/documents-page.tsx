@@ -32,7 +32,7 @@ export function DocumentsPage() {
       role === 'Super Admin' ? apiRequest<StorageUsage>('files/usage').catch(() => null) : Promise.resolve(null),
     ]).then(([equipment, storage]) => {
       if (!active) return
-      setRows(equipment.flatMap((item) => item.documents.map((document) => ({ ...document, assetNo: item.assetNo }))))
+      setRows(equipment.flatMap((item) => item.documents.map((document) => ({ ...document, assetNo: item.assetNo }))).sort((left, right) => Date.parse(right.uploadedAt) - Date.parse(left.uploadedAt)))
       setUsage(storage)
     }).catch((cause) => {
       if (active) setError(cause instanceof Error ? cause.message : 'Unable to load documents.')

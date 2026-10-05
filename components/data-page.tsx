@@ -1061,13 +1061,15 @@ export function RequestsPage() {
 }
 export function HistoryPage() {
   const [q, setQ] = useState("");
-  const rows = tickets.filter(
-    (t) =>
-      t.status === "Closed" &&
-      `${t.ticketNo} ${getName(t.equipmentId)} ${t.maintenanceRecord.problemDescription}`
-        .toLowerCase()
-        .includes(q.toLowerCase()),
-  );
+  const rows = tickets
+    .filter(
+      (t) =>
+        t.status === "Closed" &&
+        `${t.ticketNo} ${getName(t.equipmentId)} ${t.maintenanceRecord.problemDescription}`
+          .toLowerCase()
+          .includes(q.toLowerCase()),
+    )
+    .sort((left, right) => right.createdDate.localeCompare(left.createdDate));
   return (
     <>
       <PageHeader
