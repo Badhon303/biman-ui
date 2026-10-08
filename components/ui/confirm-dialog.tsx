@@ -36,7 +36,7 @@ export function ConfirmDialog({
         </div>
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>{cancelLabel}</Button>
-          <Button type="button" variant={destructive ? 'danger' : 'default'} onClick={onConfirm} disabled={loading}>{loading ? 'Working…' : confirmLabel}</Button>
+          <Button type="button" variant={destructive ? 'danger' : 'default'} onClick={onConfirm} loading={loading} loadingText="Working…">{confirmLabel}</Button>
         </div>
       </div>
     </div>

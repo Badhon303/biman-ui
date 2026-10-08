@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { FormEvent, useEffect, useRef, useState } from 'react'
-import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { LoaderCircle, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { HourMeterHistoryModal } from '@/components/hour-meter-history'
 import { useRole } from '@/components/role-context'
 import { PageHeader } from '@/components/page-header'
@@ -39,6 +39,7 @@ export function EquipmentPage() {
   const [historyLoadingId, setHistoryLoadingId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ApiEquipment | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [updatingMeter, setUpdatingMeter] = useState(false)
 
   const load = async () => {
     const requestId = ++latestLoad.current
@@ -84,6 +85,7 @@ export function EquipmentPage() {
     const form = new FormData(event.currentTarget)
     const value = Number(form.get('value'))
     if (!Number.isFinite(value) || value < 0) { toast.error('Enter a valid hour meter value'); return }
+    setUpdatingMeter(true)
     try {
       const result = await apiRequest<{ serviceTicketsCreated: number }>(`equipment/${encodeURIComponent(meterEquipment.id)}/hour-meter`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ value }) })
       setMeterEquipment(null)
@@ -95,6 +97,8 @@ export function EquipmentPage() {
       toast.success(`${actionMessage} for ${meterEquipment.assetNo}.${ticketMessage}`)
     } catch (cause) {
       toast.error(cause instanceof Error ? cause.message : 'Unable to update hour meter.')
+    } finally {
+      setUpdatingMeter(false)
     }
   }
 
@@ -126,7 +130,7 @@ export function EquipmentPage() {
       </>}
     </Card>
     {addOpen && <EquipmentModal onClose={() => setAddOpen(false)} onCreated={() => { setAddOpen(false); void load() }} />}
-    {meterEquipment && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"><div className="w-full max-w-md rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">Add current hour meter</h2><p className="mt-1 text-sm text-slate-500">Update the current reading for {meterEquipment.assetNo}.</p></div><button type="button" onClick={() => setMeterEquipment(null)} className="text-2xl leading-none text-slate-400" aria-label="Close modal">×</button></div><form className="space-y-4" onSubmit={updateMeter}><label className="text-xs font-semibold">Current hour meter<Input className="mt-2" name="value" type="number" min={meterEquipment.hourMeter} step="any" defaultValue={meterEquipment.hourMeter} required /></label><div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setMeterEquipment(null)}>Cancel</Button><Button type="submit">Update</Button></div></form></div></div>}
+    {meterEquipment && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"><div className="w-full max-w-md rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">Add current hour meter</h2><p className="mt-1 text-sm text-slate-500">Update the current reading for {meterEquipment.assetNo}.</p></div><button type="button" onClick={() => setMeterEquipment(null)} className="text-2xl leading-none text-slate-400 disabled:cursor-wait disabled:opacity-50" aria-label="Close modal" disabled={updatingMeter}>×</button></div><form className="space-y-4" onSubmit={updateMeter} aria-busy={updatingMeter}><label className="text-xs font-semibold">Current hour meter<Input className="mt-2" name="value" type="number" min={meterEquipment.hourMeter} step="any" defaultValue={meterEquipment.hourMeter} required disabled={updatingMeter} /></label><div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setMeterEquipment(null)} disabled={updatingMeter}>Cancel</Button><Button type="submit" disabled={updatingMeter}>{updatingMeter && <LoaderCircle className="h-4 w-4 animate-spin" />}{updatingMeter ? 'Updating…' : 'Update'}</Button></div></form></div></div>}
     {historyEquipment && <HourMeterHistoryModal assetNo={historyEquipment.assetNo} history={historyEquipment.hourMeterReadings ? [...historyEquipment.hourMeterReadings].reverse() : undefined} currentValue={historyEquipment.hourMeter} onClose={() => setHistoryEquipment(null)} />}
     <ConfirmDialog
       open={!!deleteTarget}
@@ -182,11 +186,11 @@ function EquipmentModal({ onClose, onCreated }: { onClose: () => void; onCreated
     } finally { setSaving(false) }
   }
 
-  return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"><div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">Add equipment</h2><p className="mt-1 text-sm text-slate-500">Enter the basic details for a new fleet asset.</p></div><button type="button" onClick={onClose} className="text-2xl leading-none text-slate-400" aria-label="Close modal">×</button></div>
+  return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"><div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">Add equipment</h2><p className="mt-1 text-sm text-slate-500">Enter the basic details for a new fleet asset.</p></div><button type="button" onClick={onClose} className="text-2xl leading-none text-slate-400 disabled:opacity-50" aria-label="Close modal" disabled={saving}>×</button></div>
     <form className="space-y-4" onSubmit={submit}><div className="grid gap-4 sm:grid-cols-2">
       <label className="text-xs font-semibold">Equipment type<Select searchable aria-label="Equipment type" className="mt-2 w-full" name="equipmentTypeId" value={selectedTypeId} onChange={(event) => setSelectedTypeId(event.target.value)} required disabled={loading}><option value="" disabled>{loading ? 'Loading types…' : 'Select equipment type'}</option>{types.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}</Select></label>
       <label className="text-xs font-semibold">Manufacturer<Input className="mt-2" name="manufacturer" placeholder="Manufacturer name" required /></label><label className="text-xs font-semibold">Model<Input className="mt-2" name="model" placeholder="Model number" required /></label><label className="text-xs font-semibold">Location<Input className="mt-2" name="location" defaultValue="Not assigned" required /></label>
       <label className="text-xs font-semibold">Engine model<Input className="mt-2" name="engineModel" /></label><label className="text-xs font-semibold">Engine S/L<Input className="mt-2" name="engineSerialNo" /></label><label className="text-xs font-semibold">Biman serial no.<Input className="mt-2" name="bimanSerialNo" /></label><label className="text-xs font-semibold">TLD serial no.<Input className="mt-2" name="tldSerialNo" /></label><label className="text-xs font-semibold">Rear tire size<Input className="mt-2" name="rearTireSize" type="text" /></label><label className="text-xs font-semibold">Front tire size<Input className="mt-2" name="frontTireSize" type="text" /></label><label className="text-xs font-semibold">Hour meter<Input className="mt-2" name="hourMeter" type="number" min="0" step="any" /></label>{hasVService && <label className="text-xs font-semibold">V-Service Start date<Input className="mt-2" name="lastVServiceDate" type="date" required /></label>}
-    </div><div className="flex justify-end gap-2 pt-2"><Button type="button" variant="outline" onClick={onClose}>Cancel</Button><Button type="submit" disabled={saving || loading || !types.length}><Plus className="h-4 w-4" />{saving ? 'Adding…' : 'Add equipment'}</Button></div></form>
+    </div><div className="flex justify-end gap-2 pt-2"><Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button><Button type="submit" disabled={loading || !types.length} loading={saving} loadingText="Adding equipment"><Plus className="h-4 w-4" />Add equipment</Button></div></form>
   </div></div>
 }

@@ -65,6 +65,7 @@ export function UsersPage() {
   const [statusSaving, setStatusSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
   const [deletingUser, setDeletingUser] = useState(false)
+  const [creatingUser, setCreatingUser] = useState(false)
   const resetPasswordIsValid = resetNewPassword.length >= 6
   const resetPasswordsMatch = confirmResetPassword.length > 0 && resetNewPassword === confirmResetPassword
 
@@ -86,6 +87,7 @@ export function UsersPage() {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
     const body = { name: String(form.get('name')).trim(), email: String(form.get('email')).trim(), role: String(form.get('role')) as Exclude<Role, 'Super Admin'> }
+    setCreatingUser(true)
     try {
       const result = await apiRequest<ApiUser & { temporaryPassword: string }>('users', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
       setTemporaryPassword(result.temporaryPassword)
@@ -94,6 +96,8 @@ export function UsersPage() {
       toast.success('User created. Share the temporary password securely.')
     } catch (cause) {
       toast.error(cause instanceof Error ? cause.message : 'Unable to create user.')
+    } finally {
+      setCreatingUser(false)
     }
   }
 
@@ -195,12 +199,12 @@ export function UsersPage() {
       </>}
     </Card>
     {invite && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"><div className="w-full max-w-md rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900">
-      <div className="mb-5 flex items-center justify-between"><h2 className="text-lg font-semibold">Invite user</h2><button type="button" onClick={closeInvite} className="text-2xl leading-none text-slate-400" aria-label="Close modal">×</button></div>
+      <div className="mb-5 flex items-center justify-between"><h2 className="text-lg font-semibold">Invite user</h2><button type="button" onClick={closeInvite} className="text-2xl leading-none text-slate-400 disabled:opacity-50" aria-label="Close modal" disabled={creatingUser}>×</button></div>
       {temporaryPassword ? <div className="space-y-4"><p className="text-sm text-slate-500">Copy this temporary password and share it securely. It will not be shown again after closing.</p><div className="relative"><Input readOnly value={temporaryPassword} aria-label="Temporary password" className="pr-12" /><button type="button" onClick={() => void copyTemporaryPassword()} className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" aria-label={passwordCopied ? 'Temporary password copied' : 'Copy temporary password'} title={passwordCopied ? 'Copied' : 'Copy password'}>{passwordCopied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}</button></div><Button className="w-full" onClick={closeInvite}>Done</Button></div> : <form className="space-y-4" onSubmit={createUser}>
         <label className="block text-xs font-semibold">Full name<Input className="mt-2" name="name" minLength={2} required /></label>
         <label className="block text-xs font-semibold">Work email<Input className="mt-2" name="email" type="email" required /></label>
         <label className="block text-xs font-semibold">Role<Select className="mt-2 w-full" name="role" defaultValue="Engineer">{(['Manager', 'Engineer', 'Biman Admin'] as Exclude<Role, 'Super Admin'>[]).map((role) => <option key={role}>{role}</option>)}</Select></label>
-        <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={closeInvite}>Cancel</Button><Button type="submit">Create user</Button></div>
+        <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={closeInvite} disabled={creatingUser}>Cancel</Button><Button type="submit" loading={creatingUser} loadingText="Creating user">Create user</Button></div>
       </form>}
     </div></div>}
     {resetTarget && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm">
@@ -212,7 +216,7 @@ export function UsersPage() {
           <label className="block text-xs font-semibold">Confirm password<PasswordInput autoComplete="new-password" minLength={6} value={confirmResetPassword} onChange={(event) => setConfirmResetPassword(event.target.value)} required /></label>
           {confirmResetPassword.length > 0 && <p aria-live="polite" className={`text-xs ${resetPasswordsMatch ? 'text-emerald-600' : 'text-rose-600'}`}>{resetPasswordsMatch ? 'Passwords match.' : 'Passwords do not match.'}</p>}
           <p className="text-xs text-slate-500">The user will be required to choose a new password when they next sign in.</p>
-          <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={closeResetDialog} disabled={resettingPassword}>Cancel</Button><Button type="submit" disabled={resettingPassword || !resetPasswordIsValid || !resetPasswordsMatch}>{resettingPassword ? 'Resetting…' : 'Reset password'}</Button></div>
+          <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={closeResetDialog} disabled={resettingPassword}>Cancel</Button><Button type="submit" disabled={!resetPasswordIsValid || !resetPasswordsMatch} loading={resettingPassword} loadingText="Resetting password">Reset password</Button></div>
         </form>
       </div>
     </div>}
@@ -221,7 +225,7 @@ export function UsersPage() {
         <div className="mb-5 flex items-start justify-between"><div><h2 id="edit-user-status-title" className="text-lg font-semibold">Change user status</h2><p className="mt-1 text-sm text-slate-500">Update the account status for {statusEditTarget.name}.</p></div><button type="button" onClick={() => setStatusEditTarget(null)} disabled={statusSaving} className="text-2xl leading-none text-slate-400 disabled:opacity-50" aria-label="Close dialog">×</button></div>
         <form className="space-y-5" onSubmit={saveUserStatus}>
           <label className="block text-xs font-semibold">Status<Select className="mt-2 w-full" value={editedStatus} onChange={(event) => setEditedStatus(event.target.value as User['status'])}><option value="Active">Active</option><option value="Inactive">Inactive</option></Select></label>
-          <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setStatusEditTarget(null)} disabled={statusSaving}>Cancel</Button><Button type="submit" disabled={statusSaving}>{statusSaving ? 'Saving…' : 'Save status'}</Button></div>
+          <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setStatusEditTarget(null)} disabled={statusSaving}>Cancel</Button><Button type="submit" loading={statusSaving} loadingText="Saving status">Save status</Button></div>
         </form>
       </div>
     </div>}
@@ -454,7 +458,7 @@ export function SettingsPage() {
                 <label className="block text-sm font-medium">Confirm new password<PasswordInput autoComplete="new-password" minLength={6} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required /></label>
                 {confirmPassword.length > 0 && <p aria-live="polite" className={`mt-2 text-xs ${ownPasswordsMatch ? 'text-emerald-600' : 'text-rose-600'}`}>{ownPasswordsMatch ? 'Passwords match.' : 'Passwords do not match.'}</p>}
               </div>
-              <Button className="w-full sm:w-auto" type="submit" disabled={passwordSaving || !ownPasswordIsValid || !ownPasswordsMatch}>{passwordSaving ? 'Updating…' : <><span>Update password</span><ArrowRight className="h-4 w-4" /></>}</Button>
+              <Button className="w-full sm:w-auto" type="submit" disabled={!ownPasswordIsValid || !ownPasswordsMatch} loading={passwordSaving} loadingText="Updating password"><span>Update password</span><ArrowRight className="h-4 w-4" /></Button>
             </form>
             <aside className="h-fit rounded-xl border bg-slate-50/70 p-4 dark:bg-slate-950/50">
               <div className="flex items-center gap-2 text-sm font-semibold"><ShieldCheck className="h-4 w-4 text-blue-600" />Password checklist</div>
@@ -471,7 +475,7 @@ export function SettingsPage() {
         {loading ? <PlaneLoader label="Loading equipment types…" /> : <Table><THead><TR><TH>Equipment type</TH><TH>Services</TH><TH>Equipment</TH>{canManageTypes && <TH>Action</TH>}</TR></THead><TBody>{types.map((type) => <TR key={type.id}><TD className="font-semibold">{type.name}</TD><TD>{type.services.map((service) => service.name).join(', ')}</TD><TD>{type._count?.equipment ?? '—'}</TD>{canManageTypes && <TD><div className="flex items-center gap-1"><Button type="button" variant="ghost" className="h-8 w-8 p-0 text-slate-600" aria-label={`Edit ${type.name}`} title="Edit equipment type" onClick={() => openTypeModal(type)}><Pencil className="h-4 w-4" /></Button><Button type="button" variant="ghost" className="h-8 w-8 p-0 text-rose-600" aria-label={`Delete ${type.name}`} title="Delete equipment type" onClick={() => void deleteEquipmentType(type)}><Trash2 className="h-4 w-4" /></Button></div></TD>}</TR>)}</TBody></Table>}{!loading && types.length === 0 && <div className="p-10 text-center text-sm text-slate-500">No equipment types found.</div>}
       </Card>}</div>
     </div>
-    {typeModalOpen && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"><div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">{editingType ? 'Edit equipment type' : 'Add equipment type'}</h2><p className="mt-1 text-sm text-slate-500">Service-band continuity is validated by the API.</p></div><button type="button" onClick={closeTypeModal} className="text-2xl leading-none text-slate-400" aria-label="Close modal">×</button></div>
+    {typeModalOpen && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"><div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">{editingType ? 'Edit equipment type' : 'Add equipment type'}</h2><p className="mt-1 text-sm text-slate-500">Service-band continuity is validated by the API.</p></div><button type="button" onClick={closeTypeModal} className="text-2xl leading-none text-slate-400 disabled:opacity-50" aria-label="Close modal" disabled={saving}>×</button></div>
       <form className="space-y-4" onSubmit={saveEquipmentType}><label className="block text-xs font-semibold">Equipment type name<Input className="mt-2" value={typeName} onChange={(event) => setTypeName(event.target.value)} minLength={2} required /></label>
         <div><div className="text-xs font-semibold">Hour-meter services</div><p className="mt-1 text-xs text-slate-500">Slide to select services from F through E. Each earlier service is included automatically.</p>
           <div className="mt-4 rounded-xl border p-4">
@@ -486,7 +490,7 @@ export function SettingsPage() {
         <div><div className="flex items-center justify-between"><span className="text-xs font-semibold">Custom services</span><Button type="button" variant="outline" className="h-8 px-2 text-xs" onClick={() => setCustomServices((current) => [...current, { name: '', minHours: '', maxHours: '', months: '', checklistItems: [] }])}><Plus className="h-3.5 w-3.5" />Add custom</Button></div>
           {customServices.length ? <div className="mt-2 space-y-2">{customServices.map((service, index) => <div key={service.id ?? index} className="space-y-2 rounded-xl border p-3"><div className="flex items-center gap-2"><Input placeholder="Service name" value={service.name} onChange={(event) => updateCustomService(index, { name: event.target.value })} /><Button type="button" variant="ghost" className="px-2 text-rose-600 hover:bg-rose-50" aria-label="Remove custom service" onClick={() => removeCustomService(index)}><Trash2 className="h-4 w-4" /></Button></div><div className="flex items-center gap-2"><Input type="number" min={0} placeholder="Start hours" className="flex-1" value={service.minHours} onChange={(event) => updateCustomService(index, { minHours: event.target.value })} /><span className="text-xs text-slate-400">to</span><Input type="number" min={0} placeholder="End hours" className="flex-1" value={service.maxHours} onChange={(event) => updateCustomService(index, { maxHours: event.target.value })} /></div></div>)}</div> : <p className="mt-2 text-xs text-slate-400">Add a custom service with its own name and hour range.</p>}
         </div>
-        <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={closeTypeModal}>Cancel</Button><Button type="submit" disabled={saving || checklistCatalogLoading}>{checklistCatalogLoading ? 'Loading checklist…' : saving ? 'Saving…' : editingType ? 'Save changes' : 'Create type'}</Button></div>
+        <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={closeTypeModal} disabled={saving}>Cancel</Button><Button type="submit" disabled={checklistCatalogLoading} loading={saving} loadingText="Saving…">{editingType ? 'Save changes' : 'Create type'}</Button></div>
       </form></div></div>}
     <ConfirmDialog
       open={!!deleteTypeTarget}

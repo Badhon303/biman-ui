@@ -65,6 +65,9 @@ export default function TicketDetail() {
   const [requestOpen, setRequestOpen] = useState(false)
   const [returnOpen, setReturnOpen] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [startingWork, setStartingWork] = useState(false)
+  const [creatingRequest, setCreatingRequest] = useState(false)
+  const [updatingChecklist, setUpdatingChecklist] = useState<string | null>(null)
 
   const load = async () => {
     try {
@@ -90,10 +93,11 @@ export default function TicketDetail() {
   }, [canListEngineers])
 
   const toggleChecklist = async (itemId: string, checked: boolean) => {
-    if (!ticket) return
+    if (!ticket || updatingChecklist) return
     const before = ticket
     const record = ticket.maintenanceRecord
     if (!record) return
+    setUpdatingChecklist(itemId)
     setTicket({ ...ticket, maintenanceRecord: { ...record, checklistItems: record.checklistItems?.map((item) => item.id === itemId ? { ...item, checked } : item), inspectionChecklist: record.inspectionChecklist?.map((item) => item.id === itemId ? { ...item, checked } : item) } })
     try {
       await apiRequest(`tickets/${encodeURIComponent(ticket.id)}/checklist/${encodeURIComponent(itemId)}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ checked }) })
@@ -101,13 +105,17 @@ export default function TicketDetail() {
     } catch (cause) {
       setTicket(before)
       toast.error(cause instanceof Error ? cause.message : 'Unable to update checklist.')
+    } finally {
+      setUpdatingChecklist(null)
     }
   }
 
   const startWork = async () => {
     if (!ticket) return
+    setStartingWork(true)
     try { await apiRequest(`tickets/${encodeURIComponent(ticket.id)}/start`, { method: 'POST' }); await load(); toast.success('Work started') }
     catch (cause) { toast.error(cause instanceof Error ? cause.message : 'Unable to start work.') }
+    finally { setStartingWork(false) }
   }
 
   const saveDetails = async (event: FormEvent<HTMLFormElement>) => {
@@ -240,12 +248,14 @@ export default function TicketDetail() {
     const partNumber = form.get('partNumber')
     const reason = String(form.get('reason')).trim()
     const body = { ticketId: ticket.id, item: String(form.get('item')).trim(), quantity: Number(form.get('quantity')), ...(partNumber ? { partNumber: Number(partNumber) } : {}), ...(reason ? { reason } : {}) }
+    setCreatingRequest(true)
     try {
       await apiRequest('requests', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
       setRequestOpen(false)
       await load()
       toast.success('Request submitted for approval')
     } catch (cause) { toast.error(cause instanceof Error ? cause.message : 'Unable to submit request.') }
+    finally { setCreatingRequest(false) }
   }
 
   if (loading) return <><PlaneLoader label="Loading ticket…" /></>
@@ -274,7 +284,7 @@ export default function TicketDetail() {
   const current = statusStep(ticket.status)
 
   return <>
-    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><Link href="/tickets" className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-blue-600"><ArrowLeft className="h-4 w-4" />All tickets</Link><div className="flex flex-wrap justify-end gap-2">{canManage && !editing && !['Closed', 'Completed'].includes(ticket.status) && <Button variant="outline" onClick={() => setEditing(true)}><Pencil className="h-4 w-4" />Edit ticket</Button>}{canManage && editing && <><Button variant="outline" onClick={() => { setEditing(false); setPriority(ticket.priority); setDueDate(ticket.dueDate.slice(0, 10)); setRequestingParty(ticket.requestingParty ?? ''); setAssignedEngineerId(ticket.assignedEngineer?.id ?? '') }}><X className="h-4 w-4" />Cancel</Button><Button form="ticket-edit" type="submit" disabled={saving}><Save className="h-4 w-4" />Save changes</Button></>}{isEngineer && ['Open', 'Assigned'].includes(ticket.status) && <Button variant="outline" onClick={() => void startWork()}><Wrench className="h-4 w-4" />Start work</Button>}{canManage && ticket.status === 'Awaiting Verification' && <><Button variant="outline" onClick={() => setReturnOpen(true)} disabled={saving}><Undo2 className="h-4 w-4" />Return to engineer</Button><Button onClick={() => void verifyAndClose()} disabled={saving}><Check className="h-4 w-4" />Verify &amp; close</Button></>}</div></div>
+    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><Link href="/tickets" className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-blue-600"><ArrowLeft className="h-4 w-4" />All tickets</Link><div className="flex flex-wrap justify-end gap-2">{canManage && !editing && !['Closed', 'Completed'].includes(ticket.status) && <Button variant="outline" onClick={() => setEditing(true)}><Pencil className="h-4 w-4" />Edit ticket</Button>}{canManage && editing && <><Button variant="outline" onClick={() => { setEditing(false); setPriority(ticket.priority); setDueDate(ticket.dueDate.slice(0, 10)); setRequestingParty(ticket.requestingParty ?? ''); setAssignedEngineerId(ticket.assignedEngineer?.id ?? '') }} disabled={saving}><X className="h-4 w-4" />Cancel</Button><Button form="ticket-edit" type="submit" loading={saving} loadingText="Saving changes"><Save className="h-4 w-4" />Save changes</Button></>}{isEngineer && ['Open', 'Assigned'].includes(ticket.status) && <Button variant="outline" onClick={() => void startWork()} loading={startingWork} loadingText="Starting work"><Wrench className="h-4 w-4" />Start work</Button>}{canManage && ticket.status === 'Awaiting Verification' && <><Button variant="outline" onClick={() => setReturnOpen(true)} disabled={saving}><Undo2 className="h-4 w-4" />Return to engineer</Button><Button onClick={() => void verifyAndClose()} loading={saving} loadingText="Verifying ticket"><Check className="h-4 w-4" />Verify &amp; close</Button></>}</div></div>
     <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><div className="mb-2 text-xs font-semibold uppercase tracking-[.18em] text-blue-600">Maintenance ticket / {ticket.ticketNo}</div><h1 className="text-3xl font-semibold tracking-tight">{ticket.faultDescription ?? ticket.maintenanceRecord?.problemDescription ?? ticket.serviceType}</h1><p className="mt-2 text-sm text-slate-500">{ticket.equipment.assetNo} · {ticket.equipment.equipmentType} · raised {ticket.createdDate.slice(0, 10)}</p></div><StatusBadge status={ticket.status} /></div>
     <Card className="mb-6 overflow-hidden"><div className="overflow-x-auto p-6"><div className="flex min-w-[640px] items-start justify-between">{steps.map((step, index) => <div key={step} className="relative flex flex-1 flex-col items-center text-center"><div className={`z-10 grid h-8 w-8 place-items-center rounded-full border-2 text-xs font-bold ${index <= current ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-200 bg-white text-slate-400 dark:border-slate-700 dark:bg-slate-900'}`}>{index < current ? <Check className="h-4 w-4" /> : index + 1}</div>{index < steps.length - 1 && <div className={`absolute left-1/2 top-4 h-0.5 w-full ${index < current ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'}`} />}<div className={`mt-3 max-w-[105px] text-[10px] font-semibold leading-4 ${index <= current ? 'text-blue-600' : 'text-slate-400'}`}>{step}</div></div>)}</div></div></Card>
     <div className="grid gap-6 lg:grid-cols-[1.25fr_.75fr]"><div className="space-y-6"><Card className="p-6"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-base font-semibold">Maintenance record</h2><p className="mt-1 text-xs text-slate-500">Problem reported for this ticket, with engineer feedback on the work performed.</p></div><ClipboardCheck className="h-5 w-5 text-blue-600" /></div>
@@ -311,13 +321,14 @@ export default function TicketDetail() {
                       type="button"
                       role="checkbox"
                       aria-checked={item.checked}
+                      aria-busy={updatingChecklist === item.id}
                       aria-label={`${item.label} (${item.checked ? 'checked' : 'unchecked'})`}
-                      disabled={!canEditRecord}
+                      disabled={!canEditRecord || updatingChecklist !== null}
                       onClick={() => void toggleChecklist(item.id, !item.checked)}
                       className="flex w-full items-start gap-3 rounded-lg border p-3 text-left transition enabled:hover:border-blue-400 enabled:hover:bg-blue-50/50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-default dark:enabled:hover:bg-blue-950/20"
                     >
-                      <span className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded border ${item.checked ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 text-transparent dark:border-slate-600'}`}>
-                        <Check className="h-3.5 w-3.5" />
+                      <span className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded border ${item.checked ? 'border-blue-600 bg-blue-600 text-white' : updatingChecklist === item.id ? 'border-blue-500 text-blue-600' : 'border-slate-300 text-transparent dark:border-slate-600'}`}>
+                        {updatingChecklist === item.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
                       </span>
                       <span className={`text-xs ${item.checked ? 'text-slate-700 dark:text-slate-200' : 'text-slate-500'}`}>{item.label}</span>
                     </button>
@@ -359,8 +370,8 @@ export default function TicketDetail() {
         <Card><div className="flex items-center justify-between border-b p-5"><div><h2 className="text-sm font-semibold">Equipment / parts</h2><p className="mt-1 text-xs text-slate-500">Linked requests for this ticket, if parts are needed</p></div>{canRequestParts && ticket.status !== 'Closed' && <Button variant="outline" className="h-8 px-2 text-xs" onClick={() => setRequestOpen(true)}><Plus className="h-3.5 w-3.5" />Request</Button>}</div><div className="divide-y">{(ticket.requests ?? []).map((request: ApiRequest) => <div key={request.id} className="flex items-center justify-between p-4"><div><div className="text-sm font-medium">{request.item}{request.partNumber != null && ` · #${request.partNumber}`} ×{request.quantity}</div>{request.reason && <div className="text-xs text-slate-400">{request.reason}</div>}</div><StatusBadge status={request.status} /></div>)}{(ticket.requests ?? []).length === 0 && <div className="p-5 text-sm text-slate-500">No requests linked yet.</div>}</div></Card>
         <Card><div className="flex items-center justify-between border-b p-5"><div><h2 className="text-sm font-semibold">Ticket history</h2><p className="mt-1 text-xs text-slate-500">Activity and status changes, newest first</p></div><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">{history.length}</span></div><div className="divide-y">{history.map((entry) => <div key={entry.id} className="p-4"><p className="whitespace-pre-wrap text-sm">{entry.label}</p><p className="mt-1 text-xs text-slate-400">{new Date(entry.timestamp).toLocaleString()}{entry.actor ? ` · ${entry.actor}` : ''}</p></div>)}{history.length === 0 && <div className="p-5 text-sm text-slate-500">No ticket history.</div>}</div></Card>
       </div></div>
-    {requestOpen && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"><div className="w-full max-w-md rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">Add request</h2><p className="mt-1 text-sm text-slate-500">Request parts needed for this ticket.</p></div><button type="button" onClick={() => setRequestOpen(false)} className="text-2xl leading-none text-slate-400" aria-label="Close modal">×</button></div><form className="space-y-4" onSubmit={createRequest}><label className="block text-xs font-semibold">Parts name<Input className="mt-2" name="item" required /></label><label className="block text-xs font-semibold">Quantity<Input className="mt-2" name="quantity" type="number" min="1" defaultValue="1" required /></label><label className="block text-xs font-semibold">Parts Number<Input className="mt-2" name="partNumber" type="number" min="0" step="1" /></label><label className="block text-xs font-semibold">Reason (optional)<textarea className="mt-2 min-h-24 w-full rounded-lg border bg-white px-3 py-2 text-sm dark:bg-slate-950" name="reason" minLength={2} /></label><div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setRequestOpen(false)}>Cancel</Button><Button type="submit">Submit request</Button></div></form></div></div>}
-    {returnOpen && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"><div className="w-full max-w-md rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">Return to engineer</h2><p className="mt-1 text-sm text-slate-500">The ticket goes back to In progress so the engineer can correct the maintenance record.</p></div><button type="button" onClick={() => setReturnOpen(false)} className="text-2xl leading-none text-slate-400" aria-label="Close modal">×</button></div><form className="space-y-4" onSubmit={returnToEngineer}><label className="block text-xs font-semibold">Reason<textarea className="mt-2 min-h-24 w-full rounded-lg border bg-white px-3 py-2 text-sm dark:bg-slate-950" name="reason" minLength={2} required placeholder="What needs to be corrected?" /></label><div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setReturnOpen(false)}>Cancel</Button><Button type="submit" disabled={saving}><Undo2 className="h-4 w-4" />Return ticket</Button></div></form></div></div>}
+    {requestOpen && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"><div className="w-full max-w-md rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">Add request</h2><p className="mt-1 text-sm text-slate-500">Request parts needed for this ticket.</p></div><button type="button" onClick={() => setRequestOpen(false)} className="text-2xl leading-none text-slate-400 disabled:opacity-50" aria-label="Close modal" disabled={creatingRequest}>×</button></div><form className="space-y-4" onSubmit={createRequest}><label className="block text-xs font-semibold">Parts name<Input className="mt-2" name="item" required /></label><label className="block text-xs font-semibold">Quantity<Input className="mt-2" name="quantity" type="number" min="1" defaultValue="1" required /></label><label className="block text-xs font-semibold">Parts Number<Input className="mt-2" name="partNumber" type="number" min="0" step="1" /></label><label className="block text-xs font-semibold">Reason (optional)<textarea className="mt-2 min-h-24 w-full rounded-lg border bg-white px-3 py-2 text-sm dark:bg-slate-950" name="reason" minLength={2} /></label><div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setRequestOpen(false)} disabled={creatingRequest}>Cancel</Button><Button type="submit" loading={creatingRequest} loadingText="Submitting request">Submit request</Button></div></form></div></div>}
+    {returnOpen && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"><div className="w-full max-w-md rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">Return to engineer</h2><p className="mt-1 text-sm text-slate-500">The ticket goes back to In progress so the engineer can correct the maintenance record.</p></div><button type="button" onClick={() => setReturnOpen(false)} className="text-2xl leading-none text-slate-400 disabled:opacity-50" aria-label="Close modal" disabled={saving}>×</button></div><form className="space-y-4" onSubmit={returnToEngineer}><label className="block text-xs font-semibold">Reason<textarea className="mt-2 min-h-24 w-full rounded-lg border bg-white px-3 py-2 text-sm dark:bg-slate-950" name="reason" minLength={2} required placeholder="What needs to be corrected?" /></label><div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setReturnOpen(false)} disabled={saving}>Cancel</Button><Button type="submit" loading={saving} loadingText="Returning ticket"><Undo2 className="h-4 w-4" />Return ticket</Button></div></form></div></div>}
   </>
 }
 

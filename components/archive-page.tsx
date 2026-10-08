@@ -156,8 +156,8 @@ export function ArchivePage() {
           <TD className="text-sm text-slate-500">{row.details}</TD>
           <TD className="text-sm text-slate-500">{new Date(row.deletedAt).toLocaleDateString()}</TD>
           <TD><div className="flex items-center gap-1">
-            <Button type="button" variant="ghost" className="h-9 px-2 text-blue-600" onClick={() => void restore(row)} disabled={busyId === row.id || deleting}><RotateCcw className="h-4 w-4" />Restore</Button>
-            {row.allowPermanentDelete !== false && <Button type="button" variant="ghost" className="h-9 w-9 p-0 text-rose-600" aria-label={`Permanently delete ${row.title}`} title="Permanently delete" onClick={() => setDeleteTarget(row)} disabled={busyId === row.id || deleting}><Trash2 className="h-4 w-4" /></Button>}
+            <Button type="button" variant="ghost" className="h-9 px-2 text-blue-600" onClick={() => void restore(row)} disabled={deleting || (busyId !== null && busyId !== row.id)} loading={busyId === row.id} loadingText="Restoring…"><RotateCcw className="h-4 w-4" />Restore</Button>
+            {row.allowPermanentDelete !== false && <Button type="button" variant="ghost" className="h-9 w-9 p-0 text-rose-600" aria-label={`Permanently delete ${row.title}`} title="Permanently delete" onClick={() => setDeleteTarget(row)} disabled={busyId !== null || deleting}><Trash2 className="h-4 w-4" /></Button>}
           </div></TD>
         </TR>)}</TBody>
       </Table> : <div className="grid place-items-center p-12 text-center text-sm text-slate-500"><Archive className="mb-3 h-8 w-8 text-slate-300" />No archived {visibleTabs.find((item) => item.id === tab)?.label.toLowerCase()}.</div>}
