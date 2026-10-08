@@ -1,8 +1,8 @@
 'use client'
 
-import { Children, ChangeEvent, Fragment, ReactNode, isValidElement, useMemo, useRef, useState } from 'react'
+import { Children, ChangeEvent, Fragment, ReactNode, isValidElement, useEffect, useId, useMemo, useRef, useState } from 'react'
 import * as SelectPrimitive from '@radix-ui/react-select'
-import { Check, ChevronDown, ChevronUp } from 'lucide-react'
+import { Check, ChevronDown, ChevronUp, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 type Option = { value: string; label: ReactNode; text: string; disabled: boolean }
@@ -17,6 +17,7 @@ type SelectProps = {
   required?: boolean
   disabled?: boolean
   placeholder?: string
+  searchable?: boolean
   children?: ReactNode
   onChange?: (event: ChangeEvent<HTMLSelectElement>) => void
   onValueChange?: (value: string) => void
@@ -59,6 +60,7 @@ export function Select({
   required,
   disabled,
   placeholder,
+  searchable = false,
   children,
   onChange,
   onValueChange,
@@ -68,21 +70,30 @@ export function Select({
   const placeholderOption = options.find((option) => option.value === '' && option.disabled)
   const items = options.filter((option) => option !== placeholderOption)
   const [innerValue, setInnerValue] = useState(() => defaultValue ?? options.find((option) => !option.disabled)?.value ?? '')
+  const [open, setOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeIndex, setActiveIndex] = useState(0)
   const current = value ?? innerValue
   const triggerRef = useRef<HTMLButtonElement>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
+  const listboxId = useId()
+  const filteredItems = searchable ? items.filter((option) => option.text.toLowerCase().includes(searchQuery.trim().toLowerCase())) : items
+  useEffect(() => { if (open && searchable) searchRef.current?.focus() }, [open, searchable])
   const hasEmptyItem = items.some((option) => option.value === '')
   const radixValue = current === '' ? (hasEmptyItem ? EMPTY : '') : current
 
   const handleChange = (next: string) => {
     const nextValue = next === EMPTY ? '' : next
     if (value === undefined) setInnerValue(nextValue)
+    setOpen(false)
+    setSearchQuery('')
     onValueChange?.(nextValue)
     onChange?.({ target: { value: nextValue, name }, currentTarget: { value: nextValue, name } } as unknown as ChangeEvent<HTMLSelectElement>)
   }
 
   return (
     <>
-      <SelectPrimitive.Root value={radixValue} onValueChange={handleChange} disabled={disabled}>
+      <SelectPrimitive.Root value={radixValue} onValueChange={handleChange} disabled={disabled} open={open} onOpenChange={(nextOpen) => { setOpen(nextOpen); if (nextOpen) { setSearchQuery(''); setActiveIndex(0) } }}>
         <SelectPrimitive.Trigger
           ref={triggerRef}
           id={id}
@@ -115,24 +126,35 @@ export function Select({
               contentClassName,
             )}
           >
+            {searchable && <div className="relative border-b p-2 dark:border-slate-800"><Search className="absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input ref={searchRef} role="combobox" aria-label={`Search ${ariaLabel ?? 'options'}`} aria-autocomplete="list" aria-expanded={open} aria-controls={listboxId} aria-activedescendant={filteredItems.length ? `${listboxId}-option-${activeIndex}` : undefined} className="h-9 w-full rounded-lg bg-transparent pl-9 pr-3 text-sm outline-none placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500/20" placeholder={`Search ${ariaLabel?.toLowerCase() ?? 'options'}…`} value={searchQuery} onChange={(event) => { setSearchQuery(event.target.value); setActiveIndex(0) }} onKeyDown={(event) => {
+                if (event.key === 'Escape') return
+                event.stopPropagation()
+                if (event.key === 'ArrowDown') { event.preventDefault(); setActiveIndex((index) => Math.max(0, Math.min(index + 1, filteredItems.length - 1))) }
+                else if (event.key === 'ArrowUp') { event.preventDefault(); setActiveIndex((index) => Math.max(0, index - 1)) }
+                else if (event.key === 'Enter') { event.preventDefault(); const option = filteredItems[activeIndex]; if (option && !option.disabled) handleChange(option.value || EMPTY) }
+              }} />
+            </div>}
             <SelectPrimitive.ScrollUpButton className="flex h-6 cursor-default items-center justify-center text-slate-400">
               <ChevronUp className="h-4 w-4" />
             </SelectPrimitive.ScrollUpButton>
-            <SelectPrimitive.Viewport className="p-1">
-              {items.length === 0 ? (
-                <div className="px-3 py-2 text-slate-400">No options</div>
+            <SelectPrimitive.Viewport id={listboxId} className="p-1">
+              {filteredItems.length === 0 ? (
+                <div className="px-3 py-2 text-slate-400">{searchable && searchQuery ? 'No matching options' : 'No options'}</div>
               ) : (
-                items.map((option) => (
+                filteredItems.map((option, index) => (
                   <SelectPrimitive.Item
                     key={option.value || EMPTY}
+                    id={`${listboxId}-option-${index}`}
                     value={option.value || EMPTY}
                     disabled={option.disabled}
                     textValue={option.text}
+                    onMouseMove={() => setActiveIndex(index)}
                     className={cn(
                       'relative flex w-full cursor-pointer select-none items-center rounded-lg py-2 pl-3 pr-8 outline-none transition-colors',
                       'data-[highlighted]:bg-blue-50 data-[highlighted]:text-blue-700 data-[state=checked]:font-medium',
                       'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
                       'dark:data-[highlighted]:bg-blue-950/50 dark:data-[highlighted]:text-blue-200',
+                      searchable && activeIndex === index && 'bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-200',
                     )}
                   >
                     <SelectPrimitive.ItemText>{option.label}</SelectPrimitive.ItemText>

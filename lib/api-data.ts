@@ -13,6 +13,7 @@ export interface ApiEquipment {
   engineSerialNo?: string | null;
   bimanSerialNo?: string | null;
   tldSerialNo?: string | null;
+  tireSize?: string | null;
   location: string;
   status: string;
   hourMeter: number;
@@ -86,8 +87,9 @@ export interface ApiRequest {
   ticketId: string;
   equipmentId: string;
   item: string;
+  partNumber?: number | null;
   quantity: number;
-  reason: string;
+  reason?: string | null;
   status: string;
   requestedBy?: { id: string; name: string };
   approvedBy?: { id: string; name: string } | null;
