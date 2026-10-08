@@ -18,6 +18,7 @@ type SelectProps = {
   disabled?: boolean
   placeholder?: string
   searchable?: boolean
+  searchPlaceholder?: string
   children?: ReactNode
   onChange?: (event: ChangeEvent<HTMLSelectElement>) => void
   onValueChange?: (value: string) => void
@@ -61,6 +62,7 @@ export function Select({
   disabled,
   placeholder,
   searchable = false,
+  searchPlaceholder,
   children,
   onChange,
   onValueChange,
@@ -126,7 +128,7 @@ export function Select({
               contentClassName,
             )}
           >
-            {searchable && <div className="relative border-b p-2 dark:border-slate-800"><Search className="absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input ref={searchRef} role="combobox" aria-label={`Search ${ariaLabel ?? 'options'}`} aria-autocomplete="list" aria-expanded={open} aria-controls={listboxId} aria-activedescendant={filteredItems.length ? `${listboxId}-option-${activeIndex}` : undefined} className="h-9 w-full rounded-lg bg-transparent pl-9 pr-3 text-sm outline-none placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500/20" placeholder={`Search ${ariaLabel?.toLowerCase() ?? 'options'}…`} value={searchQuery} onChange={(event) => { setSearchQuery(event.target.value); setActiveIndex(0) }} onKeyDown={(event) => {
+            {searchable && <div className="relative border-b p-2 dark:border-slate-800"><Search className="absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input ref={searchRef} role="combobox" aria-label={`Search ${ariaLabel ?? 'options'}`} aria-autocomplete="list" aria-expanded={open} aria-controls={listboxId} aria-activedescendant={filteredItems.length ? `${listboxId}-option-${activeIndex}` : undefined} className="h-9 w-full rounded-lg bg-transparent pl-9 pr-3 text-sm outline-none placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500/20" placeholder={searchPlaceholder ?? `Search ${ariaLabel?.toLowerCase() ?? 'options'}…`} value={searchQuery} onChange={(event) => { setSearchQuery(event.target.value); setActiveIndex(0) }} onKeyDown={(event) => {
                 if (event.key === 'Escape') return
                 event.stopPropagation()
                 if (event.key === 'ArrowDown') { event.preventDefault(); setActiveIndex((index) => Math.max(0, Math.min(index + 1, filteredItems.length - 1))) }

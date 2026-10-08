@@ -13,7 +13,8 @@ export interface ApiEquipment {
   engineSerialNo?: string | null;
   bimanSerialNo?: string | null;
   tldSerialNo?: string | null;
-  tireSize?: string | null;
+  rearTireSize?: string | null;
+  frontTireSize?: string | null;
   location: string;
   status: string;
   hourMeter: number;

@@ -12,6 +12,7 @@ import { Select } from '@/components/ui/select'
 import { StatusBadge } from '@/components/ui/badge'
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { InspectionChecklistSettings } from '@/components/inspection-checklist-settings'
 import { useRole } from '@/components/role-context'
 import { apiRequest } from '@/lib/api-client'
 import { fetchAllPages } from '@/lib/api-data'
@@ -249,7 +250,7 @@ function UserRows({ users, onDelete, onResetPassword, onEditStatus, canEditSuper
 
 export function SettingsPage() {
   const { role } = useRole()
-  const [activeTab, setActiveTab] = useState<'changePassword' | 'equipmentTypes'>('changePassword')
+  const [activeTab, setActiveTab] = useState<'changePassword' | 'equipmentTypes' | 'inspectionChecklist'>('changePassword')
   const [types, setTypes] = useState<ApiEquipmentType[]>([])
   const [loading, setLoading] = useState(false)
   const [typeModalOpen, setTypeModalOpen] = useState(false)
@@ -435,7 +436,7 @@ export function SettingsPage() {
 
   return <>
     <PageHeader eyebrow="Workspace" title="Settings" subtitle="Change your password or view equipment type settings." />
-    <div className="grid gap-6 lg:grid-cols-[220px_1fr]"><Card className="h-fit p-2"><SettingsTab active={activeTab === 'changePassword'} onClick={() => setActiveTab('changePassword')}>Change Password</SettingsTab><SettingsTab active={activeTab === 'equipmentTypes'} onClick={() => setActiveTab('equipmentTypes')}>Equipment types</SettingsTab></Card>
+    <div className="grid gap-6 lg:grid-cols-[220px_1fr]"><Card className="h-fit p-2"><SettingsTab active={activeTab === 'changePassword'} onClick={() => setActiveTab('changePassword')}>Change Password</SettingsTab><SettingsTab active={activeTab === 'equipmentTypes'} onClick={() => setActiveTab('equipmentTypes')}>Equipment types</SettingsTab>{canManageTypes && <SettingsTab active={activeTab === 'inspectionChecklist'} onClick={() => setActiveTab('inspectionChecklist')}>Inspection Checklist</SettingsTab>}</Card>
       <div className="space-y-6">{activeTab === 'changePassword' ? <>
         <Card className="overflow-hidden">
           <div className="flex items-start gap-4 border-b p-5 sm:p-6">
@@ -465,7 +466,7 @@ export function SettingsPage() {
             </aside>
           </div>
         </Card>
-      </> : <Card>
+      </> : activeTab === 'inspectionChecklist' && canManageTypes ? <InspectionChecklistSettings /> : <Card>
         <div className="flex items-start justify-between border-b p-6"><div><h2 className="text-base font-semibold">Equipment types</h2><p className="mt-1 text-sm text-slate-500">View equipment types and their service bands. Only Super Admins and Managers can make changes.</p></div>{canManageTypes && <Button onClick={() => openTypeModal()}><Plus className="h-4 w-4" />Add type</Button>}</div>
         {loading ? <PlaneLoader label="Loading equipment types…" /> : <Table><THead><TR><TH>Equipment type</TH><TH>Services</TH><TH>Equipment</TH>{canManageTypes && <TH>Action</TH>}</TR></THead><TBody>{types.map((type) => <TR key={type.id}><TD className="font-semibold">{type.name}</TD><TD>{type.services.map((service) => service.name).join(', ')}</TD><TD>{type._count?.equipment ?? '—'}</TD>{canManageTypes && <TD><div className="flex items-center gap-1"><Button type="button" variant="ghost" className="h-8 w-8 p-0 text-slate-600" aria-label={`Edit ${type.name}`} title="Edit equipment type" onClick={() => openTypeModal(type)}><Pencil className="h-4 w-4" /></Button><Button type="button" variant="ghost" className="h-8 w-8 p-0 text-rose-600" aria-label={`Delete ${type.name}`} title="Delete equipment type" onClick={() => void deleteEquipmentType(type)}><Trash2 className="h-4 w-4" /></Button></div></TD>}</TR>)}</TBody></Table>}{!loading && types.length === 0 && <div className="p-10 text-center text-sm text-slate-500">No equipment types found.</div>}
       </Card>}</div>
