@@ -44,7 +44,14 @@ export interface ApiTicket {
   ticketNo: string;
   serviceType: string;
   equipmentId: string;
-  equipment: { id: string; assetNo: string; model: string; equipmentType: string };
+  equipment: {
+    id: string;
+    assetNo: string;
+    model: string;
+    equipmentType: string;
+    bimanSerialNo?: string | null;
+    tldSerialNo?: string | null;
+  };
   pmServiceId?: string | null;
   pmType?: string;
   faultDescription?: string | null;

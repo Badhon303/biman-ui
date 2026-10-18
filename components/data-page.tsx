@@ -246,7 +246,9 @@ function TicketModal({ onClose }: { onClose: () => void }) {
               <Select
                 className="mt-2 w-full"
                 value={serviceType}
-                onChange={(event) => setServiceType(event.target.value as (typeof ticketServiceTypes)[number])}
+                onChange={(event) =>
+                  setServiceType(event.target.value as (typeof ticketServiceTypes)[number])
+                }
               >
                 {ticketServiceTypes.map((type) => (
                   <option key={type} value={type}>
@@ -616,9 +618,7 @@ export function EquipmentPage() {
   const rows = equipmentList.filter(
     (e) =>
       (status === "All" || e.status === status) &&
-      `${e.assetNo} ${e.equipmentType} ${e.manufacturer} ${e.location}`
-        .toLowerCase()
-        .includes(q.toLowerCase()),
+      `${e.assetNo} ${e.bimanSerialNo} ${e.TLDSerialNo}`.toLowerCase().includes(q.toLowerCase()),
   );
   const deleteEquipment = (item: Equipment) => setDeleteTarget(item);
   const confirmDeleteEquipment = () => {
@@ -674,7 +674,7 @@ export function EquipmentPage() {
             <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
             <Input
               className="pl-9"
-              placeholder="Search asset, manufacturer or location"
+              placeholder="Search asset no., Biman serial no. or TLD serial no."
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
