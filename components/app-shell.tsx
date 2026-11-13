@@ -87,7 +87,8 @@ const Sidebar = memo(function Sidebar({
   pathname,
   open,
   organization,
-  canManageUsers,
+  canViewUsers,
+  canAccessArchive,
   unread,
   onClose,
   onSignOut,
@@ -95,12 +96,17 @@ const Sidebar = memo(function Sidebar({
   pathname: string;
   open: boolean;
   organization: string;
-  canManageUsers: boolean;
+  canViewUsers: boolean;
+  canAccessArchive: boolean;
   unread: number;
   onClose: () => void;
   onSignOut: () => void;
 }) {
-  const sections = canManageUsers ? [...nav, adminSection] : nav;
+  const adminItems = [
+    ...(canViewUsers ? [adminSection.items[0]] : []),
+    ...(canAccessArchive ? [adminSection.items[1]] : []),
+  ];
+  const sections = adminItems.length ? [...nav, { group: 'Admin', items: adminItems }] : nav;
   return (
     <aside
       className={cn(
@@ -178,7 +184,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobile, setMobile] = useState(false);
   const { unread } = useNotifications();
   const today = useToday();
-  const canManageUsers = role === "Super Admin" || role === "Manager";
+  const canViewUsers = role === "Super Admin" || role === "Manager" || role === "Biman Admin";
+  const canAccessArchive = role === "Super Admin" || role === "Manager";
 
   useEffect(() => {
     if (!loading && (!user || mustChangePassword)) router.replace("/login");
@@ -217,7 +224,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         pathname={pathname}
         open={mobile}
         organization={user.organization}
-        canManageUsers={canManageUsers}
+        canViewUsers={canViewUsers}
+        canAccessArchive={canAccessArchive}
         unread={unread}
         onClose={closeMobile}
         onSignOut={signOut}
