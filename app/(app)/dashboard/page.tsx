@@ -627,7 +627,7 @@ function TicketRows({ rows, loading, empty = "No tickets found." }: { rows: ApiT
                 </span>
               </div>
               <div className="mt-1 text-xs text-slate-500">
-                {t.serviceType} · {t.assignedEngineer?.name ?? "Unassigned"}
+                {t.serviceType} · {t.assignedEngineer ? `${t.assignedEngineer.name} (${t.assignedEngineer.organization})` : "Unassigned"}
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-3">

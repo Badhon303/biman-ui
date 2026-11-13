@@ -1,7 +1,7 @@
 'use client'
 
 import { FormEvent, useEffect, useState } from 'react'
-import { ArrowRight, Check, Copy, KeyRound, Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react'
+import { ArrowRight, Building2, Check, Copy, KeyRound, Pencil, Plus, ShieldCheck, Trash2 } from 'lucide-react'
 import { PasswordInput } from '@/components/ui/password-input'
 import { PlaneLoader } from '@/components/ui/plane-loader'
 import { PageHeader } from '@/components/page-header'
@@ -52,6 +52,8 @@ export function UsersPage() {
   const canManageUsers = isSuperAdmin || role === 'Manager'
   const [users, setUsers] = useState<User[]>([])
   const [invite, setInvite] = useState(false)
+  const [newUserRole, setNewUserRole] = useState<Exclude<Role, 'Super Admin'>>('Engineer')
+  const [newUserOrganization, setNewUserOrganization] = useState<User['organization']>('NGGL')
   const [temporaryPassword, setTemporaryPassword] = useState('')
   const [passwordCopied, setPasswordCopied] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -63,6 +65,9 @@ export function UsersPage() {
   const [statusEditTarget, setStatusEditTarget] = useState<User | null>(null)
   const [editedStatus, setEditedStatus] = useState<User['status']>('Active')
   const [statusSaving, setStatusSaving] = useState(false)
+  const [editTarget, setEditTarget] = useState<User | null>(null)
+  const [editedOrganization, setEditedOrganization] = useState<User['organization']>('NGGL')
+  const [userSaving, setUserSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
   const [deletingUser, setDeletingUser] = useState(false)
   const [creatingUser, setCreatingUser] = useState(false)
@@ -86,7 +91,7 @@ export function UsersPage() {
   const createUser = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
-    const body = { name: String(form.get('name')).trim(), email: String(form.get('email')).trim(), role: String(form.get('role')) as Exclude<Role, 'Super Admin'> }
+    const body = { name: String(form.get('name')).trim(), email: String(form.get('email')).trim(), role: newUserRole, ...(newUserRole === 'Engineer' ? { organization: newUserOrganization } : {}) }
     setCreatingUser(true)
     try {
       const result = await apiRequest<ApiUser & { temporaryPassword: string }>('users', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
@@ -144,6 +149,32 @@ export function UsersPage() {
     }
   }
 
+  const openEditDialog = (user: User) => {
+    setEditedOrganization(user.organization)
+    setEditTarget(user)
+  }
+
+  const saveUser = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const target = editTarget
+    if (!target) return
+    setUserSaving(true)
+    try {
+      const updated = await apiRequest<ApiUser>(`users/${encodeURIComponent(target.id)}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ organization: editedOrganization }),
+      })
+      setUsers((current) => current.map((item) => item.id === target.id ? { ...item, ...updated, initials: getInitials(updated.name) } : item))
+      setEditTarget(null)
+      toast.success(`Organization updated for ${target.name}.`)
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : 'Unable to update user.')
+    } finally {
+      setUserSaving(false)
+    }
+  }
+
   const openResetDialog = (user: User) => {
     setResetNewPassword('')
     setConfirmResetPassword('')
@@ -185,7 +216,7 @@ export function UsersPage() {
     }
   }
 
-  const closeInvite = () => { setInvite(false); setTemporaryPassword(''); setPasswordCopied(false) }
+  const closeInvite = () => { setInvite(false); setTemporaryPassword(''); setPasswordCopied(false); setNewUserRole('Engineer'); setNewUserOrganization('NGGL') }
   const ngglUsers = users.filter((user) => user.organization === 'NGGL')
   const bimanUsers = users.filter((user) => user.organization === 'Biman')
 
@@ -193,9 +224,9 @@ export function UsersPage() {
     <PageHeader eyebrow="Admin / Access" title="User management" subtitle="Manage NGGL operators and connected Biman users." action={isSuperAdmin && <Button onClick={() => setInvite(true)}><Plus className="h-4 w-4" />Invite user</Button>} />
     <Card>
       {loading ? <PlaneLoader label="Loading users…" /> : error ? <div className="p-10 text-center text-sm text-rose-600">{error}</div> : <>
-        <UserTable title="NGGL users" users={ngglUsers} onDelete={isSuperAdmin ? deleteUser : undefined} onResetPassword={isSuperAdmin ? openResetDialog : undefined} onEditStatus={canManageUsers ? openStatusDialog : undefined} canEditSuperAdminStatus={isSuperAdmin} />
+        <UserTable title="NGGL users" users={ngglUsers} onDelete={isSuperAdmin ? deleteUser : undefined} onResetPassword={isSuperAdmin ? openResetDialog : undefined} onEditStatus={canManageUsers ? openStatusDialog : undefined} onEditUser={isSuperAdmin ? openEditDialog : undefined} canEditSuperAdminStatus={isSuperAdmin} />
         <div className="border-b p-5"><h2 className="text-sm font-semibold">Biman users</h2></div>
-        <UserRows users={bimanUsers} onDelete={isSuperAdmin ? deleteUser : undefined} onResetPassword={isSuperAdmin ? openResetDialog : undefined} onEditStatus={canManageUsers ? openStatusDialog : undefined} canEditSuperAdminStatus={isSuperAdmin} />
+        <UserRows users={bimanUsers} onDelete={isSuperAdmin ? deleteUser : undefined} onResetPassword={isSuperAdmin ? openResetDialog : undefined} onEditStatus={canManageUsers ? openStatusDialog : undefined} onEditUser={isSuperAdmin ? openEditDialog : undefined} canEditSuperAdminStatus={isSuperAdmin} />
       </>}
     </Card>
     {invite && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"><div className="w-full max-w-md rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900">
@@ -203,10 +234,20 @@ export function UsersPage() {
       {temporaryPassword ? <div className="space-y-4"><p className="text-sm text-slate-500">Copy this temporary password and share it securely. It will not be shown again after closing.</p><div className="relative"><Input readOnly value={temporaryPassword} aria-label="Temporary password" className="pr-12" /><button type="button" onClick={() => void copyTemporaryPassword()} className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" aria-label={passwordCopied ? 'Temporary password copied' : 'Copy temporary password'} title={passwordCopied ? 'Copied' : 'Copy password'}>{passwordCopied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}</button></div><Button className="w-full" onClick={closeInvite}>Done</Button></div> : <form className="space-y-4" onSubmit={createUser}>
         <label className="block text-xs font-semibold">Full name<Input className="mt-2" name="name" minLength={2} required /></label>
         <label className="block text-xs font-semibold">Work email<Input className="mt-2" name="email" type="email" required /></label>
-        <label className="block text-xs font-semibold">Role<Select className="mt-2 w-full" name="role" defaultValue="Engineer">{(['Manager', 'Engineer', 'Biman Admin'] as Exclude<Role, 'Super Admin'>[]).map((role) => <option key={role}>{role}</option>)}</Select></label>
+        <label className="block text-xs font-semibold">Role<Select className="mt-2 w-full" name="role" value={newUserRole} onChange={(event) => { const role = event.target.value as Exclude<Role, 'Super Admin'>; setNewUserRole(role); setNewUserOrganization(role === 'Biman Admin' ? 'Biman' : 'NGGL') }}>{(['Manager', 'Engineer', 'Biman Admin'] as Exclude<Role, 'Super Admin'>[]).map((role) => <option key={role}>{role}</option>)}</Select></label>
+        {newUserRole === 'Engineer' && <label className="block text-xs font-semibold">Organization<Select className="mt-2 w-full" name="organization" value={newUserOrganization} onChange={(event) => setNewUserOrganization(event.target.value as User['organization'])}><option value="NGGL">NGGL</option><option value="Biman">Biman</option></Select></label>}
         <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={closeInvite} disabled={creatingUser}>Cancel</Button><Button type="submit" loading={creatingUser} loadingText="Creating user">Create user</Button></div>
       </form>}
     </div></div>}
+    {editTarget && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm">
+      <div role="dialog" aria-modal="true" aria-labelledby="edit-user-title" className="w-full max-w-md rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900">
+        <div className="mb-5 flex items-start justify-between"><div><h2 id="edit-user-title" className="text-lg font-semibold">Edit user</h2><p className="mt-1 text-sm text-slate-500">Update the organization for {editTarget.name}.</p></div><button type="button" onClick={() => setEditTarget(null)} disabled={userSaving} className="text-2xl leading-none text-slate-400 disabled:opacity-50" aria-label="Close dialog">×</button></div>
+        <form className="space-y-5" onSubmit={saveUser}>
+          <label className="block text-xs font-semibold">Organization<Select className="mt-2 w-full" value={editedOrganization} onChange={(event) => setEditedOrganization(event.target.value as User['organization'])}><option value="NGGL">NGGL</option><option value="Biman">Biman</option></Select></label>
+          <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setEditTarget(null)} disabled={userSaving}>Cancel</Button><Button type="submit" loading={userSaving} loadingText="Saving changes">Save changes</Button></div>
+        </form>
+      </div>
+    </div>}
     {resetTarget && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm">
       <div role="dialog" aria-modal="true" aria-labelledby="reset-password-title" className="w-full max-w-md rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900">
         <div className="mb-5 flex items-start justify-between"><div><h2 id="reset-password-title" className="text-lg font-semibold">Reset password</h2><p className="mt-1 text-sm text-slate-500">Set a temporary password for {resetTarget.name}.</p></div><button type="button" onClick={closeResetDialog} disabled={resettingPassword} className="text-2xl leading-none text-slate-400 disabled:opacity-50" aria-label="Close dialog">×</button></div>
@@ -241,15 +282,28 @@ export function UsersPage() {
   </>
 }
 
-function UserTable({ title, users, onDelete, onResetPassword, onEditStatus, canEditSuperAdminStatus }: { title: string; users: User[]; onDelete?: (user: User) => void; onResetPassword?: (user: User) => void; onEditStatus?: (user: User) => void; canEditSuperAdminStatus?: boolean }) {
-  return <><div className="border-b p-5"><h2 className="text-sm font-semibold">{title}</h2></div><UserRows users={users} onDelete={onDelete} onResetPassword={onResetPassword} onEditStatus={onEditStatus} canEditSuperAdminStatus={canEditSuperAdminStatus} /></>
+function UserTable({ title, users, onDelete, onResetPassword, onEditStatus, onEditUser, canEditSuperAdminStatus }: { title: string; users: User[]; onDelete?: (user: User) => void; onResetPassword?: (user: User) => void; onEditStatus?: (user: User) => void; onEditUser?: (user: User) => void; canEditSuperAdminStatus?: boolean }) {
+  return <><div className="border-b p-5"><h2 className="text-sm font-semibold">{title}</h2></div><UserRows users={users} onDelete={onDelete} onResetPassword={onResetPassword} onEditStatus={onEditStatus} onEditUser={onEditUser} canEditSuperAdminStatus={canEditSuperAdminStatus} /></>
 }
 
-function UserRows({ users, onDelete, onResetPassword, onEditStatus, canEditSuperAdminStatus }: { users: User[]; onDelete?: (user: User) => void; onResetPassword?: (user: User) => void; onEditStatus?: (user: User) => void; canEditSuperAdminStatus?: boolean }) {
-  const hasActions = onDelete || onResetPassword || onEditStatus
-  return <Table><THead><TR><TH>Name</TH><TH>Role</TH><TH>Organization</TH><TH>Status</TH><TH>Email</TH>{hasActions && <TH>Action</TH>}</TR></THead><TBody>{users.map((user) => <TR key={user.id}>
-    <TD><div className="flex items-center gap-3"><div className="grid h-8 w-8 place-items-center rounded-full bg-blue-50 text-xs font-bold text-blue-600 dark:bg-blue-950/40">{user.initials}</div><span className="font-medium">{user.name}</span></div></TD><TD>{user.role}</TD><TD>{user.organization}</TD><TD><StatusBadge status={user.status} /></TD><TD className="text-slate-500">{user.email}</TD>{hasActions && <TD><div className="flex items-center gap-1">{onResetPassword && <Button type="button" variant="ghost" className="h-8 w-8 p-0 text-blue-600" aria-label={`Reset password for ${user.name}`} title="Reset password" onClick={() => onResetPassword(user)}><KeyRound className="h-4 w-4" /></Button>}{onEditStatus && (canEditSuperAdminStatus || user.role !== 'Super Admin') && <Button type="button" variant="ghost" className="h-8 w-8 p-0 text-slate-600" aria-label={`Edit status for ${user.name}`} title="Edit user status" onClick={() => onEditStatus(user)}><Pencil className="h-4 w-4" /></Button>}{onDelete && <Button type="button" variant="ghost" className="h-8 w-8 p-0 text-rose-600" aria-label={`Delete ${user.name}`} title="Delete user" onClick={() => void onDelete(user)}><Trash2 className="h-4 w-4" /></Button>}</div></TD>}
-  </TR>)}</TBody></Table>
+function UserRows({ users, onDelete, onResetPassword, onEditStatus, onEditUser, canEditSuperAdminStatus }: { users: User[]; onDelete?: (user: User) => void; onResetPassword?: (user: User) => void; onEditStatus?: (user: User) => void; onEditUser?: (user: User) => void; canEditSuperAdminStatus?: boolean }) {
+  const hasActions = onDelete || onResetPassword || onEditStatus || onEditUser
+  return <Table>
+    <THead><TR><TH>Name</TH><TH>Role</TH><TH>Organization</TH><TH>Status</TH><TH>Email</TH>{hasActions && <TH>Action</TH>}</TR></THead>
+    <TBody>{users.map((user) => <TR key={user.id}>
+      <TD><div className="flex items-center gap-3"><div className="grid h-8 w-8 place-items-center rounded-full bg-blue-50 text-xs font-bold text-blue-600 dark:bg-blue-950/40">{user.initials}</div><span className="font-medium">{user.role === 'Engineer' ? `${user.name} (${user.organization})` : user.name}</span></div></TD>
+      <TD>{user.role}</TD>
+      <TD>{user.organization}</TD>
+      <TD><StatusBadge status={user.status} /></TD>
+      <TD className="text-slate-500">{user.email}</TD>
+      {hasActions && <TD><div className="flex items-center gap-1">
+        {onResetPassword && <Button type="button" variant="ghost" className="h-8 w-8 p-0 text-blue-600" aria-label={`Reset password for ${user.name}`} title="Reset password" onClick={() => onResetPassword(user)}><KeyRound className="h-4 w-4" /></Button>}
+        {onEditUser && user.role === 'Engineer' && <Button type="button" variant="ghost" className="h-8 w-8 p-0 text-slate-600" aria-label={`Edit ${user.name}`} title="Edit engineer organization" onClick={() => onEditUser(user)}><Building2 className="h-4 w-4" /></Button>}
+        {onEditStatus && (canEditSuperAdminStatus || user.role !== 'Super Admin') && <Button type="button" variant="ghost" className="h-8 w-8 p-0 text-slate-600" aria-label={`Edit status for ${user.name}`} title="Edit user status" onClick={() => onEditStatus(user)}><Pencil className="h-4 w-4" /></Button>}
+        {onDelete && <Button type="button" variant="ghost" className="h-8 w-8 p-0 text-rose-600" aria-label={`Delete ${user.name}`} title="Delete user" onClick={() => void onDelete(user)}><Trash2 className="h-4 w-4" /></Button>}
+      </div></TD>}
+    </TR>)}</TBody>
+  </Table>
 }
 
 export function SettingsPage() {

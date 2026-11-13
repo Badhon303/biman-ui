@@ -61,7 +61,7 @@ export interface ApiTicket {
   createdAt: string;
   createdDate: string;
   createdBy?: { id: string; name: string; email: string };
-  assignedEngineer?: { id: string; name: string } | null;
+  assignedEngineer?: { id: string; name: string; organization: "Biman" | "NGGL" } | null;
   assignedEngineerId?: string | null;
   requestingParty?: string | null;
   closedDate?: string | null;

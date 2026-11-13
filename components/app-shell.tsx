@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { PlaneLoader } from '@/components/ui/plane-loader'
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { usePathname, useRouter } from "next/navigation";
 import {
   Archive,
@@ -250,13 +251,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <NotificationBell />
             <div className="hidden h-8 w-px bg-slate-200 sm:block" aria-hidden="true" />
-            <div className="flex min-w-0 items-center gap-2 rounded-full border border-white bg-white/80 py-1 pl-1 pr-2 shadow-[0_2px_12px_-6px_rgba(15,23,42,0.18)] sm:gap-2.5 sm:pl-1.5 sm:pr-3">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-blue-100 to-sky-200 text-xs font-bold text-blue-800 ring-2 ring-white">{user.initials}</span>
-              <span className="hidden min-w-0 sm:block">
-                <span className="block max-w-[160px] truncate text-xs font-semibold text-slate-900">{user.name}</span>
-                <span className="mt-0.5 block max-w-[160px] truncate text-[10px] text-slate-500">{user.role}</span>
-              </span>
-            </div>
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild>
+                <button type="button" aria-label="Open account menu" className="flex min-w-0 items-center gap-2 rounded-full border border-white bg-white/80 py-1 pl-1 pr-2 text-left shadow-[0_2px_12px_-6px_rgba(15,23,42,0.18)] transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:gap-2.5 sm:pl-1.5 sm:pr-3">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-blue-100 to-sky-200 text-xs font-bold text-blue-800 ring-2 ring-white">{user.initials}</span>
+                  <span className="hidden min-w-0 sm:block">
+                    <span className="block max-w-[160px] truncate text-xs font-semibold text-slate-900">{user.name}</span>
+                    <span className="mt-0.5 block max-w-[160px] truncate text-[10px] text-slate-500">{user.role}</span>
+                  </span>
+                </button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content align="end" sideOffset={8} className="z-50 w-64 overflow-hidden rounded-2xl border bg-white p-1.5 shadow-xl shadow-slate-900/10 ring-1 ring-black/[0.02] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 dark:border-slate-800 dark:bg-slate-900">
+                  <div className="border-b px-3 py-2.5">
+                    <div className="truncate text-sm font-semibold text-slate-900 dark:text-white">{user.name}</div>
+                    <div className="mt-1 text-xs text-slate-500">{user.role} · {user.organization}</div>
+                  </div>
+                  <DropdownMenu.Item onSelect={() => void signOut()} className="mt-1 flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-rose-600 outline-none transition-colors hover:bg-rose-50 focus:bg-rose-50 dark:hover:bg-rose-950/30 dark:focus:bg-rose-950/30">
+                    <LogOut className="h-4 w-4" />
+                    Log out
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
           </div>
         </header>
         <main className="mx-auto max-w-[1520px] px-4 pb-8 pt-2 sm:px-5 lg:px-8">{children}</main>

@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { StatusBadge } from '@/components/ui/badge'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { DatePicker } from '@/components/ui/date-picker'
 import { TD, TH, TBody, THead, TR, Table } from '@/components/ui/table'
 import { ApiEquipment, ApiTicket, fetchAllPages } from '@/lib/api-data'
 import { apiRequest } from '@/lib/api-client'
@@ -20,7 +21,7 @@ import { Role } from '@/lib/types'
 import { toast } from 'sonner'
 
 const manualTypes = ['Breakdown', 'General', 'Washing'] as const
-type EngineerOption = { id: string; name: string }
+type EngineerOption = { id: string; name: string; organization: 'Biman' | 'NGGL' }
 
 export function TicketsPage() {
   const { role } = useRole()
@@ -85,7 +86,7 @@ export function TicketsPage() {
             <TD><Link className="font-semibold text-blue-600" href={`/tickets/${ticket.id}`}>{ticket.ticketNo}</Link><div className="mt-1 text-xs text-slate-400">Raised {ticket.createdDate.slice(0, 10)}</div></TD>
             <TD><div className="font-medium">{ticket.equipment.assetNo}</div><div className="text-xs text-slate-400">{ticket.equipment.equipmentType}</div>{(ticket.equipment.bimanSerialNo || ticket.equipment.tldSerialNo) && <div className="mt-1 space-y-0.5 text-[11px] leading-4 text-slate-500 dark:text-slate-400">{ticket.equipment.bimanSerialNo && <div><span className="font-medium text-slate-400 dark:text-slate-500">Biman:</span> <span className="font-mono break-all">{ticket.equipment.bimanSerialNo}</span></div>}{ticket.equipment.tldSerialNo && <div><span className="font-medium text-slate-400 dark:text-slate-500">TLD:</span> <span className="font-mono break-all">{ticket.equipment.tldSerialNo}</span></div>}</div>}</TD>
             <TD><span className="text-xs">{ticket.serviceType}</span></TD><TD><div className="font-medium">{ticket.dueDate.slice(0, 10)}</div><div className="text-xs text-slate-400">{ticket.priority} priority</div></TD>
-            <TD className={isOverdue(ticket.dueDate, ticket.closedDate ?? undefined) ? 'font-medium text-rose-600' : ''}>{overdueBy(ticket.dueDate, ticket.closedDate ?? undefined)}</TD><TD>{ticket.assignedEngineer?.name ?? 'Unassigned'}</TD><TD><StatusBadge status={ticket.status} /></TD>
+            <TD className={isOverdue(ticket.dueDate, ticket.closedDate ?? undefined) ? 'font-medium text-rose-600' : ''}>{overdueBy(ticket.dueDate, ticket.closedDate ?? undefined)}</TD><TD>{ticket.assignedEngineer ? `${ticket.assignedEngineer.name} (${ticket.assignedEngineer.organization})` : 'Unassigned'}</TD><TD><StatusBadge status={ticket.status} /></TD>
             <TD className="w-24 text-center"><div className="flex justify-center gap-1"><Link href={`/tickets/${ticket.id}`} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:bg-blue-950/40" aria-label={`Open ${ticket.ticketNo}`} title="Open ticket"><Pencil className="h-4 w-4" /></Link>{canDelete && <button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-rose-50 hover:text-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 dark:hover:bg-rose-950/40" aria-label={`Delete ${ticket.ticketNo}`} title="Delete ticket" onClick={() => setDeleteTarget(ticket)}><Trash2 className="h-4 w-4" /></button>}</div></TD>
           </TR>)}
         </TBody></Table>
@@ -103,7 +104,8 @@ function TicketModal({ role, onClose, onCreated }: { role: Role | null; onClose:
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [serviceType, setServiceType] = useState<(typeof manualTypes)[number]>('Breakdown')
-  const canListEngineers = role === 'Super Admin' || role === 'Manager'
+  const [dueDate, setDueDate] = useState('')
+  const canListEngineers = role === 'Super Admin' || role === 'Manager' || role === 'Biman Admin'
 
   useEffect(() => {
     let active = true
@@ -126,13 +128,17 @@ function TicketModal({ role, onClose, onCreated }: { role: Role | null; onClose:
       toast.error('Select an equipment item.')
       return
     }
+    if (!dueDate) {
+      toast.error('Select a due date.')
+      return
+    }
     const assignedEngineerId = String(form.get('assignedEngineerId') ?? '')
     const body = {
       equipmentId: selectedEquipmentId,
       serviceType,
       faultDescription: String(form.get('faultDescription')).trim(),
       priority: String(form.get('priority')),
-      dueDate: String(form.get('dueDate')),
+      dueDate,
       requestingParty: String(form.get('requestingParty')).trim() || undefined,
     }
     setSaving(true)
@@ -154,14 +160,14 @@ function TicketModal({ role, onClose, onCreated }: { role: Role | null; onClose:
     } finally { setSaving(false) }
   }
 
-  return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"><div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">Create ticket</h2><p className="mt-1 text-sm text-slate-500">Enter the basic details for a new ticket.</p></div><button type="button" onClick={onClose} className="text-2xl leading-none text-slate-400 disabled:opacity-50" aria-label="Close modal" disabled={saving}>×</button></div>
+  return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4 backdrop-blur-sm"><div className="max-h-[90vh] w-full max-w-2xl overflow-x-hidden overflow-y-auto rounded-2xl border bg-white p-6 shadow-2xl dark:bg-slate-900"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">Create ticket</h2><p className="mt-1 text-sm text-slate-500">Enter the basic details for a new ticket.</p></div><button type="button" onClick={onClose} className="text-2xl leading-none text-slate-400 disabled:opacity-50" aria-label="Close modal" disabled={saving}>×</button></div>
     <form className="space-y-4" onSubmit={create}><div className="grid gap-4 sm:grid-cols-2">
       <label className="text-xs font-semibold">Equipment<Select searchable searchPlaceholder="Search by asset, Biman, or TLD serial no." aria-label="Equipment" className="mt-2 w-full" name="equipmentId" defaultValue="" required disabled={loading}><option value="" disabled>{loading ? 'Loading equipment…' : 'Select equipment'}</option>{equipment.map((item) => <option key={item.id} value={item.id}>{item.assetNo} · {item.equipmentType}{item.bimanSerialNo && ` · BIMAN S/N: ${item.bimanSerialNo}`}{item.tldSerialNo && ` · TLD S/N: ${item.tldSerialNo}`}</option>)}</Select></label>
       <label className="text-xs font-semibold">Service type<Select className="mt-2 w-full" value={serviceType} onChange={(event) => setServiceType(event.target.value as (typeof manualTypes)[number])}>{manualTypes.map((type) => <option key={type}>{type}</option>)}</Select></label>
       <label className="text-xs font-semibold">Priority<Select className="mt-2 w-full" name="priority" defaultValue="Medium">{['Low', 'Medium', 'High', 'Critical'].map((priority) => <option key={priority}>{priority}</option>)}</Select></label>
-      <label className="text-xs font-semibold">Due date<Input className="mt-2" name="dueDate" type="date" required /></label>
+      <label className="text-xs font-semibold"><span>Due date <span className="text-rose-600">*</span></span><DatePicker className="mt-2" name="dueDate" value={dueDate} onChange={setDueDate} required aria-label="Due date" /></label>
       <label className="text-xs font-semibold">Requesting party (optional)<Input className="mt-2" name="requestingParty" /></label>
-      {canListEngineers && <label className="text-xs font-semibold">Assign engineer (optional)<Select searchable aria-label="Assigned engineer" className="mt-2 w-full" name="assignedEngineerId" defaultValue=""><option value="">Unassigned</option>{engineers.map((engineer) => <option key={engineer.id} value={engineer.id}>{engineer.name}</option>)}</Select></label>}
+      {canListEngineers && <label className="text-xs font-semibold">Assign engineer (optional)<Select searchable aria-label="Assigned engineer" className="mt-2 w-full" name="assignedEngineerId" defaultValue=""><option value="">Unassigned</option>{engineers.map((engineer) => <option key={engineer.id} value={engineer.id}>{engineer.name} ({engineer.organization})</option>)}</Select></label>}
     </div><label className="block text-xs font-semibold">Problem description<textarea className="mt-2 min-h-28 w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 dark:bg-slate-950" name="faultDescription" minLength={2} placeholder="Describe the issue or planned work" required /></label>
     <div className="flex justify-end gap-2 pt-2"><Button type="button" variant="outline" onClick={onClose} disabled={saving}>Cancel</Button><Button type="submit" disabled={loading || !equipment.length} loading={saving} loadingText="Creating ticket"><Plus className="h-4 w-4" />Create ticket</Button></div></form>
   </div></div>

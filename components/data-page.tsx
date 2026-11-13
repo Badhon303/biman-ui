@@ -290,7 +290,7 @@ function TicketModal({ onClose }: { onClose: () => void }) {
                 </option>
                 {engineers.map((engineer) => (
                   <option key={engineer.id} value={engineer.id}>
-                    {engineer.name}
+                    {engineer.name} ({engineer.organization})
                   </option>
                 ))}
               </Select>
